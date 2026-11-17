@@ -11,7 +11,7 @@ export default defineConfig({
     allowedHosts: ['.trycloudflare.com', 'localhost', '127.0.0.1'],
     // Local-dev helper only: if you set VITE_ENGINE_URL=/engine, requests to
     // /engine/* are proxied to the engine bound on 127.0.0.1:8787. The prefix
-    // is stripped so the engine sees /v1/*, /healthz, /v1/auth/token, etc.
+    // is stripped so the engine sees /api/*, /healthz, /auth/*, etc.
     //
     // Alternatives for dev (all rely on the engine's ALLOWED_ORIGINS CORS):
     //   * VITE_ENGINE_URL=http://127.0.0.1:8787  -> browser calls engine directly

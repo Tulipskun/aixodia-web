@@ -24,7 +24,7 @@ export default function App() {
   useEffect(() => {
     // Cloudflare Access owns the login. The only local question is whether the
     // engine still accepts our Access session, and the engine answers that
-    // with /v1/auth/whoami. A network failure keeps the cached profile so a
+    // with /api/auth/whoami. A network failure keeps the cached profile so a
     // stopped engine does not look like a signed-out user.
     if (booted.current) return
     booted.current = true
