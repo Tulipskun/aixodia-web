@@ -1133,3 +1133,62 @@ button,
 @media (prefers-reduced-motion: reduce) {
   .chat-rail, .metric-bar span, .typing-dots i { animation: none; transition: none; }
 }
+
+/* ---------------------------------------------------------------- multi-engine switcher */
+.hello-world-topbar .engine-switcher { margin-left: auto; }
+.engine-switcher { position: relative; display: inline-flex; align-items: center; }
+.engine-switcher-trigger {
+  display: inline-flex; align-items: center; gap: 8px; min-height: 36px;
+  padding: 6px 11px; border: 1px solid var(--border-strong); border-radius: 9px;
+  background: var(--surface-2); color: var(--text); font-size: 12px; font-weight: 600;
+}
+.engine-switcher-trigger:hover { border-color: var(--accent); background: var(--surface-3); }
+.engine-switcher-label { max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.engine-switcher-badge {
+  padding: 1px 6px; border-radius: 999px; background: var(--surface);
+  border: 1px solid var(--border); color: var(--muted); font: 10px var(--mono);
+}
+.engine-switcher-popover {
+  position: absolute; top: calc(100% + 8px); right: 0; z-index: 50;
+  width: min(320px, calc(100vw - 28px)); padding: 10px;
+  border: 1px solid var(--border-strong); border-radius: 12px;
+  background: var(--surface-2); box-shadow: var(--shadow);
+  display: flex; flex-direction: column; gap: 8px;
+}
+.engine-switcher-head {
+  display: flex; align-items: center; justify-content: space-between;
+  font: 10px var(--mono); letter-spacing: 0.1em; color: var(--dim);
+}
+.engine-switcher-list { display: flex; flex-direction: column; gap: 4px; max-height: 240px; overflow-y: auto; }
+.engine-switcher-row { display: flex; align-items: center; gap: 4px; }
+.engine-switcher-item {
+  flex: 1; min-width: 0; display: flex; align-items: center; gap: 9px;
+  padding: 8px 9px; border: 1px solid transparent; border-radius: 8px;
+  background: transparent; color: var(--muted); text-align: left;
+}
+.engine-switcher-item:hover, .engine-switcher-row.is-selected .engine-switcher-item {
+  background: var(--surface-3); border-color: var(--border-strong); color: var(--text);
+}
+.engine-switcher-copy { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.engine-switcher-copy strong { font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.engine-switcher-copy small { font: 10px var(--mono); color: var(--dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.engine-switcher-add { width: 100%; }
+.engine-fleet-card { gap: 14px; }
+.engine-fleet-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; }
+.engine-fleet-item {
+  display: flex; flex-direction: column; gap: 12px; padding: 14px;
+  border: 1px solid var(--border); border-radius: 12px; background: rgba(8, 8, 39, 0.65);
+}
+.engine-fleet-item.is-active { border-color: var(--accent); }
+.engine-fleet-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+.engine-fleet-top strong { display: block; font-size: 13px; }
+.engine-fleet-top small { font: 10.5px var(--mono); color: var(--dim); }
+.engine-modal-dialog { width: min(440px, 100%); }
+.engine-modal-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.engine-form-fields { display: flex; flex-direction: column; gap: 11px; margin-bottom: 18px; }
+.engine-field { display: flex; flex-direction: column; gap: 5px; font-size: 12px; color: var(--muted); }
+.engine-field input, .engine-field select {
+  height: 38px; padding: 0 10px; border: 1px solid var(--border-strong);
+  border-radius: 8px; background: var(--surface); color: var(--text); outline: none;
+}
+.engine-field input:focus, .engine-field select:focus { border-color: var(--accent); }

@@ -1,3 +1,4 @@
+import { EngineSwitcher } from './EngineSwitcher'
 import { useEffect, useRef, useState } from 'react'
 
 import * as api from './api'
@@ -145,7 +146,8 @@ export default function App() {
           <span className="hello-world-brand-mark">A</span>
           <span className="hello-world-brand-name">AIxodia</span>
         </button>
-        <div className="hello-world-account-menu" ref={accountMenuRef}>
+        <EngineSwitcher />
+          <div className="hello-world-account-menu" ref={accountMenuRef}>
           <button
             className="hello-world-account-trigger"
             type="button"

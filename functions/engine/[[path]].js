@@ -9,9 +9,6 @@
  * * `/engine/by/<engineId>/*` forwards to that specific registered engine.
  * * `/engine/api/*`, `/engine/healthz`, `/engine/cdn-cgi/*` forward to the
  *   default (first) registered engine.
- *
- * Only registered engine origins and explicit path prefixes are forwarded, so
- * this function never acts as an open egress proxy.
  */
 
 const DEFAULT_AUTH = 'https://aixodia-auth.aixodia.workers.dev'
@@ -22,8 +19,6 @@ const DEFAULT_ENGINE_ENTRY = {
 }
 
 const AUTH_PREFIXES = ['/auth/']
-// No /terminal here: that is a WebSocket upgrade, and a Pages Function cannot
-// proxy one — the engine is dialled directly for it.
 const ENGINE_PREFIXES = ['/api/', '/healthz', '/cdn-cgi/']
 
 function sanitizeId(raw, fallback) {
@@ -66,8 +61,6 @@ function parseEngineList(raw) {
     }
   }
 
-  // Comma-separated format: `alpha=https://engine-1.example.com,beta=https://engine-2.example.com`
-  // or plain URLs `https://engine-1.example.com,https://engine-2.example.com`.
   return trimmed
     .split(',')
     .map((part, idx) => {
@@ -79,11 +72,7 @@ function parseEngineList(raw) {
       if (!/^https?:\/\//i.test(rawUrl)) return null
       const host = new URL(rawUrl).host
       const id = sanitizeId(rawName || (idx === 0 ? 'default' : host), `engine-${idx + 1}`)
-      return {
-        id,
-        name: rawName || host,
-        url: rawUrl,
-      }
+      return { id, name: rawName || host, url: rawUrl }
     })
     .filter(Boolean)
 }
@@ -117,9 +106,7 @@ function resolveRoute(subpath, engines, authOrigin) {
     const slash = rest.indexOf('/')
     const requestedId = decodeURIComponent(slash >= 0 ? rest.slice(0, slash) : rest)
     const found = engines.find((entry) => entry.id === requestedId)
-    if (!found) {
-      return { kind: 'unknown_engine', engineId: requestedId }
-    }
+    if (!found) return { kind: 'unknown_engine', engineId: requestedId }
     selected = found
     forwardPath = slash >= 0 ? rest.slice(slash) : '/'
   }
@@ -154,23 +141,15 @@ export async function onRequest({ request, env = {} }) {
     }))
     return new Response(JSON.stringify({ engines: publicList }), {
       status: 200,
-      headers: {
-        'content-type': 'application/json',
-        'cache-control': 'no-store',
-      },
+      headers: { 'content-type': 'application/json', 'cache-control': 'no-store' },
     })
   }
 
   const route = resolveRoute(subpath, engines, authOrigin)
-  if (!route) {
-    return new Response('Not found', { status: 404 })
-  }
+  if (!route) return new Response('Not found', { status: 404 })
   if (route.kind === 'unknown_engine') {
     return new Response(
-      JSON.stringify({
-        error: `Unknown engine "${route.engineId}"`,
-        code: 'UNKNOWN_ENGINE',
-      }),
+      JSON.stringify({ error: `Unknown engine "${route.engineId}"`, code: 'UNKNOWN_ENGINE' }),
       { status: 404, headers: { 'content-type': 'application/json' } },
     )
   }
@@ -178,8 +157,6 @@ export async function onRequest({ request, env = {} }) {
   const target = new URL(route.forwardPath + url.search, route.upstreamBase)
   const isEngine = route.kind === 'engine'
 
-  // Copy the headers that carry identity and content negotiation; drop the ones
-  // that describe this hop rather than the request.
   const headers = new Headers()
   for (const name of [
     'accept',
@@ -194,9 +171,6 @@ export async function onRequest({ request, env = {} }) {
   ]) {
     const value = request.headers.get(name)
     if (!value) continue
-    // This origin's cookies belong to this host. Forwarding them to an engine
-    // sends a CF_AppSession issued for the wrong hostname, which Access reads as
-    // a stale session and answers with a 302. Engines authorise by bearer token.
     if (name === 'cookie' && isEngine && route.forwardPath.startsWith('/api/')) continue
     headers.set(name, value)
   }
