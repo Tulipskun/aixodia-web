@@ -2,7 +2,13 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import {
   DEFAULT_ENGINE_URL,
+  DEFAULT_ENGINE_ID,
   resolveEngineUrl,
+  engineProxyBaseUrl,
+  slugifyEngineId,
+  normalizeEngineNode,
+  mergeEngineCatalog,
+  selectActiveEngine,
   isExpired,
   enginePath,
   DEVICE_PATHS,
@@ -227,5 +233,53 @@ test('normalizeDevices/normalizeDeviceTools never throw on null or malformed bod
   assert.equal(normalizeDevices(rawResponse('not json')).items.length, 0)
 })
 
-// ---------------------------------------------------------------- GitHub PKCE
+// ---------------------------------------------------------------- multi-engine catalog
 
+test('engineProxyBaseUrl keeps /engine for default and scopes named engines under /engine/by/<id>', () => {
+  assert.equal(DEFAULT_ENGINE_ID, 'default')
+  assert.equal(engineProxyBaseUrl('default'), '/engine')
+  assert.equal(engineProxyBaseUrl('beta'), '/engine/by/beta')
+  assert.equal(engineProxyBaseUrl('node 2', 'https://console.example/engine/'), 'https://console.example/engine/by/node%202')
+})
+
+test('normalizeEngineNode and slugifyEngineId produce stable ids and auth modes', () => {
+  assert.equal(slugifyEngineId('https://Engine-2.AIxodia.dpdns.org/'), 'engine-2.aixodia.dpdns.org')
+  const node = normalizeEngineNode(
+    { name: 'Edge Bangkok', host: 'edge-bkk.aixodia.dpdns.org', authMode: 'bearer' },
+    { index: 1, source: 'custom' },
+  )
+  assert.equal(node.id, 'edge-bangkok')
+  assert.equal(node.url, '/engine/by/edge-bangkok')
+  assert.equal(node.authMode, 'bearer')
+  assert.equal(node.source, 'custom')
+})
+
+test('mergeEngineCatalog deduplicates by id, lets custom override, and guarantees a fallback', () => {
+  const fallback = mergeEngineCatalog([])
+  assert.equal(fallback.length, 1)
+  assert.equal(fallback[0].id, 'default')
+  assert.equal(fallback[0].url, '/engine')
+
+  const merged = mergeEngineCatalog([
+    {
+      source: 'proxy',
+      items: [
+        { id: 'default', name: 'Alpha', host: 'engine.aixodia.dpdns.org' },
+        { id: 'beta', name: 'Beta', host: 'beta.aixodia.dpdns.org' },
+      ],
+    },
+    {
+      source: 'custom',
+      items: [
+        { id: 'beta', name: 'Beta Custom', url: 'https://custom-beta.example.com/', authMode: 'bearer' },
+      ],
+    },
+  ])
+  assert.equal(merged.length, 2)
+  assert.equal(merged[0].url, '/engine')
+  assert.equal(merged[1].name, 'Beta Custom')
+  assert.equal(merged[1].url, 'https://custom-beta.example.com')
+  assert.equal(merged[1].authMode, 'bearer')
+  assert.equal(selectActiveEngine(merged, 'beta').id, 'beta')
+  assert.equal(selectActiveEngine(merged, 'missing').id, 'default')
+})

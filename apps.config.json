@@ -5,6 +5,18 @@
     "tagline": "กดปุ่มสั่งงาน · ดูภาพหน้าจอจริง",
     "owner": "Tulipskun"
   },
+  "engines": [
+    {
+      "id": "default",
+      "name": "Primary Engine",
+      "url": "/engine",
+      "host": "engine.aixodia.dpdns.org",
+      "subtitle": "Cloudflare Named Tunnel",
+      "tag": "PRIMARY",
+      "authMode": "access",
+      "source": "config"
+    }
+  ],
   "devices": [
     {
       "id": "redroid14-x86-64-c64742",

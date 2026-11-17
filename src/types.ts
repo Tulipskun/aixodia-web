@@ -11,12 +11,40 @@ export interface Health {
   authConfigured: boolean
 }
 
+export type EngineAuthMode = 'access' | 'bearer'
+export type EngineSource = 'proxy' | 'config' | 'custom'
+
+export interface EngineNode {
+  id: string
+  name: string
+  url: string
+  host?: string
+  subtitle?: string
+  tag?: string
+  accent?: string
+  authMode: EngineAuthMode
+  source: EngineSource
+}
+
+export interface EnginesDiscoveryResponse {
+  engines: Array<{
+    id: string
+    name: string
+    host?: string
+    url?: string
+    subtitle?: string | null
+    tag?: string | null
+    default?: boolean
+  }>
+}
+
 export interface EngineMetrics {
   cpuPercent: number | null
   memoryUsedBytes: number | null
   memoryTotalBytes: number | null
   memoryPercent: number | null
 }
+
 export interface EngineStatus {
   configured: boolean
   online: boolean
@@ -27,6 +55,7 @@ export interface EngineStatus {
   uptimeSeconds?: number | null
   metrics: EngineMetrics | null
 }
+
 export interface EngineSession {
   id: string
   title: string
@@ -34,6 +63,7 @@ export interface EngineSession {
   model: string
   updated_at: number
 }
+
 export interface EngineTurn {
   id: number
   seq: number
@@ -44,17 +74,20 @@ export interface EngineTurn {
   model?: string
   agent?: string
 }
+
 export interface EngineRun {
   id: string
   session_id: string
   status: string
   last_seq: number
 }
+
 export interface EngineEvent {
   seq: number
   kind: string
   data: Record<string, unknown>
 }
+
 export interface DeviceStatus {
   online: boolean
   latencyMs: number | null
@@ -62,6 +95,7 @@ export interface DeviceStatus {
   reason: string | null
   version?: string | null
 }
+
 export interface Device {
   id: string
   name: string
@@ -71,12 +105,14 @@ export interface Device {
   accent?: string
   status: DeviceStatus
 }
+
 export interface DevicesResponse {
   items: Device[]
   checkedAt: string
   ephemeral: boolean
   note?: string | null
 }
+
 export interface DeviceTool {
   name: string
   description?: string
@@ -86,13 +122,16 @@ export interface DeviceTool {
     required?: string[]
   }
 }
+
 export interface DeviceToolsResponse {
   tools: DeviceTool[]
 }
+
 export interface Screenshot {
   mimeType: string
   data: string
 }
+
 export interface DeviceActionResult {
   ok: boolean
   device: string
@@ -101,6 +140,7 @@ export interface DeviceActionResult {
   screenshot: Screenshot | null
   at: string
 }
+
 export interface ApiErrorBody {
   error: string
   code: string
@@ -111,13 +151,13 @@ export interface ApiErrorBody {
   retryAfter?: number
 }
 
-
 export interface ConsoleInfo {
   name: string
   subtitle: string
   tagline: string
   owner: string
 }
+
 export interface Preset {
   id: string
   label: string
@@ -125,7 +165,9 @@ export interface Preset {
   arguments: Record<string, unknown>
   hint?: string
 }
+
 export type ToolFieldKind = 'percent' | 'int' | 'text' | 'points' | 'pointers' | 'keycodes'
+
 export interface ToolField {
   key: string
   label: string
@@ -138,6 +180,7 @@ export interface ToolField {
   max?: number
   maxLength?: number
 }
+
 export interface ToolDescriptor {
   name: string
   label: string
@@ -145,7 +188,7 @@ export interface ToolDescriptor {
   group: string
   fields: ToolField[]
 }
-export interface Screenshot { mimeType: string; data: string }
+
 export interface ActionResult {
   ok: boolean
   device: string
@@ -158,16 +201,20 @@ export interface ActionResult {
   requestId: string
   platform?: string
 }
+
 export interface ConsoleConfig {
   console: ConsoleInfo
+  engines?: EngineNode[]
   devices: Device[]
   presets: Preset[]
   protocolVersion?: string
   platform?: string
 }
+
 export interface CommandLogEntry {
   id: string
   at: string
+  engineId?: string
   tool: string
   device: string
   ok: boolean
@@ -176,6 +223,7 @@ export interface CommandLogEntry {
   arguments?: Record<string, unknown>
   error?: { code: string; message: string } | null
 }
+
 export interface ToolsResponse {
   tools: ToolDescriptor[]
   source: 'catalog' | 'device'
@@ -183,6 +231,7 @@ export interface ToolsResponse {
   protocolVersion: string
   note: string
 }
+
 export interface CommandsResponse {
   items: CommandLogEntry[]
   cap: number
