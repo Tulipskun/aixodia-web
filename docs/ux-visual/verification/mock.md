@@ -1,0 +1,29 @@
+# Verification — `/mock` redesign
+
+Re-ran the two audits from the skill (`layout-audit.js`, `geometry-audit.js`) at
+390×844, 430×932 and 1440×900 after the change, plus a fresh screenshot per
+viewport (`pages/mock/shots/after-*.png`).
+
+| check | before | after |
+|---|---|---|
+| `pageScrollY` @ 390 / 430 / 1440 | 0 / 0 / 24 | 0 / 0 / 0 |
+| `spacing.offScale` | [3,6,7,10,14,15,18] | [] |
+| `spacing.nearDupes` | 7 pairs | none |
+| distinct font sizes | 6 (17/15/18/11/10/13) | 5 (20/15/13/11/10) |
+| `lowContrast` | [] | [] |
+| `smallTargets` | [] | [] |
+| `pageOverflowX` / `unevenRows` / `overflowSpills` | 0 / [] / [] | 0 / [] / [] |
+| `wrappedControls` | [] | [] |
+
+Findings resolved: F1 (no filled peer action — the status pill is the only
+emphasis), F2 (value above the chart, baseline drawn, aria label names metric and
+value), F3/F4 (tokens), F5 (offline values are "—" with "no data" in the chart
+slot, controls visually inert and carrying the reason in `title`), F6 (labels
+moved from `--dim` 4.59:1 to `--muted` 8.85:1, and 10px text is now only chrome),
+F7 (fits at 1440×900), F8 (`prefers-reduced-motion` turns off the bar and button
+transitions).
+
+Deferred, recorded not fixed: F9 — the "MCP" tab has no screen behind it in the
+mock; it is a mock of the real tab bar, not a broken link.
+
+`npm test` 19/19, `npm run build` clean.

@@ -1,5 +1,9 @@
 /* The machines screen, mocked. Same palette and type as the console so the mock
-   is judged as the real thing would look, but nothing here is shared with it. */
+   is judged as the real thing would look, but nothing here is shared with it.
+
+   Every size and gap below comes from the scale at the top of this file. The
+   mock is a throwaway, but it is a throwaway of a design system, not of a pile
+   of one-off numbers. */
 
 :root {
   --bg: #000000;
@@ -8,23 +12,38 @@
   --surface-3: #11114d;
   --border: rgba(145, 142, 255, 0.13);
   --border-strong: rgba(145, 142, 255, 0.24);
+  --hairline: rgba(145, 142, 255, 0.1);
   --text: #f4f3ff;
   --muted: #aaa8d0;
   --dim: #77749f;
-  --dim-strong: #b6b3d8;
   --accent: #7772ff;
   --success: #45d6b0;
   --warn: #f6c66b;
   --info: #69c8ff;
+
+  /* Type: five sizes, no more. */
+  --fs-display: 20px;
+  --fs-value: 15px;
+  --fs-body: 13px;
+  --fs-label: 11px;
+  --fs-meta: 10px;
+
+  /* Space: 4 / 8 / 12 / 16 / 24. */
+  --s1: 4px;
+  --s2: 8px;
+  --s3: 12px;
+  --s4: 16px;
+  --s5: 24px;
+
   --mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
   --sans: 'Inter', 'Noto Sans Thai', system-ui, -apple-system, 'Segoe UI', sans-serif;
   --brand: 'Saira', 'Inter', system-ui, sans-serif;
-  --radius: 18px;
+  --radius: 16px;
 }
 
 * { box-sizing: border-box; }
 
-html, body { min-height: 100%; }
+html, body { height: 100%; }
 
 body {
   margin: 0;
@@ -33,7 +52,7 @@ body {
     var(--bg);
   color: var(--text);
   font-family: var(--sans);
-  font-size: 14px;
+  font-size: var(--fs-body);
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
 }
@@ -43,13 +62,15 @@ button:disabled { cursor: not-allowed; }
 
 /* ---------------------------------------------------------------- shell */
 
+/* The column owns the viewport, so the screen scrolls inside it and the tab bar
+   never has to be positioned over content. */
 .shell {
   width: 100%;
   max-width: 460px;
-  min-height: 100vh;
-  min-height: 100dvh;
+  height: 100vh;
+  height: 100dvh;
   margin: 0 auto;
-  padding: 0 18px env(safe-area-inset-bottom);
+  padding: 0 var(--s4);
   display: flex;
   flex-direction: column;
 }
@@ -57,16 +78,12 @@ button:disabled { cursor: not-allowed; }
 /* --------------------------------------------------------------- topbar */
 
 .topbar {
-  position: sticky;
-  top: 0;
-  z-index: 5;
+  flex: 0 0 auto;
   display: grid;
   grid-template-columns: 40px 1fr 40px;
   align-items: center;
-  gap: 12px;
-  padding: 12px 0 10px;
-  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.94) 62%, transparent);
-  backdrop-filter: blur(10px);
+  gap: var(--s3);
+  padding: var(--s3) 0 var(--s2);
 }
 
 .icon-button,
@@ -75,7 +92,8 @@ button:disabled { cursor: not-allowed; }
   place-items: center;
   width: 40px;
   height: 40px;
-  border-radius: 13px;
+  padding: 0;
+  border-radius: var(--s3);
   border: 1px solid var(--border);
   background: var(--surface);
   color: var(--muted);
@@ -91,26 +109,26 @@ button:disabled { cursor: not-allowed; }
   color: var(--text);
   font-family: var(--brand);
   font-weight: 600;
-  font-size: 15px;
+  line-height: 40px;
 }
 
 .brand {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 7px;
+  gap: var(--s1);
 }
 
 .brand-name {
   font-family: var(--brand);
   font-weight: 700;
-  font-size: 17px;
+  font-size: var(--fs-display);
   letter-spacing: 0.01em;
 }
 
 .brand-dot {
-  width: 6px;
-  height: 6px;
+  width: var(--s2);
+  height: var(--s2);
   border-radius: 50%;
   background: var(--success);
   box-shadow: 0 0 10px var(--success);
@@ -119,28 +137,31 @@ button:disabled { cursor: not-allowed; }
 /* --------------------------------------------------------------- screen */
 
 .screen {
-  flex: 1;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  padding-top: 4px;
+  gap: var(--s3);
+  padding-bottom: var(--s2);
+  scrollbar-width: thin;
 }
 
 /* ----------------------------------------------------------------- card */
 
 .card {
-  padding: 15px;
   border-radius: var(--radius);
   border: 1px solid var(--border);
   background:
     linear-gradient(160deg, rgba(119, 114, 255, 0.1), transparent 46%),
     var(--surface);
   box-shadow: 0 18px 44px rgba(0, 0, 0, 0.45);
+  padding: var(--s4);
 }
 
 .card.is-offline {
-  background: var(--surface);
-  border-style: dashed;
+  background: rgba(8, 8, 58, 0.55);
+  border-color: var(--hairline);
   box-shadow: none;
 }
 
@@ -148,41 +169,59 @@ button:disabled { cursor: not-allowed; }
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 10px;
+  gap: var(--s3);
+  padding-bottom: var(--s3);
+  border-bottom: 1px solid var(--hairline);
 }
 
-.card-title h2 {
+.card-identity { min-width: 0; }
+
+.card-identity h2 {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s2);
   margin: 0;
   font-family: var(--brand);
-  font-size: 18px;
+  font-size: var(--fs-display);
   font-weight: 600;
   letter-spacing: -0.01em;
 }
 
-.card-title p {
-  margin: 2px 0 0;
+.version {
   font-family: var(--mono);
-  font-size: 11px;
-  color: var(--dim);
+  font-size: var(--fs-meta);
+  font-weight: 400;
+  color: var(--muted);
+  letter-spacing: 0.02em;
+}
+
+.meta {
+  margin: var(--s1) 0 0;
+  font-family: var(--mono);
+  font-size: var(--fs-label);
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .pill {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 4px 10px;
+  gap: var(--s1);
+  padding: var(--s1) var(--s2);
   border-radius: 999px;
   border: 1px solid var(--border);
   font-family: var(--mono);
-  font-size: 10px;
+  font-size: var(--fs-meta);
   letter-spacing: 0.06em;
   text-transform: uppercase;
   white-space: nowrap;
 }
 
 .pill-dot {
-  width: 6px;
-  height: 6px;
+  width: var(--s2);
+  height: var(--s2);
   border-radius: 50%;
   background: var(--dim);
 }
@@ -198,90 +237,120 @@ button:disabled { cursor: not-allowed; }
   box-shadow: 0 0 8px rgba(69, 214, 176, 0.85);
 }
 
-.pill.is-offline { color: var(--dim-strong); }
-.pill.is-offline .pill-dot { background: var(--dim-strong); }
+.pill.is-offline { color: var(--muted); }
+.pill.is-offline .pill-dot { background: var(--muted); }
 
-/* ---------------------------------------------------------------- charts */
+/* --------------------------------------------------------------- metrics */
 
-.charts {
+.metrics {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 8px;
-  margin: 14px 0 12px;
+  padding: var(--s3) 0;
+  border-bottom: 1px solid var(--hairline);
 }
 
-.chart {
+.metric {
+  position: relative;
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: var(--s1);
   min-width: 0;
+  padding-right: var(--s4);
 }
 
-.chart-label {
+.metric + .metric { padding-left: var(--s4); }
+
+.metric + .metric::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: var(--s1);
+  bottom: var(--s1);
+  width: 1px;
+  background: var(--hairline);
+}
+.metric:last-child { padding-right: 0; }
+
+.metric-label {
   font-family: var(--mono);
-  font-size: 9.5px;
+  font-size: var(--fs-meta);
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: var(--dim);
+  color: var(--muted);
 }
 
-.spark {
-  display: block;
-  width: 100%;
-  height: 34px;
-  overflow: visible;
-}
-
-.spark-line {
-  fill: none;
-  stroke: var(--accent);
-  stroke-width: 1.6;
-  stroke-linejoin: round;
-  stroke-linecap: round;
-}
-
-.spark-area { fill: rgba(119, 114, 255, 0.16); }
-
-.spark.is-cool .spark-line { stroke: var(--info); }
-.spark.is-cool .spark-area { fill: rgba(105, 200, 255, 0.14); }
-.spark.is-warm .spark-line { stroke: var(--warn); }
-.spark.is-warm .spark-area { fill: rgba(246, 198, 107, 0.13); }
-
-.spark.is-empty {
-  height: 34px;
-  border-bottom: 1px dashed rgba(145, 142, 255, 0.22);
-}
-
-.chart-value {
+.metric-value {
   font-family: var(--mono);
-  font-size: 11px;
-  font-weight: 500;
+  font-size: var(--fs-value);
+  font-weight: 600;
   color: var(--text);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
+.spark {
+  display: block;
+  width: 100%;
+  height: 28px;
+}
+
+.spark-line {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 1.5;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+.spark-area { fill: rgba(119, 114, 255, 0.14); }
+.spark-base { stroke: rgba(145, 142, 255, 0.22); stroke-width: 1; }
+
+.spark.is-cool .spark-line { stroke: var(--info); }
+.spark.is-cool .spark-area { fill: rgba(105, 200, 255, 0.12); }
+.spark.is-warm .spark-line { stroke: var(--warn); }
+.spark.is-warm .spark-area { fill: rgba(246, 198, 107, 0.12); }
+
+.spark.is-empty {
+  height: 28px;
+  border-bottom: 1px dashed rgba(145, 142, 255, 0.22);
+}
+
+/* The offline card says why the line is missing instead of pretending the chart
+   is there with no data in it. */
+.metric-note {
+  position: absolute;
+  right: var(--s3);
+  bottom: var(--s1);
+  font-family: var(--mono);
+  font-size: var(--fs-meta);
+  color: var(--muted);
+}
+
+.metric:last-child .metric-note { right: 0; }
+
 /* --------------------------------------------------------------- storage */
 
-.storage { margin-bottom: 13px; }
-
-.storage-head {
-  display: flex;
+.storage {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: var(--s1) var(--s3);
   align-items: baseline;
-  justify-content: space-between;
-  gap: 10px;
-  margin-bottom: 6px;
+  padding: var(--s3) 0;
+  border-bottom: 1px solid var(--hairline);
 }
 
 .storage-value {
   font-family: var(--mono);
-  font-size: 11px;
-  color: var(--text);
+  font-size: var(--fs-body);
+  font-weight: 600;
+  color: var(--muted);
 }
 
 .bar {
-  height: 7px;
+  grid-column: 1 / -1;
+  height: var(--s1);
+  margin-top: var(--s2);
   border-radius: 999px;
   background: rgba(145, 142, 255, 0.14);
   overflow: hidden;
@@ -291,39 +360,35 @@ button:disabled { cursor: not-allowed; }
   display: block;
   height: 100%;
   border-radius: 999px;
-  background: linear-gradient(90deg, var(--accent), #9b8cff);
+  background: linear-gradient(90deg, rgba(119, 114, 255, 0.92), rgba(155, 140, 255, 0.92));
   transition: width 0.4s ease;
 }
-
-/* --------------------------------------------------------------- offline */
-
-.card.is-offline .card-title h2 { color: var(--dim-strong); }
-.card.is-offline .chart-label,
-.card.is-offline .chart-value,
-.card.is-offline .storage-value { color: var(--dim-strong); }
-.card.is-offline .bar { background: rgba(145, 142, 255, 0.1); }
-.card.is-offline .bar-fill { background: none; }
 
 /* --------------------------------------------------------------- actions */
 
 .actions {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--s2);
+  padding-top: var(--s3);
 }
 
+/* Four peers: none of them is this screen's purpose, so none of them is filled. */
 .action {
-  display: inline-flex;
+  display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  height: 38px;
-  border-radius: 12px;
+  gap: var(--s1);
+  height: 52px;
+  padding: 0 var(--s1);
+  border-radius: var(--s3);
   border: 1px solid var(--border);
   background: var(--surface-2);
   color: var(--muted);
-  font-size: 13px;
+  font-size: var(--fs-label);
   font-weight: 500;
+  letter-spacing: 0.01em;
   transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
 }
 
@@ -333,47 +398,28 @@ button:disabled { cursor: not-allowed; }
   color: var(--text);
 }
 
-.action.is-primary {
-  border-color: rgba(119, 114, 255, 0.44);
-  background: linear-gradient(140deg, rgba(119, 114, 255, 0.9), rgba(93, 88, 232, 0.86));
-  color: #fff;
+.action:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
-
-.action.is-primary:hover:not(:disabled) { filter: brightness(1.08); }
 
 .action:disabled {
   background: transparent;
-  border-style: dashed;
-  border-color: var(--border-strong);
-  color: var(--dim-strong);
+  border-color: transparent;
+  color: var(--muted);
+  opacity: 0.7;
 }
-
-.card-foot {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-top: 10px;
-  font-family: var(--mono);
-  font-size: 10.5px;
-  color: var(--dim);
-}
-
-.foot-live { color: var(--success); }
 
 /* --------------------------------------------------------------- tabbar */
 
 .tabbar {
-  /* Sticky rather than fixed: it is the last child of the shell, so it can never
-     float in the middle of the page or hide the last card behind it. */
-  position: sticky;
-  bottom: 0;
-  margin: 14px -18px 0;
+  flex: 0 0 auto;
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 6px;
-  padding: 8px 18px calc(8px + env(safe-area-inset-bottom));
+  gap: var(--s1);
+  margin: 0 calc(var(--s4) * -1);
+  padding: var(--s2) var(--s4) calc(var(--s2) + env(safe-area-inset-bottom));
   border-top: 1px solid var(--border);
-  border-radius: 16px 16px 0 0;
   background: rgba(4, 2, 38, 0.92);
   backdrop-filter: blur(14px);
 }
@@ -382,17 +428,17 @@ button:disabled { cursor: not-allowed; }
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 3px;
-  padding: 7px 0;
+  gap: var(--s1);
+  padding: var(--s1) 0;
   border: 0;
-  border-radius: 12px;
+  border-radius: var(--s3);
   background: transparent;
-  color: var(--dim);
-  font-size: 11px;
+  color: var(--muted);
+  font-size: var(--fs-label);
   font-weight: 500;
 }
 
-.tab:hover { color: var(--muted); }
+.tab:hover { color: var(--text); }
 
 .tab.is-active {
   color: var(--text);
@@ -401,7 +447,11 @@ button:disabled { cursor: not-allowed; }
 
 .tab.is-active svg { color: var(--accent); }
 
+@media (prefers-reduced-motion: reduce) {
+  .bar-fill { transition: none; }
+  .action, .icon-button { transition: none; }
+}
+
 @media (min-width: 520px) {
-  body { padding: 12px 0; }
-  .shell { padding-bottom: 12px; }
+  .shell { padding-top: var(--s2); padding-bottom: var(--s2); }
 }

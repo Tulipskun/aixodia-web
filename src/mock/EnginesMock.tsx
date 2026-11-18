@@ -5,7 +5,7 @@
 
 import { Boxes, Ellipsis, Home, Menu, MonitorSmartphone, Sparkles, SquareTerminal } from 'lucide-react'
 
-interface Chart {
+interface Metric {
   label: string
   value: string
   /** Oldest to newest; the chart is scaled to its own range. */
@@ -24,8 +24,10 @@ interface Machine {
   name: string
   online: boolean
   version: string
-  subtitle: string
-  charts: Chart[]
+  meta: string
+  /** Why the controls are unavailable, when they are. */
+  reason?: string
+  metrics: Metric[]
   storage: Storage
 }
 
@@ -35,25 +37,25 @@ const MACHINES: Machine[] = [
     name: 'Alpha',
     online: true,
     version: 'v1.177',
-    subtitle: 'Debian 13 · x86_64 · up 12h 40m',
-    charts: [
+    meta: 'Debian 13 · x86_64 · up 12h 40m',
+    metrics: [
       {
         label: 'CPU',
         value: '50%',
         tone: 'accent',
-        series: [18, 26, 22, 41, 38, 52, 44, 61, 47, 39, 55, 50, 46, 58, 50],
+        series: [18, 30, 24, 44, 38, 57, 46, 39, 58, 48, 53, 50],
       },
       {
         label: 'RAM',
         value: '5 / 8 GB',
         tone: 'cool',
-        series: [40, 42, 45, 44, 48, 51, 50, 54, 57, 56, 59, 60, 58, 61, 62],
+        series: [40, 43, 45, 47, 50, 52, 55, 57, 56, 59, 61, 62],
       },
       {
         label: 'I/O',
         value: '12.4 MB/s',
         tone: 'warm',
-        series: [4, 9, 3, 14, 22, 8, 5, 18, 26, 11, 7, 19, 12, 6, 13],
+        series: [6, 11, 4, 17, 24, 9, 6, 20, 26, 12, 8, 14],
       },
     ],
     storage: { used: '164', total: '256 GB', percent: 64 },
@@ -63,8 +65,9 @@ const MACHINES: Machine[] = [
     name: 'Beta',
     online: false,
     version: 'v1.170',
-    subtitle: 'Last seen 4h ago',
-    charts: [
+    meta: 'Last seen 4h ago',
+    reason: 'Offline since 4h ago',
+    metrics: [
       { label: 'CPU', value: '—', tone: 'accent', series: [] },
       { label: 'RAM', value: '—', tone: 'cool', series: [] },
       { label: 'I/O', value: '—', tone: 'warm', series: [] },
@@ -80,34 +83,37 @@ const ACTIONS = [
   { id: 'more', label: 'More', icon: Ellipsis },
 ] as const
 
-const CHART_WIDTH = 100
-const CHART_HEIGHT = 34
+const SPARK_WIDTH = 100
+const SPARK_HEIGHT = 28
 
-function Sparkline({ series, tone }: { series: number[]; tone: Chart['tone'] }) {
-  if (series.length < 2) {
-    return <div className="spark is-empty" aria-hidden="true" />
-  }
+function Sparkline({ series, tone, label }: { series: number[]; tone: Metric['tone']; label: string }) {
+  if (series.length < 2) return <div className="spark is-empty" aria-hidden="true" />
   const high = Math.max(...series)
   const low = Math.min(...series)
   const span = high - low || 1
-  const step = CHART_WIDTH / (series.length - 1)
+  const step = SPARK_WIDTH / (series.length - 1)
   const points = series.map((value, index) => {
-    const x = index * step
-    // A little headroom above and below keeps the line off the edges.
-    const y = CHART_HEIGHT - 3 - ((value - low) / span) * (CHART_HEIGHT - 6)
-    return [x, y] as const
+    const y = SPARK_HEIGHT - 3 - ((value - low) / span) * (SPARK_HEIGHT - 8)
+    return `${(index * step).toFixed(1)},${y.toFixed(1)}`
   })
-  const line = points.map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`).join(' ')
-  const area = `0,${CHART_HEIGHT} ${line} ${CHART_WIDTH},${CHART_HEIGHT}`
   return (
     <svg
       className={`spark is-${tone}`}
-      viewBox={`0 0 ${CHART_WIDTH} ${CHART_HEIGHT}`}
+      viewBox={`0 0 ${SPARK_WIDTH} ${SPARK_HEIGHT}`}
       preserveAspectRatio="none"
-      aria-hidden="true"
+      role="img"
+      aria-label={label}
     >
-      <polygon className="spark-area" points={area} />
-      <polyline className="spark-line" points={line} vectorEffect="non-scaling-stroke" />
+      <polygon className="spark-area" points={`0,${SPARK_HEIGHT} ${points.join(' ')} ${SPARK_WIDTH},${SPARK_HEIGHT}`} />
+      <polyline className="spark-line" points={points.join(' ')} vectorEffect="non-scaling-stroke" />
+      <line
+        className="spark-base"
+        x1="0"
+        y1={SPARK_HEIGHT - 0.5}
+        x2={SPARK_WIDTH}
+        y2={SPARK_HEIGHT - 0.5}
+        vectorEffect="non-scaling-stroke"
+      />
     </svg>
   )
 }
@@ -117,35 +123,41 @@ function Card({ machine }: { machine: Machine }) {
   return (
     <article className={`card${offline ? ' is-offline' : ''}`} aria-label={machine.name}>
       <header className="card-head">
-        <div className="card-title">
-          <h2>{machine.name}</h2>
-          <p>{machine.subtitle}</p>
+        <div className="card-identity">
+          <h2>
+            {machine.name}
+            <span className="version">{machine.version}</span>
+          </h2>
+          <p className="meta">{machine.meta}</p>
         </div>
         <span className={`pill is-${machine.online ? 'online' : 'offline'}`}>
-          <span className="pill-dot" />
+          <span className="pill-dot" aria-hidden="true" />
           {machine.online ? 'online' : 'offline'}
         </span>
       </header>
 
-      <div className="charts">
-        {machine.charts.map((chart) => (
-          <div key={chart.label} className="chart">
-            <span className="chart-label">{chart.label}</span>
-            <Sparkline series={chart.series} tone={chart.tone} />
-            <strong className="chart-value">{chart.value}</strong>
+      <div className="metrics">
+        {machine.metrics.map((metric) => (
+          <div key={metric.label} className="metric">
+            <span className="metric-label">{metric.label}</span>
+            <strong className="metric-value">{metric.value}</strong>
+            <Sparkline
+              series={metric.series}
+              tone={metric.tone}
+              label={`${metric.label} ${metric.value}`}
+            />
+            {offline && <span className="metric-note">no data</span>}
           </div>
         ))}
       </div>
 
       <div className="storage">
-        <div className="storage-head">
-          <span className="chart-label">Storage</span>
-          <span className="storage-value">
-            {machine.storage.used}
-            {machine.storage.total ? ` / ${machine.storage.total}` : ''}
-          </span>
-        </div>
-        <div className="bar" role="img" aria-label={`Storage ${machine.storage.percent}%`}>
+        <span className="metric-label">Storage</span>
+        <span className="storage-value">
+          {machine.storage.used}
+          {machine.storage.total ? ` / ${machine.storage.total}` : ''}
+        </span>
+        <div className="bar" role="img" aria-label={`Storage ${machine.storage.percent} percent`}>
           <span className="bar-fill" style={{ width: `${machine.storage.percent}%` }} />
         </div>
       </div>
@@ -155,19 +167,15 @@ function Card({ machine }: { machine: Machine }) {
           <button
             key={id}
             type="button"
-            className={`action${id === 'ai' ? ' is-primary' : ''}`}
+            className="action"
             disabled={offline}
+            title={offline ? machine.reason : label}
           >
-            <Icon size={16} />
+            <Icon size={15} />
             <span>{label}</span>
           </button>
         ))}
       </div>
-
-      <footer className="card-foot">
-        <span>{machine.version}</span>
-        {machine.online && <span className="foot-live">live</span>}
-      </footer>
     </article>
   )
 }
