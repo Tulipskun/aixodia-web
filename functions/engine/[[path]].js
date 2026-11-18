@@ -21,6 +21,8 @@ const DEFAULT_ENGINE_ENTRY = {
 const AUTH_PREFIXES = ['/auth/']
 const ENGINE_PREFIXES = ['/api/', '/healthz', '/cdn-cgi/']
 
+const DEFAULT_REGISTRY_URL = 'https://engines.aixodia.dpdns.org/engines'
+
 function sanitizeId(raw, fallback) {
   const clean = String(raw || '')
     .trim()
@@ -30,64 +32,40 @@ function sanitizeId(raw, fallback) {
   return clean || fallback
 }
 
-function parseEngineList(raw) {
-  if (!raw) return []
-  const trimmed = String(raw).trim()
-  if (!trimmed) return []
-
-  if (trimmed.startsWith('[')) {
-    try {
-      const parsed = JSON.parse(trimmed)
-      if (!Array.isArray(parsed)) return []
-      return parsed
-        .map((item, idx) => {
-          if (!item || typeof item !== 'object') return null
-          const rawUrl = String(item.url || '').trim().replace(/\/+$/, '')
-          if (!/^https?:\/\//i.test(rawUrl)) return null
-          const host = new URL(rawUrl).host
-          const id = sanitizeId(item.id || item.name || host, `engine-${idx + 1}`)
-          const name = String(item.name || host || id).trim()
+/**
+ * Which engines exist, asked of the Worker that routes to them (`GET /engines`
+ * on the engine gateway, read from the `engines` table in D1). A registry that
+ * cannot answer is not a reason to stop working: the default engine still
+ * answers on its own hostname.
+ */
+async function loadEngineRegistry(env = {}) {
+  const registryUrl = String(env.ENGINE_REGISTRY_URL || DEFAULT_REGISTRY_URL).trim()
+  try {
+    const response = await fetch(registryUrl, {
+      headers: { accept: 'application/json' },
+      signal: AbortSignal.timeout(4000),
+    })
+    if (response.ok) {
+      const body = await response.json()
+      const engines = (Array.isArray(body?.engines) ? body.engines : [])
+        .map((entry, index) => {
+          if (!entry || typeof entry !== 'object') return null
+          const url = String(entry.url || '').trim().replace(/\/+$/, '')
+          if (!/^https?:\/\//i.test(url)) return null
           return {
-            id,
-            name,
-            url: rawUrl,
-            subtitle: typeof item.subtitle === 'string' ? item.subtitle : undefined,
-            tag: typeof item.tag === 'string' ? item.tag : undefined,
+            id: sanitizeId(entry.id || entry.name, `engine-${index + 1}`),
+            name: String(entry.name || entry.id || url).trim(),
+            url,
+            subtitle: typeof entry.subtitle === 'string' ? entry.subtitle : undefined,
+            tag: typeof entry.tag === 'string' ? entry.tag : undefined,
           }
         })
         .filter(Boolean)
-    } catch {
-      return []
+      if (engines.length > 0) return engines
     }
+  } catch {
+    /* the registry is down or slow; the default engine is still an engine */
   }
-
-  return trimmed
-    .split(',')
-    .map((part, idx) => {
-      const token = part.trim()
-      if (!token) return null
-      const eq = token.indexOf('=')
-      const rawName = eq > 0 ? token.slice(0, eq).trim() : ''
-      const rawUrl = (eq > 0 ? token.slice(eq + 1) : token).trim().replace(/\/+$/, '')
-      if (!/^https?:\/\//i.test(rawUrl)) return null
-      const host = new URL(rawUrl).host
-      const id = sanitizeId(rawName || (idx === 0 ? 'default' : host), `engine-${idx + 1}`)
-      return { id, name: rawName || host, url: rawUrl }
-    })
-    .filter(Boolean)
-}
-
-async function loadEngineRegistry(env = {}) {
-  let raw = env.ENGINES_JSON || env.ENGINE_URLS || ''
-  if (!raw && env.CONFIG && typeof env.CONFIG.get === 'function') {
-    try {
-      raw = (await env.CONFIG.get('engines')) || ''
-    } catch {
-      raw = ''
-    }
-  }
-  const parsed = parseEngineList(raw)
-  if (parsed.length > 0) return parsed
 
   const singleUrl = String(env.ENGINE_URL || DEFAULT_ENGINE_ENTRY.url).trim().replace(/\/+$/, '')
   return [{ ...DEFAULT_ENGINE_ENTRY, url: singleUrl }]
@@ -154,7 +132,9 @@ export async function onRequest({ request, env = {} }) {
     )
   }
 
-  const target = new URL(route.forwardPath + url.search, route.upstreamBase)
+  // A registry entry is a base URL, not just an origin: `…/m-8a7d1192` keeps its
+  // path when a request for `/api/...` is joined onto it.
+  const target = new URL(route.upstreamBase.replace(/\/+$/, '') + route.forwardPath + url.search)
   const isEngine = route.kind === 'engine'
 
   const headers = new Headers()
