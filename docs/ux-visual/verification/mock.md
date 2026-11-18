@@ -27,3 +27,21 @@ Deferred, recorded not fixed: F9 — the "MCP" tab has no screen behind it in th
 mock; it is a mock of the real tab bar, not a broken link.
 
 `npm test` 19/19, `npm run build` clean.
+
+## Round 2 — storage to the header, charts redrawn
+
+Requested: the storage bar was a full-width band and the charts still read as
+jagged decoration.
+
+- **Storage** is now a compact meter in the card's top-right, under the status
+  pill: `disk · 164 / 256 GB` over a 4px, 124px bar. The full-width band and its
+  `.storage` rules were deleted, not hidden.
+- **Charts** are Catmull-Rom curves (gentle control offsets) instead of polylines,
+  with a gradient fill, a faint zero baseline, an end marker with a halo, and a
+  scale anchored at zero with 15% headroom — two charts at the same height now
+  mean the same thing instead of each inventing its own range. Eight points per
+  series at this width.
+
+Audits after round 2: `pageScrollY 0`, `offScale []`, 5 font sizes, no low
+contrast, no wrapped controls, no overlapping at 390×844 / 430×932 / 1440×900.
+`npm test` 19/19, build clean.

@@ -3,6 +3,7 @@
 //! It exists so the shape of the screen can be argued about before any of it is
 //! wired to the registry. Everything below is a literal.
 
+import { useId } from 'react'
 import { Boxes, Ellipsis, Home, Menu, MonitorSmartphone, Sparkles, SquareTerminal } from 'lucide-react'
 
 interface Metric {
@@ -37,25 +38,25 @@ const MACHINES: Machine[] = [
     name: 'Alpha',
     online: true,
     version: 'v1.177',
-    meta: 'Debian 13 · x86_64 · up 12h 40m',
+    meta: 'Debian 13 · up 12h 40m',
     metrics: [
       {
         label: 'CPU',
         value: '50%',
         tone: 'accent',
-        series: [18, 30, 24, 44, 38, 57, 46, 39, 58, 48, 53, 50],
+        series: [20, 32, 26, 44, 39, 57, 47, 52],
       },
       {
         label: 'RAM',
         value: '5 / 8 GB',
         tone: 'cool',
-        series: [40, 43, 45, 47, 50, 52, 55, 57, 56, 59, 61, 62],
+        series: [41, 45, 48, 52, 55, 58, 60, 62],
       },
       {
         label: 'I/O',
         value: '12.4 MB/s',
         tone: 'warm',
-        series: [6, 11, 4, 17, 24, 9, 6, 20, 26, 12, 8, 14],
+        series: [7, 12, 5, 19, 24, 10, 7, 15],
       },
     ],
     storage: { used: '164', total: '256 GB', percent: 64 },
@@ -84,18 +85,43 @@ const ACTIONS = [
 ] as const
 
 const SPARK_WIDTH = 100
-const SPARK_HEIGHT = 28
+const SPARK_HEIGHT = 32
+
+/** Catmull-Rom through the points, as cubic beziers: a curve, not a zigzag. */
+function sparkPath(points: { x: number; y: number }[]): string {
+  let d = `M ${points[0].x.toFixed(2)} ${points[0].y.toFixed(2)}`
+  for (let i = 0; i < points.length - 1; i += 1) {
+    const before = points[i - 1] ?? points[i]
+    const from = points[i]
+    const to = points[i + 1]
+    const after = points[i + 2] ?? to
+    const c1x = from.x + (to.x - before.x) / 8
+    const c1y = from.y + (to.y - before.y) / 8
+    const c2x = to.x - (after.x - from.x) / 8
+    const c2y = to.y - (after.y - from.y) / 8
+    d += ` C ${c1x.toFixed(2)} ${c1y.toFixed(2)} ${c2x.toFixed(2)} ${c2y.toFixed(2)} ${to.x.toFixed(2)} ${to.y.toFixed(2)}`
+  }
+  return d
+}
 
 function Sparkline({ series, tone, label }: { series: number[]; tone: Metric['tone']; label: string }) {
-  if (series.length < 2) return <div className="spark is-empty" aria-hidden="true" />
-  const high = Math.max(...series)
-  const low = Math.min(...series)
-  const span = high - low || 1
-  const step = SPARK_WIDTH / (series.length - 1)
-  const points = series.map((value, index) => {
-    const y = SPARK_HEIGHT - 3 - ((value - low) / span) * (SPARK_HEIGHT - 8)
-    return `${(index * step).toFixed(1)},${y.toFixed(1)}`
-  })
+  const gradientId = useId()
+  if (series.length < 2) {
+    return (
+      <div className="spark is-empty" aria-hidden="true">
+        <span className="spark-empty-line" />
+      </div>
+    )
+  }
+  // Scale from zero with headroom, so two charts at the same height mean the same
+  // thing instead of each one inventing its own drama.
+  const high = Math.max(...series) * 1.15 || 1
+  const points = series.map((value, index) => ({
+    x: 2 + (index * (SPARK_WIDTH - 4)) / (series.length - 1),
+    y: SPARK_HEIGHT - 4 - (value / high) * (SPARK_HEIGHT - 12),
+  }))
+  const line = sparkPath(points)
+  const last = points[points.length - 1]
   return (
     <svg
       className={`spark is-${tone}`}
@@ -104,16 +130,24 @@ function Sparkline({ series, tone, label }: { series: number[]; tone: Metric['to
       role="img"
       aria-label={label}
     >
-      <polygon className="spark-area" points={`0,${SPARK_HEIGHT} ${points.join(' ')} ${SPARK_WIDTH},${SPARK_HEIGHT}`} />
-      <polyline className="spark-line" points={points.join(' ')} vectorEffect="non-scaling-stroke" />
+      <defs>
+        <linearGradient id={`fill-${gradientId}`} x1="0" y1="0" x2="0" y2="1">
+          <stop className="spark-stop" offset="0" stopOpacity="0.32" />
+          <stop className="spark-stop" offset="1" stopOpacity="0" />
+        </linearGradient>
+      </defs>
+      <path className="spark-area" d={`${line} L ${SPARK_WIDTH} ${SPARK_HEIGHT} L 0 ${SPARK_HEIGHT} Z`} fill={`url(#fill-${gradientId})`} />
       <line
         className="spark-base"
         x1="0"
-        y1={SPARK_HEIGHT - 0.5}
+        y1={SPARK_HEIGHT - 4}
         x2={SPARK_WIDTH}
-        y2={SPARK_HEIGHT - 0.5}
+        y2={SPARK_HEIGHT - 4}
         vectorEffect="non-scaling-stroke"
       />
+      <path className="spark-line" d={line} vectorEffect="non-scaling-stroke" />
+      <circle className="spark-halo" cx={last.x} cy={last.y} r="4" />
+      <circle className="spark-tip" cx={last.x} cy={last.y} r="1.8" />
     </svg>
   )
 }
@@ -130,10 +164,26 @@ function Card({ machine }: { machine: Machine }) {
           </h2>
           <p className="meta">{machine.meta}</p>
         </div>
-        <span className={`pill is-${machine.online ? 'online' : 'offline'}`}>
-          <span className="pill-dot" aria-hidden="true" />
-          {machine.online ? 'online' : 'offline'}
-        </span>
+        <div className="card-aside">
+          <span className={`pill is-${machine.online ? 'online' : 'offline'}`}>
+            <span className="pill-dot" aria-hidden="true" />
+            {machine.online ? 'online' : 'offline'}
+          </span>
+          <div
+            className="disk"
+            role="img"
+            aria-label={`Storage ${machine.storage.used} of ${machine.storage.total}, ${machine.storage.percent} percent`}
+          >
+            <span className="disk-label">disk</span>
+            <span className="disk-value">
+              {machine.storage.used}
+              {machine.storage.total ? ` / ${machine.storage.total}` : ''}
+            </span>
+            <span className="disk-bar">
+              <span className="disk-fill" style={{ width: `${machine.storage.percent}%` }} />
+            </span>
+          </div>
+        </div>
       </header>
 
       <div className="metrics">
@@ -149,17 +199,6 @@ function Card({ machine }: { machine: Machine }) {
             {offline && <span className="metric-note">no data</span>}
           </div>
         ))}
-      </div>
-
-      <div className="storage">
-        <span className="metric-label">Storage</span>
-        <span className="storage-value">
-          {machine.storage.used}
-          {machine.storage.total ? ` / ${machine.storage.total}` : ''}
-        </span>
-        <div className="bar" role="img" aria-label={`Storage ${machine.storage.percent} percent`}>
-          <span className="bar-fill" style={{ width: `${machine.storage.percent}%` }} />
-        </div>
       </div>
 
       <div className="actions">
