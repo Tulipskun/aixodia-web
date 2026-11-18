@@ -294,3 +294,19 @@ are gone), 0 low contrast, no overflow at 360×780, 390×844, 430×932, 1440×90
 
 Audits: `pageScrollY 0`, `offScale []`, 4 font sizes, 0 low contrast, no overflow at
 360×780, 390×844, 430×932, 1440×900. `npm test` 19/19.
+
+## Round 19 — icon and name on one line, the reading under it
+
+The gauges are gone; each metric is a two-line cell: `icon + CPU` on the first line
+in the muted mono label style, the reading under it in the value style —
+`52%`, `100/128 GB`, `164/256 GB`.
+
+- `Gauge`, `percent()` and the arc markup went with them, plus the `.gauge*` rules.
+  The `icon` field came back on a metric, because the label line needs a mark again.
+- RAM is shown whole (`100`, not `100.4`) to match the requested reading, and the
+  unit moved after the ratio once — `/ 128 GB`.
+- The value dropped to 13px: at 15px `100/128 GB` spilled 11px out of its third of a
+  360px screen (measured, not guessed). At 13px all four widths report no spill.
+
+Audits: `pageScrollY 0`, `offScale []`, 4 font sizes, 0 low contrast, no overflow at
+360×780, 390×844, 430×932, 1440×900. `npm test` 19/19.

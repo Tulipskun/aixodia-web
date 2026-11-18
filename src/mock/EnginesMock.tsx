@@ -3,8 +3,12 @@
 //! It exists so the shape of the screen can be argued about before any of it is
 //! wired to the registry. Everything below is a literal.
 
+import type { LucideIcon } from 'lucide-react'
 import {
   Boxes,
+  Cpu,
+  HardDrive,
+  MemoryStick,
   Ellipsis,
   Home,
   Menu,
@@ -15,6 +19,7 @@ import {
 
 interface Metric {
   label: string
+  icon: LucideIcon
   tone: 'accent' | 'cool' | 'warm'
   /** Suffix after the reading, e.g. "%" or " MB/s". */
   unit: string
@@ -46,6 +51,7 @@ const MACHINES: Machine[] = [
     metrics: [
       {
         label: 'CPU',
+        icon: Cpu,
         tone: 'accent',
         unit: '%',
         digits: 0,
@@ -53,14 +59,16 @@ const MACHINES: Machine[] = [
       },
       {
         label: 'RAM',
+        icon: MemoryStick,
         tone: 'cool',
         unit: ' GB',
-        digits: 1,
+        digits: 0,
         total: '128',
         series: sampleSeries(19, 100.4, 1.6),
       },
       {
         label: 'DISK',
+        icon: HardDrive,
         tone: 'warm',
         unit: ' GB',
         digits: 0,
@@ -76,9 +84,9 @@ const MACHINES: Machine[] = [
     meta: 'Last seen 4h ago',
     reason: 'Offline since 4h ago',
     metrics: [
-      { label: 'CPU', tone: 'accent', unit: '%', digits: 0, series: [] },
-      { label: 'RAM', tone: 'cool', unit: ' GB', digits: 1, total: '128', series: [] },
-      { label: 'DISK', tone: 'warm', unit: ' GB', digits: 0, total: '256', series: [] },
+      { label: 'CPU', icon: Cpu, tone: 'accent', unit: '%', digits: 0, series: [] },
+      { label: 'RAM', icon: MemoryStick, tone: 'cool', unit: ' GB', digits: 1, total: '128', series: [] },
+      { label: 'DISK', icon: HardDrive, tone: 'warm', unit: ' GB', digits: 0, total: '256', series: [] },
     ],
   },
 ]
@@ -112,52 +120,13 @@ function amount(metric: Metric): string {
   return last(metric.series, metric)
 }
 
-/** How full the metric is, when that question has an answer. */
-function percent(metric: Metric): number | null {
-  if (!metric.series.length) return null
-  const value = Number(amount(metric))
-  if (metric.total) return Math.min(100, (value / Number(metric.total)) * 100)
-  if (metric.unit === '%') return Math.min(100, value)
-  return null
-}
-
-/** The reading as used over whole: "100/128". A metric with no capacity is
- *  measured out of 100, which is what a percentage is. */
-function reading(metric: Metric, value: number | null): string {
-  if (value === null) return '—'
-  return `${Math.round(Number(amount(metric)))}/${metric.total ?? 100}`
-}
-
-/** A round gauge: the arc is how full the metric is, the middle says by how much.
- *  Without a reading it keeps the track and drops the arc, so an offline card
- *  holds the same shape as an online one. */
-function Gauge({ metric, tone }: { metric: Metric; tone: Metric['tone'] }) {
-  const value = percent(metric)
-  const label = metric.label
-  const radius = 38
-  const circumference = 2 * Math.PI * radius
-  return (
-    <div
-      className={`gauge is-${tone}`}
-      role="img"
-      aria-label={value === null ? `${label}, no reading` : `${label}, ${Math.round(value)} percent`}
-    >
-      <svg viewBox="0 0 84 84" aria-hidden="true">
-        <circle className="gauge-track" cx="42" cy="42" r={radius} />
-        {value !== null && (
-          <circle
-            className="gauge-arc"
-            cx="42"
-            cy="42"
-            r={radius}
-            strokeDasharray={`${(Math.min(100, value) / 100) * circumference} ${circumference}`}
-            transform="rotate(-90 42 42)"
-          />
-        )}
-      </svg>
-      <span className="gauge-read">{reading(metric, value)}</span>
-    </div>
-  )
+/** What the reading says: a share out of 100, or used over whole. */
+function reading(metric: Metric): { value: string; unit: string } {
+  if (!metric.series.length) return { value: '—', unit: '' }
+  const used = String(Math.round(Number(amount(metric))))
+  return metric.total
+    ? { value: `${used}/${metric.total}`, unit: metric.unit }
+    : { value: `${used}%`, unit: '' }
 }
 
 function Card({ machine }: { machine: Machine }) {
@@ -177,9 +146,20 @@ function Card({ machine }: { machine: Machine }) {
 
       <div className="metrics">
         {machine.metrics.map((metric) => (
-          <div key={metric.label} className="metric">
-            <Gauge metric={metric} tone={metric.tone} />
-            <span className="metric-label">{metric.label}</span>
+          <div
+            key={metric.label}
+            className="metric"
+            role="img"
+            aria-label={`${metric.label}, ${reading(metric).value}${reading(metric).unit}`}
+          >
+            <span className="metric-label">
+              <metric.icon size={13} className={`is-${metric.tone}`} />
+              {metric.label}
+            </span>
+            <strong className="metric-value">
+              {reading(metric).value}
+              {reading(metric).unit && <span className="metric-unit">{reading(metric).unit}</span>}
+            </strong>
           </div>
         ))}
       </div>
