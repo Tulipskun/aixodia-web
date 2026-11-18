@@ -3,13 +3,15 @@
 A React/Vite + TypeScript single-page app for the AIxodia console, published as
 static files from `dist/` with Pages Functions alongside.
 
-Two server-side pieces live here, and both are part of this product rather than a
-separate service:
+One server-side piece lives here:
 
 | Path | What it is |
 |---|---|
 | `functions/engine/[[path]].js` | Pages Function proxying `/engine/*` to the service that owns the path |
-| `workers/auth/` | The sign-in Worker: issues and confirms session tokens |
+
+The Workers it proxies to — the sign-in Worker and the two gateways — live in
+[Tulipskun/aixodia-workers](https://github.com/Tulipskun/aixodia-workers). They are
+deployed from there, not from this repository.
 
 The proxy exists because Cloudflare Access sets its session cookie per host. A
 browser that signed in at one hostname has no credential at another, so the SPA
@@ -20,10 +22,10 @@ that also exposes device-control routes; when it was the sign-in authority its
 uptime was a login requirement, so stopping it to upgrade logged everyone out.
 Sign-in now answers whether or not the engine is running.
 
-`workers/auth/` deploys separately from the site:
+The sign-in Worker deploys separately from the site, from its own repository:
 
 ```bash
-npx wrangler deploy --config workers/auth/wrangler.toml
+cd aixodia-workers/auth && npx wrangler deploy
 ```
 
 Publishing `dist/` is a separate step from deploying the Worker; a successful
@@ -53,7 +55,7 @@ The browser does not receive the GitHub client secret, a GitHub OAuth access tok
 The old `worker/` directory was removed and its job is now split by path. Workers KV,
 D1 and the Named Tunnel remain in the backend architecture. The Engine owns the
 device/MCP gateway routes; the device list is read from Workers KV `DEVICE_TUNNELS`.
-Sign-in is served by `workers/auth/`, and `functions/engine/[[path]].js` sends each
+Sign-in is served by the `aixodia-auth` Worker, and `functions/engine/[[path]].js` sends each
 path to whichever of the two owns it.
 
 ## GitHub sign-in
@@ -122,7 +124,7 @@ npm run build  # tsc --noEmit && vite build; static output is in dist/
 
 `npm run build` only type-checks and builds the static bundle; it deploys nothing.
 Two separate deployment steps exist: publishing `dist/` to Cloudflare Pages, and
-`npx wrangler deploy --config workers/auth/wrangler.toml` for the sign-in Worker.
+`cd aixodia-workers/auth && npx wrangler deploy` for the sign-in Worker.
 Neither is implied by a successful build.
 
 This repository currently has no active GitHub Actions workflow. The previous build-only workflow example is retained at `docs/deploy-build-only.yml.example`; enabling a GitHub Actions workflow requires the appropriate `workflow` permission and an explicit deployment configuration.
