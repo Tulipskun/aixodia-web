@@ -335,8 +335,14 @@ button:disabled { cursor: not-allowed; }
   font-weight: 600;
   color: var(--text);
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+}
+
+/* The unit is a qualifier, not a second number: small and quiet next to the value
+   so that "5.4 / 8 GB" fits a third of a phone without shrinking the number. */
+.metric-unit {
+  font-size: var(--fs-meta);
+  font-weight: 400;
+  color: var(--muted);
 }
 
 .spark {
@@ -351,7 +357,7 @@ button:disabled { cursor: not-allowed; }
 .spark-line {
   fill: none;
   stroke: var(--spark-ink);
-  stroke-width: 1.6;
+  stroke-width: 1.2;
   stroke-linejoin: round;
   stroke-linecap: round;
 }
@@ -359,8 +365,6 @@ button:disabled { cursor: not-allowed; }
 .spark-stop { stop-color: var(--spark-ink); }
 
 .spark-base { stroke: rgba(145, 142, 255, 0.16); stroke-width: 1; }
-.spark-tip { fill: var(--spark-ink); }
-.spark-halo { fill: var(--spark-ink); opacity: 0.22; }
 
 .spark.is-cool { --spark-ink: var(--info); }
 .spark.is-warm { --spark-ink: var(--warn); }
@@ -388,6 +392,56 @@ button:disabled { cursor: not-allowed; }
 }
 
 .metric:last-child .metric-note { right: 0; }
+
+/* ----------------------------------------------------------------- table */
+
+.range-block { padding-top: var(--s2); }
+
+.range-caption {
+  margin: 0 0 var(--s1);
+  font-family: var(--mono);
+  font-size: var(--fs-meta);
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  text-align: right;
+}
+
+.range {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--mono);
+  font-size: var(--fs-label);
+  font-variant-numeric: tabular-nums;
+}
+
+.range th,
+.range td { padding: var(--s1) 0; }
+
+.range thead th {
+  font-size: var(--fs-meta);
+  font-weight: 400;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  text-align: right;
+  border-bottom: 1px solid var(--hairline);
+}
+
+.range thead th:first-child { text-align: left; }
+
+.range tbody th { font-weight: 400; text-align: left; }
+
+.range-label {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s1);
+  color: var(--muted);
+}
+
+.range td { text-align: right; color: var(--text); }
+
+.range tbody tr + tr th,
+.range tbody tr + tr td { border-top: 1px solid rgba(145, 142, 255, 0.06); }
 
 /* --------------------------------------------------------------- actions */
 

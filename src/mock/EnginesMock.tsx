@@ -22,10 +22,14 @@ import {
 interface Metric {
   label: string
   icon: LucideIcon
-  value: string
-  /** Oldest to newest; the chart is scaled to its own range. */
-  series: number[]
   tone: 'accent' | 'cool' | 'warm'
+  /** Suffix after the reading, e.g. "%" or " MB/s". */
+  unit: string
+  digits: number
+  /** Turned into "used / total" for readings that have a capacity. */
+  total?: string
+  /** Oldest to newest, one sample every 10 s: 60 samples is ten minutes. */
+  series: number[]
 }
 
 interface Storage {
@@ -45,6 +49,8 @@ interface Machine {
   storage: Storage
 }
 
+const SAMPLE_SECONDS = 10
+const WINDOW_SAMPLES = 60
 const MACHINES: Machine[] = [
   {
     id: 'alpha',
@@ -55,23 +61,27 @@ const MACHINES: Machine[] = [
       {
         label: 'CPU',
         icon: Cpu,
-        value: '50%',
         tone: 'accent',
-        series: [20, 32, 26, 44, 39, 57, 47, 52],
+        unit: '%',
+        digits: 0,
+        series: sampleSeries(7, 46, 26),
       },
       {
         label: 'RAM',
         icon: MemoryStick,
-        value: '5 / 8 GB',
         tone: 'cool',
-        series: [41, 45, 48, 52, 55, 58, 60, 62],
+        unit: ' GB',
+        digits: 1,
+        total: '8 GB',
+        series: sampleSeries(19, 5.2, 1.1),
       },
       {
         label: 'I/O',
         icon: ArrowDownUp,
-        value: '12.4 MB/s',
         tone: 'warm',
-        series: [7, 12, 5, 19, 24, 10, 7, 15],
+        unit: ' MB/s',
+        digits: 1,
+        series: sampleSeries(31, 12, 14),
       },
     ],
     storage: { used: '164', total: '256 GB', percent: 64 },
@@ -83,9 +93,9 @@ const MACHINES: Machine[] = [
     meta: 'Last seen 4h ago',
     reason: 'Offline since 4h ago',
     metrics: [
-      { label: 'CPU', icon: Cpu, value: '—', tone: 'accent', series: [] },
-      { label: 'RAM', icon: MemoryStick, value: '—', tone: 'cool', series: [] },
-      { label: 'I/O', icon: ArrowDownUp, value: '—', tone: 'warm', series: [] },
+      { label: 'CPU', icon: Cpu, tone: 'accent', unit: '%', digits: 0, series: [] },
+      { label: 'RAM', icon: MemoryStick, tone: 'cool', unit: ' GB', digits: 1, total: '8 GB', series: [] },
+      { label: 'I/O', icon: ArrowDownUp, tone: 'warm', unit: ' MB/s', digits: 1, series: [] },
     ],
     storage: { used: '—', total: '', percent: 0 },
   },
@@ -101,21 +111,35 @@ const ACTIONS = [
 const SPARK_WIDTH = 100
 const SPARK_HEIGHT = 32
 
-/** Catmull-Rom through the points, as cubic beziers: a curve, not a zigzag. */
-function sparkPath(points: { x: number; y: number }[]): string {
-  let d = `M ${points[0].x.toFixed(2)} ${points[0].y.toFixed(2)}`
-  for (let i = 0; i < points.length - 1; i += 1) {
-    const before = points[i - 1] ?? points[i]
-    const from = points[i]
-    const to = points[i + 1]
-    const after = points[i + 2] ?? to
-    const c1x = from.x + (to.x - before.x) / 8
-    const c1y = from.y + (to.y - before.y) / 8
-    const c2x = to.x - (after.x - from.x) / 8
-    const c2y = to.y - (after.y - from.y) / 8
-    d += ` C ${c1x.toFixed(2)} ${c1y.toFixed(2)} ${c2x.toFixed(2)} ${c2y.toFixed(2)} ${to.x.toFixed(2)} ${to.y.toFixed(2)}`
-  }
-  return d
+/** A deterministic walk, so the mock looks the same on every load. */
+function sampleSeries(seed: number, base: number, swing: number): number[] {
+  let state = seed
+  return Array.from({ length: WINDOW_SAMPLES }, (_, index) => {
+    state = (state * 1664525 + 1013904223) % 4294967296
+    const noise = state / 4294967296 - 0.5
+    const drift = Math.sin((index / WINDOW_SAMPLES) * Math.PI * 2)
+    return base + drift * swing * 0.35 + noise * swing
+  })
+}
+
+/** One reading, in the machine's units. */
+function reading(metric: Metric, value: number): string {
+  const rounded = value.toFixed(metric.digits)
+  return metric.total ? `${rounded} / ${metric.total}` : `${rounded}${metric.unit}`
+}
+
+/** A table cell: the number and its own unit, never the capacity again. */
+function cell(metric: Metric, value: number): string {
+  return `${value.toFixed(metric.digits)}${metric.unit}`
+}
+
+/** The reading without its unit; the unit is set small beside it. */
+function amount(metric: Metric): string {
+  return metric.series.length ? metric.series[metric.series.length - 1].toFixed(metric.digits) : '—'
+}
+
+function unit(metric: Metric): string {
+  return metric.total ? ` / ${metric.total}` : metric.unit
 }
 
 function Sparkline({ series, tone, label }: { series: number[]; tone: Metric['tone']; label: string }) {
@@ -130,12 +154,14 @@ function Sparkline({ series, tone, label }: { series: number[]; tone: Metric['to
   // Scale from zero with headroom, so two charts at the same height mean the same
   // thing instead of each one inventing its own drama.
   const high = Math.max(...series) * 1.15 || 1
-  const points = series.map((value, index) => ({
-    x: 2 + (index * (SPARK_WIDTH - 4)) / (series.length - 1),
-    y: SPARK_HEIGHT - 4 - (value / high) * (SPARK_HEIGHT - 12),
-  }))
-  const line = sparkPath(points)
-  const last = points[points.length - 1]
+  const step = (SPARK_WIDTH - 4) / (series.length - 1)
+  const points = series.map((value, index) => {
+    const x = 2 + index * step
+    const y = SPARK_HEIGHT - 4 - (value / high) * (SPARK_HEIGHT - 12)
+    return `${x.toFixed(2)},${y.toFixed(2)}`
+  })
+  // Straight segments: every one of the 60 samples shows up as its own corner.
+  const line = `M ${points.join(' L ')}`
   return (
     <svg
       className={`spark is-${tone}`}
@@ -146,11 +172,15 @@ function Sparkline({ series, tone, label }: { series: number[]; tone: Metric['to
     >
       <defs>
         <linearGradient id={`fill-${gradientId}`} x1="0" y1="0" x2="0" y2="1">
-          <stop className="spark-stop" offset="0" stopOpacity="0.32" />
+          <stop className="spark-stop" offset="0" stopOpacity="0.28" />
           <stop className="spark-stop" offset="1" stopOpacity="0" />
         </linearGradient>
       </defs>
-      <path className="spark-area" d={`${line} L ${SPARK_WIDTH} ${SPARK_HEIGHT} L 0 ${SPARK_HEIGHT} Z`} fill={`url(#fill-${gradientId})`} />
+      <path
+        className="spark-area"
+        d={`${line} L ${SPARK_WIDTH} ${SPARK_HEIGHT} L 0 ${SPARK_HEIGHT} Z`}
+        fill={`url(#fill-${gradientId})`}
+      />
       <line
         className="spark-base"
         x1="0"
@@ -160,9 +190,49 @@ function Sparkline({ series, tone, label }: { series: number[]; tone: Metric['to
         vectorEffect="non-scaling-stroke"
       />
       <path className="spark-line" d={line} vectorEffect="non-scaling-stroke" />
-      <circle className="spark-halo" cx={last.x} cy={last.y} r="4" />
-      <circle className="spark-tip" cx={last.x} cy={last.y} r="1.8" />
     </svg>
+  )
+}
+
+function RangeTable({ metrics }: { metrics: Metric[] }) {
+  return (
+    <div className="range-block">
+      <p className="range-caption">last 10 min · 1 sample / {SAMPLE_SECONDS} s</p>
+      <table className="range">
+        <thead>
+          <tr>
+            <th scope="col">metric</th>
+            <th scope="col">min</th>
+            <th scope="col">avg</th>
+            <th scope="col">max</th>
+          </tr>
+        </thead>
+        <tbody>
+          {metrics.map((metric) => {
+            const cells = metric.series.length
+              ? [
+                  Math.min(...metric.series),
+                  metric.series.reduce((sum, value) => sum + value, 0) / metric.series.length,
+                  Math.max(...metric.series),
+                ].map((value) => cell(metric, value))
+              : ['—', '—', '—']
+            return (
+              <tr key={metric.label}>
+                <th scope="row">
+                  <span className="range-label">
+                    <metric.icon size={13} />
+                    {metric.label}
+                  </span>
+                </th>
+                {cells.map((cell, index) => (
+                  <td key={index}>{cell}</td>
+                ))}
+              </tr>
+            )
+          })}
+        </tbody>
+      </table>
+    </div>
   )
 }
 
@@ -207,16 +277,21 @@ function Card({ machine }: { machine: Machine }) {
               <metric.icon size={13} />
               {metric.label}
             </span>
-            <strong className="metric-value">{metric.value}</strong>
+            <strong className="metric-value">
+              {amount(metric)}
+              {metric.series.length > 0 && <span className="metric-unit">{unit(metric)}</span>}
+            </strong>
             <Sparkline
               series={metric.series}
               tone={metric.tone}
-              label={`${metric.label} ${metric.value}`}
+              label={`${metric.label}, last 10 minutes, now ${reading(metric, Number(amount(metric)))}`}
             />
             {offline && <span className="metric-note">no data</span>}
           </div>
         ))}
       </div>
+
+      <RangeTable metrics={machine.metrics} />
 
       <div className="actions">
         {ACTIONS.map(({ id, label, icon: Icon }) => (
