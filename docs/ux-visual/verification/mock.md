@@ -259,3 +259,23 @@ unfinished next to Alpha's).
 
 Audits: `pageScrollY 0`, `offScale []`, 5 font sizes, 0 low contrast, no overflow
 at 360×780, 390×844, 430×932, 1440×900. `npm test` 19/19.
+
+## Round 17 — the chart goes, a round gauge takes its place
+
+The charts were removed entirely, as asked. Each metric is now a single **84px
+gauge**: the arc is the share (52% CPU, 78% RAM), the middle states that percentage
+at display size, the name sits under the ring, and the capacity under that
+(`of 100%`, `of 128 GB`) so the number in the middle cannot be read as absolute.
+
+Removed with the charts: `Sparkline`, the gradient/area/gridline/baseline markup,
+the 26px axis column, `scale()`, `axisLabel()`, `SPARK_WIDTH`, `SPARK_HEIGHT`,
+`SAMPLE_SECONDS`, the `metric-value` / `metric-unit` / `metric-note` blocks, all
+`.spark*` and `.trend*` CSS, and the `useId` import. The series stays only as the
+window the card reads its last sample from.
+
+The reference was a sketch with almost no ink (30k opaque pixels in 3.1MP), so it
+was read as "replace the plot with a circle".
+
+Audits: `pageScrollY 0`, `offScale []`, 4 font sizes (the chart's 10px axis labels
+are gone), 0 low contrast, no overflow at 360×780, 390×844, 430×932, 1440×900.
+`npm test` 19/19.

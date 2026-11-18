@@ -319,7 +319,8 @@ button:disabled { cursor: not-allowed; }
   position: relative;
   display: flex;
   flex-direction: column;
-  gap: var(--s1);
+  align-items: center;
+  gap: var(--s2);
   min-width: 0;
   padding-right: var(--s3);
 }
@@ -337,128 +338,69 @@ button:disabled { cursor: not-allowed; }
 }
 .metric:last-child { padding-right: 0; }
 
-.metric-label {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--s1);
-  font-family: var(--mono);
-  font-size: var(--fs-meta);
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--muted);
+/* A round gauge, not a plot: the arc answers "how full" and the middle answers
+   "by how much", so the reading needs no scale drawn around it. */
+.gauge {
+  position: relative;
+  width: 84px;
+  height: 84px;
+  flex: 0 0 auto;
 }
 
-.ring { flex: 0 0 auto; }
-.ring-track,
-.ring-arc {
+.gauge svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.gauge-track,
+.gauge-arc {
   fill: none;
-  stroke-width: 2.5;
+  stroke-width: 5;
 }
 
-.ring-track { stroke: rgba(145, 142, 255, 0.18); }
-.ring-arc { stroke: var(--accent); stroke-linecap: round; }
-.ring.is-cool .ring-arc { stroke: var(--info); }
-.ring.is-warm .ring-arc { stroke: var(--warn); }
+.gauge-track { stroke: rgba(145, 142, 255, 0.16); }
+.gauge-arc { stroke: var(--accent); stroke-linecap: round; }
+.gauge.is-cool .gauge-arc { stroke: var(--info); }
+.gauge.is-warm .gauge-arc { stroke: var(--warn); }
 
-.metric-value {
+.gauge-read {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   font-family: var(--mono);
-  font-size: var(--fs-value);
+  font-size: var(--fs-display);
   font-weight: 600;
   color: var(--text);
-  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
 }
 
-/* The unit is a qualifier, not a second number: small and quiet next to the value
-   so that "5.4 / 8 GB" fits a third of a phone without shrinking the number. */
-.metric-unit {
+.gauge-unit {
   font-size: var(--fs-meta);
   font-weight: 400;
   color: var(--muted);
+  margin-left: 1px;
+  align-self: center;
 }
 
-.trend {
-  display: flex;
-  align-items: stretch;
-  gap: var(--s2);
-  margin-top: var(--s1);
-}
-
-.spark {
-  display: block;
-  flex: 1 1 auto;
-  min-width: 0;
-  height: 40px;
-  overflow: visible;
-  --spark-ink: var(--accent);
-}
-
-/* The grid only means something with numbers on it: the top of the scale and zero,
-   right-aligned so both charts read the same way. */
-.trend-axis {
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  flex: 0 0 auto;
-  min-width: 26px;
-  padding: var(--s1) var(--s2) var(--s1) 0;
+.metric-label {
   font-family: var(--mono);
-  font-size: var(--fs-meta);
-  line-height: 1;
-  font-variant-numeric: tabular-nums;
-  color: var(--muted);
-  text-align: right;
+  font-size: var(--fs-label);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text);
 }
 
-.metric:last-child .trend-axis { padding-right: var(--s2); }
-
-.spark-line {
-  fill: none;
-  stroke: var(--spark-ink);
-  stroke-width: 1.2;
-  stroke-linejoin: round;
-  stroke-linecap: round;
-}
-
-.spark-stop { stop-color: var(--spark-ink); }
-
-.spark-grid line {
-  stroke: rgba(145, 142, 255, 0.1);
-  stroke-width: 1;
-}
-
-.spark-grid line.is-tick {
-  stroke: rgba(145, 142, 255, 0.14);
-  stroke-dasharray: 2 3;
-}
-
-.spark-base { stroke: rgba(145, 142, 255, 0.2); stroke-width: 1; }
-
-.spark.is-cool { --spark-ink: var(--info); }
-.spark.is-warm { --spark-ink: var(--warn); }
-
-.spark.is-empty {
-  display: flex;
-  align-items: flex-end;
-  height: 34px;
-}
-
-.spark-empty-line {
-  width: 100%;
-  border-bottom: 1px dashed rgba(145, 142, 255, 0.2);
-}
-
-/* The offline card says why the line is missing instead of pretending the chart
-   is there with no data in it. */
-.metric-note {
-  position: absolute;
-  right: var(--s3);
-  bottom: var(--s1);
+/* What the reading is measured against: the gauge shows the share, this names the
+   whole, so the number in the middle cannot be read as an absolute. */
+.metric-capacity {
   font-family: var(--mono);
   font-size: var(--fs-meta);
   color: var(--muted);
+  white-space: nowrap;
 }
-
-.metric:last-child .metric-note { right: 0; }
 
 /* --------------------------------------------------------------- actions */
 
