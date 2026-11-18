@@ -19,6 +19,7 @@
   --accent: #7772ff;
   --success: #45d6b0;
   --warn: #f6c66b;
+  --danger: #ff5c6c;
   --info: #69c8ff;
 
   /* Type: five sizes, no more. */
@@ -208,7 +209,7 @@ button:disabled { cursor: not-allowed; }
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: var(--dim);
+  background: var(--danger);
 }
 
 .state.is-online .state-dot {

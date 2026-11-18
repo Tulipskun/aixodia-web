@@ -327,3 +327,11 @@ Audits: `pageScrollY 0`, `offScale []`, 4 font sizes, 0 low contrast, no overflo
 
 Audits: `pageScrollY 0`, `offScale []`, 4 font sizes, 0 low contrast, no overflow at
 360, 390, 430 and 1440. `npm test` 19/19.
+
+## Round 21 — a down machine gets a red light
+
+The offline dot was `--dim`, which read as "no information" rather than "down". It
+is now `--danger` (`#ff5c6c`), a new token, with no halo: the glow belongs to a live
+machine, the colour alone says the other one is not.
+
+Audits clean at 360, 390 and 1440; `npm test` 19/19.
