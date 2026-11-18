@@ -227,3 +227,12 @@ at 360×780, 390×844, 430×932 and 1440×900. `npm test` 19/19.
 
 Audits: `pageScrollY 0`, `offScale []`, 5 font sizes, no low contrast, no overflow
 at 360×780, 390×844, 430×932 and 1440×900. `npm test` 19/19.
+
+## Round 15 — an offline card keeps the ring rhythm
+
+Without a ring the offline card's header lost the mark the online card has there.
+`Ring` now takes a nullable percentage: with no reading it draws only the track and
+labels itself "no reading", so the two cards share a structure and the empty gauge
+says the same thing as the dash and the "no data" note.
+
+Audits clean at 360×780, 390×844 and 1440×900; `npm test` 19/19.

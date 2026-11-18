@@ -132,8 +132,9 @@ function percent(metric: Metric): number | null {
   return null
 }
 
-/** A 20px ring: how much of the metric's headroom is in use. */
-function Ring({ percent: value, tone }: { percent: number; tone: Metric['tone'] }) {
+/** An 18px ring: how much of the metric's headroom is in use. With no reading it
+ *  keeps its track and drops the arc, so an offline card keeps the same rhythm. */
+function Ring({ percent: value, tone }: { percent: number | null; tone: Metric['tone'] }) {
   const radius = 8
   const circumference = 2 * Math.PI * radius
   return (
@@ -143,17 +144,19 @@ function Ring({ percent: value, tone }: { percent: number; tone: Metric['tone'] 
       height="18"
       viewBox="0 0 20 20"
       role="img"
-      aria-label={`${Math.round(value)} percent`}
+      aria-label={value === null ? 'no reading' : `${Math.round(value)} percent`}
     >
       <circle className="ring-track" cx="10" cy="10" r={radius} />
-      <circle
-        className="ring-arc"
-        cx="10"
-        cy="10"
-        r={radius}
-        strokeDasharray={`${(value / 100) * circumference} ${circumference}`}
-        transform="rotate(-90 10 10)"
-      />
+      {value !== null && (
+        <circle
+          className="ring-arc"
+          cx="10"
+          cy="10"
+          r={radius}
+          strokeDasharray={`${(value / 100) * circumference} ${circumference}`}
+          transform="rotate(-90 10 10)"
+        />
+      )}
     </svg>
   )
 }
@@ -268,7 +271,7 @@ function Card({ machine }: { machine: Machine }) {
         {machine.metrics.map((metric) => (
           <div key={metric.label} className="metric">
             <span className="metric-label">
-              {percent(metric) !== null && <Ring percent={percent(metric) as number} tone={metric.tone} />}
+              <Ring percent={percent(metric)} tone={metric.tone} />
               {metric.label}
             </span>
             <strong className="metric-value">
