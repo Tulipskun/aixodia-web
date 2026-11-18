@@ -272,12 +272,12 @@ function Card({ machine }: { machine: Machine }) {
             aria-label={`Storage ${machine.storage.used} of ${machine.storage.total}, ${machine.storage.percent} percent`}
           >
             <span className="disk-label">
-              <HardDrive size={13} />
+              <HardDrive size={13} className="is-accent" />
               disk
             </span>
             <span className="disk-value">
               {machine.storage.used}
-              {machine.storage.total ? ` / ${machine.storage.total}` : ''}
+              {machine.storage.total && <span className="disk-total"> / {machine.storage.total}</span>}
             </span>
             <span className="disk-bar">
               <span className="disk-fill" style={{ width: `${machine.storage.percent}%` }} />

@@ -131,3 +131,16 @@ at 390×844 / 430×932 / 1440×900. `npm test` 19/19.
 
 Audits: `pageScrollY 0`, `offScale []`, 5 font sizes, no low contrast, no overflow
 at 390×844 / 430×932 / 1440×900. `npm test` 19/19.
+
+## Round 9 — the disk meter reads like the rest of the card
+
+- Value is now `164` at body size, bold, in `--text`, with `/ 256 GB` small and
+  muted beside it — the same number + qualifier pattern as RAM.
+- The drive icon takes the metric colour system (`--accent`), so the header is no
+  longer the one place with a grey icon.
+- Gap between the status pill and the meter is one step larger (8 → 12), the bar
+  track is stronger (0.2 → 0.24) and the fill sits at 85% so it stops competing
+  with the text. Meter width 132px, right-aligned in the card padding.
+
+Audits: `pageScrollY 0`, `offScale []`, 5 font sizes, no low contrast at
+390×844 / 430×932 / 1440×900. `npm test` 19/19.

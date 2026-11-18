@@ -178,7 +178,7 @@ button:disabled { cursor: not-allowed; }
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  gap: var(--s2);
+  gap: var(--s3);
   flex: 0 0 auto;
 }
 
@@ -186,11 +186,11 @@ button:disabled { cursor: not-allowed; }
    across the card. */
 .disk {
   display: grid;
-  grid-template-columns: 1fr auto;
+  grid-template-columns: auto 1fr;
   align-items: baseline;
   column-gap: var(--s2);
-  row-gap: var(--s1);
-  width: 124px;
+  row-gap: var(--s2);
+  width: 132px;
 }
 
 .disk-label {
@@ -204,18 +204,30 @@ button:disabled { cursor: not-allowed; }
   color: var(--muted);
 }
 
+.disk-label svg.is-accent { color: var(--accent); opacity: 0.9; }
+
+/* The number reads like every other reading on the card: value in --text, the
+   qualifier small and muted beside it. */
 .disk-value {
+  justify-self: end;
   font-family: var(--mono);
-  font-size: var(--fs-meta);
+  font-size: var(--fs-body);
+  font-weight: 600;
   color: var(--text);
   white-space: nowrap;
+}
+
+.disk-total {
+  font-size: var(--fs-meta);
+  font-weight: 400;
+  color: var(--muted);
 }
 
 .disk-bar {
   grid-column: 1 / -1;
   height: var(--s1);
   border-radius: 999px;
-  background: rgba(145, 142, 255, 0.16);
+  background: rgba(145, 142, 255, 0.24);
   overflow: hidden;
 }
 
@@ -224,6 +236,7 @@ button:disabled { cursor: not-allowed; }
   height: 100%;
   border-radius: 999px;
   background: var(--accent);
+  opacity: 0.85;
   transition: width 0.4s ease;
 }
 
