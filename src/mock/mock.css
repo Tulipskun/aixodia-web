@@ -179,71 +179,6 @@ button:disabled { cursor: not-allowed; }
   min-width: 0;
 }
 
-/* Storage is a meter for the whole card, not a badge in the corner: the bar is the
-   point, so it gets the full width. */
-.disk {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  align-items: baseline;
-  column-gap: var(--s2);
-  row-gap: var(--s2);
-  margin-top: var(--s3);
-}
-
-.disk-label {
-  /* Inline, not flex: as a flex container its baseline comes from the icon and the
-     word drifts 4px above the number. Inline text keeps one baseline for both. */
-  display: inline;
-  line-height: 1;
-  font-family: var(--mono);
-  font-size: var(--fs-meta);
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--muted);
-}
-
-.disk-label svg {
-  vertical-align: -2px;
-  margin-right: var(--s1);
-}
-
-.disk-label svg.is-accent { color: var(--accent); opacity: 0.9; }
-
-/* The number reads like every other reading on the card: value in --text, the
-   qualifier small and muted beside it. */
-.disk-value {
-  justify-self: end;
-  line-height: 1;
-  font-family: var(--mono);
-  font-size: var(--fs-body);
-  font-weight: 600;
-  color: var(--text);
-  white-space: nowrap;
-}
-
-.disk-total {
-  font-size: var(--fs-meta);
-  font-weight: 400;
-  color: var(--muted);
-}
-
-.disk-bar {
-  grid-column: 1 / -1;
-  height: var(--s1);
-  border-radius: 999px;
-  background: rgba(145, 142, 255, 0.24);
-  overflow: hidden;
-}
-
-.disk-fill {
-  display: block;
-  height: 100%;
-  border-radius: 999px;
-  background: var(--accent);
-  opacity: 0.85;
-  transition: width 0.4s ease;
-}
-
 .card-title h2 {
   display: flex;
   align-items: baseline;
@@ -308,7 +243,7 @@ button:disabled { cursor: not-allowed; }
 
 .metrics {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   margin-top: var(--s3);
   padding: var(--s3) 0;
   border-top: 1px solid var(--hairline);
@@ -342,8 +277,8 @@ button:disabled { cursor: not-allowed; }
    "by how much", so the reading needs no scale drawn around it. */
 .gauge {
   position: relative;
-  width: 84px;
-  height: 84px;
+  width: 78px;
+  height: 78px;
   flex: 0 0 auto;
 }
 
@@ -371,18 +306,10 @@ button:disabled { cursor: not-allowed; }
   align-items: center;
   justify-content: center;
   font-family: var(--mono);
-  font-size: var(--fs-display);
+  font-size: var(--fs-body);
   font-weight: 600;
   color: var(--text);
   font-variant-numeric: tabular-nums;
-}
-
-.gauge-unit {
-  font-size: var(--fs-meta);
-  font-weight: 400;
-  color: var(--muted);
-  margin-left: 1px;
-  align-self: center;
 }
 
 .metric-label {
@@ -391,15 +318,6 @@ button:disabled { cursor: not-allowed; }
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--text);
-}
-
-/* What the reading is measured against: the gauge shows the share, this names the
-   whole, so the number in the middle cannot be read as an absolute. */
-.metric-capacity {
-  font-family: var(--mono);
-  font-size: var(--fs-meta);
-  color: var(--muted);
-  white-space: nowrap;
 }
 
 /* --------------------------------------------------------------- actions */
@@ -485,7 +403,6 @@ button:disabled { cursor: not-allowed; }
 .tab.is-active svg { color: var(--accent); }
 
 @media (prefers-reduced-motion: reduce) {
-  .disk-fill { transition: none; }
   .action, .icon-button { transition: none; }
 }
 

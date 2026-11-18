@@ -6,7 +6,6 @@
 import {
   Boxes,
   Ellipsis,
-  HardDrive,
   Home,
   Menu,
   MonitorSmartphone,
@@ -27,12 +26,6 @@ interface Metric {
   series: number[]
 }
 
-interface Storage {
-  used: string
-  total: string
-  percent: number
-}
-
 interface Machine {
   id: string
   name: string
@@ -41,7 +34,6 @@ interface Machine {
   /** Why the controls are unavailable, when they are. */
   reason?: string
   metrics: Metric[]
-  storage: Storage
 }
 
 const WINDOW_SAMPLES = 20
@@ -67,8 +59,15 @@ const MACHINES: Machine[] = [
         total: '128',
         series: sampleSeries(19, 100.4, 1.6),
       },
+      {
+        label: 'DISK',
+        tone: 'warm',
+        unit: ' GB',
+        digits: 0,
+        total: '256',
+        series: Array.from({ length: WINDOW_SAMPLES }, () => 164),
+      },
     ],
-    storage: { used: '164', total: '256 GB', percent: 64 },
   },
   {
     id: 'beta',
@@ -79,8 +78,8 @@ const MACHINES: Machine[] = [
     metrics: [
       { label: 'CPU', tone: 'accent', unit: '%', digits: 0, series: [] },
       { label: 'RAM', tone: 'cool', unit: ' GB', digits: 1, total: '128', series: [] },
+      { label: 'DISK', tone: 'warm', unit: ' GB', digits: 0, total: '256', series: [] },
     ],
-    storage: { used: '—', total: '', percent: 0 },
   },
 ]
 
@@ -122,20 +121,21 @@ function percent(metric: Metric): number | null {
   return null
 }
 
-/** The capacity a reading is measured against, e.g. "of 128 GB". */
-function capacity(metric: Metric): string | null {
-  if (metric.total) return `of ${metric.total}${metric.unit}`
-  if (metric.unit === '%') return 'of 100%'
-  return null
+/** The reading as used over whole: "100/128". A metric with no capacity is
+ *  measured out of 100, which is what a percentage is. */
+function reading(metric: Metric, value: number | null): string {
+  if (value === null) return '—'
+  return `${Math.round(Number(amount(metric)))}/${metric.total ?? 100}`
 }
 
 /** A round gauge: the arc is how full the metric is, the middle says by how much.
  *  Without a reading it keeps the track and drops the arc, so an offline card
  *  holds the same shape as an online one. */
-function Gauge({ percent: value, tone, label }: { percent: number | null; tone: Metric['tone']; label: string }) {
+function Gauge({ metric, tone }: { metric: Metric; tone: Metric['tone'] }) {
+  const value = percent(metric)
+  const label = metric.label
   const radius = 38
   const circumference = 2 * Math.PI * radius
-  const reading = value === null ? '—' : String(Math.round(value))
   return (
     <div
       className={`gauge is-${tone}`}
@@ -155,10 +155,7 @@ function Gauge({ percent: value, tone, label }: { percent: number | null; tone: 
           />
         )}
       </svg>
-      <span className="gauge-read">
-        {reading}
-        {value !== null && <span className="gauge-unit">%</span>}
-      </span>
+      <span className="gauge-read">{reading(metric, value)}</span>
     </div>
   )
 }
@@ -178,30 +175,11 @@ function Card({ machine }: { machine: Machine }) {
         <p className="meta">{machine.meta}</p>
       </header>
 
-      <div
-        className="disk"
-        role="img"
-        aria-label={`Storage ${machine.storage.used} of ${machine.storage.total}, ${machine.storage.percent} percent`}
-      >
-        <span className="disk-label">
-          <HardDrive size={12} className="is-accent" />
-          disk
-        </span>
-        <span className="disk-value">
-          {machine.storage.used}
-          {machine.storage.total && <span className="disk-total"> / {machine.storage.total}</span>}
-        </span>
-        <span className="disk-bar">
-          <span className="disk-fill" style={{ width: `${machine.storage.percent}%` }} />
-        </span>
-      </div>
-
       <div className="metrics">
         {machine.metrics.map((metric) => (
           <div key={metric.label} className="metric">
-            <Gauge percent={percent(metric)} tone={metric.tone} label={metric.label} />
+            <Gauge metric={metric} tone={metric.tone} />
             <span className="metric-label">{metric.label}</span>
-            <span className="metric-capacity">{capacity(metric)}</span>
           </div>
         ))}
       </div>

@@ -279,3 +279,18 @@ was read as "replace the plot with a circle".
 Audits: `pageScrollY 0`, `offScale []`, 4 font sizes (the chart's 10px axis labels
 are gone), 0 low contrast, no overflow at 360×780, 390×844, 430×932, 1440×900.
 `npm test` 19/19.
+
+## Round 18 — disk becomes a gauge, and every gauge reads used/total
+
+- **DISK is a gauge now**, the third column in the same row as CPU and RAM. The
+  separate disk row, its bar and the `Storage` interface are gone; the disk is a
+  metric like the others, with a constant 164 of 256.
+- **No percentage sign anywhere.** Each gauge states the reading as used over whole:
+  `52/100`, `100/128`, `164/256`. A metric without a capacity is divided by 100,
+  which is what a percentage was.
+- Gauges shrank 84 → **78px** to keep three columns on a 360px phone, and the
+  reading is set at 13px: `164/256` is 55px inside a 68px opening, measured, so the
+  longest reading keeps a margin at 360.
+
+Audits: `pageScrollY 0`, `offScale []`, 4 font sizes, 0 low contrast, no overflow at
+360×780, 390×844, 430×932, 1440×900. `npm test` 19/19.
