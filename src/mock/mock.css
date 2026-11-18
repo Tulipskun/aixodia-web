@@ -167,30 +167,27 @@ button:disabled { cursor: not-allowed; }
 
 .card-head {
   display: flex;
-  align-items: flex-start;
+  align-items: baseline;
   justify-content: space-between;
   gap: var(--s3);
-  padding-bottom: var(--s3);
-  border-bottom: 1px solid var(--hairline);
 }
 
-.card-aside {
+.card-title {
   display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: var(--s3);
-  flex: 0 0 auto;
+  align-items: center;
+  gap: var(--s2);
+  min-width: 0;
 }
 
-/* Storage lives where it reads best: a short meter under the state, not a band
-   across the card. */
+/* Storage is a meter for the whole card, not a badge in the corner: the bar is the
+   point, so it gets the full width. */
 .disk {
   display: grid;
   grid-template-columns: auto 1fr;
   align-items: baseline;
   column-gap: var(--s2);
   row-gap: var(--s2);
-  width: 132px;
+  margin-top: var(--s3);
 }
 
 .disk-label {
@@ -247,9 +244,7 @@ button:disabled { cursor: not-allowed; }
   transition: width 0.4s ease;
 }
 
-.card-identity { min-width: 0; }
-
-.card-identity h2 {
+.card-title h2 {
   display: flex;
   align-items: baseline;
   gap: var(--s2);
@@ -258,10 +253,13 @@ button:disabled { cursor: not-allowed; }
   font-size: var(--fs-display);
   font-weight: 600;
   letter-spacing: -0.01em;
+  white-space: nowrap;
 }
 
 .meta {
-  margin: var(--s1) 0 0;
+  margin: 0;
+  flex: 0 1 auto;
+  text-align: right;
   font-family: var(--mono);
   font-size: var(--fs-label);
   color: var(--muted);
@@ -274,7 +272,8 @@ button:disabled { cursor: not-allowed; }
   display: inline-flex;
   align-items: center;
   gap: var(--s1);
-  padding: var(--s1) var(--s2);
+  padding: 0 var(--s2);
+  height: 18px;
   border-radius: 999px;
   border: 1px solid var(--border);
   font-family: var(--mono);
@@ -310,7 +309,9 @@ button:disabled { cursor: not-allowed; }
 .metrics {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-top: var(--s3);
   padding: var(--s3) 0;
+  border-top: 1px solid var(--hairline);
   border-bottom: 1px solid var(--hairline);
 }
 
@@ -375,14 +376,40 @@ button:disabled { cursor: not-allowed; }
   color: var(--muted);
 }
 
+.trend {
+  display: flex;
+  align-items: stretch;
+  gap: var(--s2);
+  margin-top: var(--s1);
+}
+
 .spark {
   display: block;
-  width: 100%;
-  height: 34px;
-  margin-top: var(--s1);
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 40px;
   overflow: visible;
   --spark-ink: var(--accent);
 }
+
+/* The grid only means something with numbers on it: the top of the scale and zero,
+   right-aligned so both charts read the same way. */
+.trend-axis {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  flex: 0 0 auto;
+  min-width: 26px;
+  padding: var(--s1) var(--s2) var(--s1) 0;
+  font-family: var(--mono);
+  font-size: var(--fs-meta);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+  text-align: right;
+}
+
+.metric:last-child .trend-axis { padding-right: var(--s2); }
 
 .spark-line {
   fill: none;
@@ -474,9 +501,8 @@ button:disabled { cursor: not-allowed; }
 
 .action:disabled {
   background: transparent;
-  border-color: transparent;
+  border-color: var(--hairline);
   color: var(--muted);
-  opacity: 0.7;
 }
 
 /* --------------------------------------------------------------- tabbar */

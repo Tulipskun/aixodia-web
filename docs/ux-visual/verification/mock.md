@@ -236,3 +236,26 @@ labels itself "no reading", so the two cards share a structure and the empty gau
 says the same thing as the dash and the "no data" note.
 
 Audits clean at 360×780, 390×844 and 1440×900; `npm test` 19/19.
+
+## Round 16 — the grid gets numbers, the state moves next to the name, the meter gets the width
+
+Three complaints, one pass:
+
+1. **The charts had no values.** A grid with nothing written on it measures
+   nothing. Each chart now carries a two-label scale on its right — the top of the
+   scale and `0` — in tabular mono, 10px, aligned to the top gridline and to the
+   baseline (measured: plot top 222 / label top 226, baseline 252 / label bottom
+   252). The axis is a fixed 26px so both plot areas measure 116px, which they did
+   not at 20px (`117` pushed its column 6px narrower).
+2. **The state sits beside the name** and the meta line took the right end of the
+   header, so the card no longer needs a corner stack and the header is one row.
+3. **The disk meter moved out of the corner into its own row** — label left, value
+   right, bar across the full card. The `64%` after the value went: the bar is the
+   percentage and printing both crowded the line.
+
+Also from the same review: rings 18 → 20px, charts 34 → 40px, and the offline
+actions keep their outline (they had lost it, which made Beta's bottom look
+unfinished next to Alpha's).
+
+Audits: `pageScrollY 0`, `offScale []`, 5 font sizes, 0 low contrast, no overflow
+at 360×780, 390×844, 430×932, 1440×900. `npm test` 19/19.

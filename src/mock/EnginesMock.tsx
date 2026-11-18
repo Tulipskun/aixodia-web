@@ -113,6 +113,16 @@ function qualifier(metric: Metric): string | null {
   return metric.total ? ` / ${metric.total}${metric.unit}` : null
 }
 
+/** The top of a chart: the tallest sample plus a little air, from zero up. */
+function scale(series: number[]): number {
+  return Math.max(...series) * 1.15 || 1
+}
+
+/** Axis numbers stay two or three characters wide: no decimals above ten. */
+function axisLabel(value: number): string {
+  return value >= 10 ? String(Math.ceil(value)) : value.toFixed(1)
+}
+
 /** The last sample of a series, formatted. */
 function last(samples: number[] | undefined, metric: Metric): string {
   return samples?.length ? samples[samples.length - 1].toFixed(metric.digits) : '—'
@@ -132,7 +142,7 @@ function percent(metric: Metric): number | null {
   return null
 }
 
-/** An 18px ring: how much of the metric's headroom is in use. With no reading it
+/** A 20px ring: how much of the metric's headroom is in use. With no reading it
  *  keeps its track and drops the arc, so an offline card keeps the same rhythm. */
 function Ring({ percent: value, tone }: { percent: number | null; tone: Metric['tone'] }) {
   const radius = 8
@@ -140,8 +150,8 @@ function Ring({ percent: value, tone }: { percent: number | null; tone: Metric['
   return (
     <svg
       className={`ring is-${tone}`}
-      width="18"
-      height="18"
+      width="20"
+      height="20"
       viewBox="0 0 20 20"
       role="img"
       aria-label={value === null ? 'no reading' : `${Math.round(value)} percent`}
@@ -166,16 +176,16 @@ function Sparkline({ series, tone, label }: { series: number[]; tone: Metric['to
   const gradientId = useId()
   if (series.length < 2) {
     return (
-      <div className="spark is-empty" aria-hidden="true">
-        <span className="spark-empty-line" />
+      <div className="trend">
+        <div className="spark is-empty" aria-hidden="true">
+          <span className="spark-empty-line" />
+        </div>
       </div>
     )
   }
   // Scale from zero with headroom, so two charts at the same height mean the same
   // thing instead of each one inventing its own drama.
-  // Scale from zero with headroom, so two charts at the same height mean the same
-  // thing instead of each one inventing its own drama.
-  const high = Math.max(...series) * 1.15 || 1
+  const high = scale(series)
   // Straight segments: every one of the samples shows up as its own corner.
   const line = `M ${series
     .map((value, index) => {
@@ -185,6 +195,7 @@ function Sparkline({ series, tone, label }: { series: number[]; tone: Metric['to
     })
     .join(' L ')}`
   return (
+    <div className="trend">
     <svg
       className={`spark is-${tone}`}
       viewBox={`0 0 ${SPARK_WIDTH} ${SPARK_HEIGHT}`}
@@ -230,6 +241,11 @@ function Sparkline({ series, tone, label }: { series: number[]; tone: Metric['to
       />
       <path className="spark-line" d={line} vectorEffect="non-scaling-stroke" />
     </svg>
+      <span className="trend-axis" aria-hidden="true">
+        <span>{axisLabel(high)}</span>
+        <span>0</span>
+      </span>
+    </div>
   )
 }
 
@@ -238,34 +254,33 @@ function Card({ machine }: { machine: Machine }) {
   return (
     <article className={`card${offline ? ' is-offline' : ''}`} aria-label={machine.name}>
       <header className="card-head">
-        <div className="card-identity">
+        <div className="card-title">
           <h2>{machine.name}</h2>
-          <p className="meta">{machine.meta}</p>
-        </div>
-        <div className="card-aside">
           <span className={`pill is-${machine.online ? 'online' : 'offline'}`}>
             <span className="pill-dot" aria-hidden="true" />
             {machine.online ? 'online' : 'offline'}
           </span>
-          <div
-            className="disk"
-            role="img"
-            aria-label={`Storage ${machine.storage.used} of ${machine.storage.total}, ${machine.storage.percent} percent`}
-          >
-            <span className="disk-label">
-              <HardDrive size={13} className="is-accent" />
-              disk
-            </span>
-            <span className="disk-value">
-              {machine.storage.used}
-              {machine.storage.total && <span className="disk-total"> / {machine.storage.total}</span>}
-            </span>
-            <span className="disk-bar">
-              <span className="disk-fill" style={{ width: `${machine.storage.percent}%` }} />
-            </span>
-          </div>
         </div>
+        <p className="meta">{machine.meta}</p>
       </header>
+
+      <div
+        className="disk"
+        role="img"
+        aria-label={`Storage ${machine.storage.used} of ${machine.storage.total}, ${machine.storage.percent} percent`}
+      >
+        <span className="disk-label">
+          <HardDrive size={12} className="is-accent" />
+          disk
+        </span>
+        <span className="disk-value">
+          {machine.storage.used}
+          {machine.storage.total && <span className="disk-total"> / {machine.storage.total}</span>}
+        </span>
+        <span className="disk-bar">
+          <span className="disk-fill" style={{ width: `${machine.storage.percent}%` }} />
+        </span>
+      </div>
 
       <div className="metrics">
         {machine.metrics.map((metric) => (
