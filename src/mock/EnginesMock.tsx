@@ -51,7 +51,6 @@ interface Machine {
   storage: Storage
 }
 
-const SAMPLE_SECONDS = 10
 const WINDOW_SAMPLES = 60
 const MACHINES: Machine[] = [
   {
@@ -80,7 +79,7 @@ const MACHINES: Machine[] = [
       {
         label: 'I/O',
         icon: ArrowDownUp,
-        tone: 'cool',
+        tone: 'warm',
         unit: ' MB/s',
         digits: 1,
         series: sampleSeries(31, 12, 12),
@@ -138,7 +137,7 @@ function amount(metric: Metric): string {
 
 function unit(metric: Metric): string {
   if (metric.total) return ` / ${metric.total}`
-  if (metric.write) return last(metric.write, metric)
+  if (metric.write) return ` / ${last(metric.write, metric)}`
   return metric.unit
 }
 
@@ -264,23 +263,13 @@ function Card({ machine }: { machine: Machine }) {
         {machine.metrics.map((metric) => (
           <div key={metric.label} className="metric">
             <span className="metric-label">
-              <metric.icon size={13} />
+              <metric.icon size={13} className={`is-${metric.tone}`} />
               {metric.label}
               {metric.write && <span className="metric-unit">{metric.unit.trim()}</span>}
             </span>
             <strong className="metric-value">
-              {metric.write ? (
-                <>
-                  <span className="is-read">{amount(metric)}</span>
-                  <span className="metric-sep"> / </span>
-                  <span className="metric-unit is-write">{unit(metric)}</span>
-                </>
-              ) : (
-                <>
-                  {amount(metric)}
-                  {metric.series.length > 0 && <span className="metric-unit">{unit(metric)}</span>}
-                </>
-              )}
+              {amount(metric)}
+              {metric.series.length > 0 && <span className="metric-unit">{unit(metric)}</span>}
             </strong>
             <Sparkline
               series={metric.series}
@@ -294,20 +283,6 @@ function Card({ machine }: { machine: Machine }) {
           </div>
         ))}
       </div>
-
-      <p className="chart-caption">
-        {machine.metrics.some((metric) => metric.write?.length) ? (
-          <span className="legend">
-            <i className="legend-dot is-read" />
-            read
-            <i className="legend-dot is-write" />
-            write
-          </span>
-        ) : (
-          <span />
-        )}
-        <span>10 min · 1 line = 1 min</span>
-      </p>
 
       <div className="actions">
         {ACTIONS.map(({ id, label, icon: Icon }) => (

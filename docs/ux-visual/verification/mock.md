@@ -104,3 +104,16 @@ both, on one zero-based scale.
 
 Audits: `pageScrollY 0`, `offScale []`, 5 font sizes, no low contrast, no overflow
 at 390×844 / 430×932 / 1440×900. `npm test` 19/19.
+
+## Round 7 — colour moves from the numbers to the icons
+
+- The reading is neutral again: `11.4` in `--text` with `/ 2.9` set small and
+  muted, exactly like RAM's `/ 8 GB`. No number is coloured by series any more.
+- The metric icons now carry the colour (CPU `--accent`, RAM `--info`, I/O
+  `--warn`), so the strip's identity survives without shouting in the values.
+- The `read / write` legend and the `10 min · 1 line = 1 min` caption are deleted
+  along with their CSS; the charts keep their grid lines and their two traces.
+  `SAMPLE_SECONDS` went with the caption — no constant left carrying nothing.
+
+Audits: `pageScrollY 0`, `offScale []`, 5 font sizes, no low contrast, no overflow
+at 390×844 / 430×932 / 1440×900. `npm test` 19/19.
