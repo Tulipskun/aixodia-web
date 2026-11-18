@@ -350,6 +350,12 @@ button:disabled { cursor: not-allowed; }
 .metric-label svg.is-cool { color: var(--info); }
 .metric-label svg.is-warm { color: var(--warn); }
 
+/* Down is data coming in, up is data going out: one colour per direction, on the
+   two halves of the same 13px glyph so the label row keeps its height. */
+.io-arrows { flex: 0 0 auto; opacity: 0.9; }
+.io-arrows .is-read { stroke: var(--info); }
+.io-arrows .is-write { stroke: var(--warn); }
+
 .metric-label .metric-unit { letter-spacing: 0; }
 
 .spark {

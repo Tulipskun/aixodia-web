@@ -117,3 +117,17 @@ at 390×844 / 430×932 / 1440×900. `npm test` 19/19.
 
 Audits: `pageScrollY 0`, `offScale []`, 5 font sizes, no low contrast, no overflow
 at 390×844 / 430×932 / 1440×900. `npm test` 19/19.
+
+## Round 8 — one 13px double arrow, two directions, 30 s samples
+
+- Stacking two `<ArrowDown>/<ArrowUp>` icons grew the I/O label row and pushed its
+  value 9px below the neighbours. Replaced with a single 13px SVG of the lucide
+  `arrow-down-up` glyph split into two paths, so the label row keeps its height:
+  the down arrow (data in) is cyan, the up arrow (data out) is amber.
+- The double arrow is set in the same CSS colour variables as the two traces.
+- Samples are now one per 30 s over the same ten minutes: 20 samples, and 20 grid
+  divisions (19 interior tick lines), derived from `WINDOW_SAMPLES` instead of a
+  hard-coded 9. `SAMPLE_SECONDS` states the rate in the chart's aria text.
+
+Audits: `pageScrollY 0`, `offScale []`, 5 font sizes, no low contrast, no overflow
+at 390×844 / 430×932 / 1440×900. `npm test` 19/19.

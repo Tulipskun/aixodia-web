@@ -6,7 +6,7 @@
 import { useId } from 'react'
 import type { LucideIcon } from 'lucide-react'
 import {
-  ArrowDownUp,
+  ArrowUp,
   Boxes,
   Cpu,
   Ellipsis,
@@ -28,7 +28,7 @@ interface Metric {
   digits: number
   /** Turned into "used / total" for readings that have a capacity. */
   total?: string
-  /** Oldest to newest, one sample every 10 s: 60 samples is ten minutes. */
+  /** Oldest to newest, one sample every 30 s: 20 samples is ten minutes. */
   series: number[]
   /** A second line on the same scale, e.g. writes next to reads. */
   write?: number[]
@@ -51,7 +51,8 @@ interface Machine {
   storage: Storage
 }
 
-const WINDOW_SAMPLES = 60
+const WINDOW_SAMPLES = 20
+const SAMPLE_SECONDS = 30
 const MACHINES: Machine[] = [
   {
     id: 'alpha',
@@ -78,7 +79,7 @@ const MACHINES: Machine[] = [
       },
       {
         label: 'I/O',
-        icon: ArrowDownUp,
+        icon: ArrowUp,
         tone: 'warm',
         unit: ' MB/s',
         digits: 1,
@@ -97,7 +98,7 @@ const MACHINES: Machine[] = [
     metrics: [
       { label: 'CPU', icon: Cpu, tone: 'accent', unit: '%', digits: 0, series: [] },
       { label: 'RAM', icon: MemoryStick, tone: 'cool', unit: ' GB', digits: 1, total: '8 GB', series: [] },
-      { label: 'I/O', icon: ArrowDownUp, tone: 'warm', unit: ' MB/s', digits: 1, series: [] },
+      { label: 'I/O', icon: ArrowUp, tone: 'warm', unit: ' MB/s', digits: 1, series: [] },
     ],
     storage: { used: '—', total: '', percent: 0 },
   },
@@ -139,6 +140,32 @@ function unit(metric: Metric): string {
   if (metric.total) return ` / ${metric.total}`
   if (metric.write) return ` / ${last(metric.write, metric)}`
   return metric.unit
+}
+
+/** The down-up glyph, split into two paths so each direction can carry its colour. */
+function IoArrows() {
+  return (
+    <svg
+      className="io-arrows"
+      width="13"
+      height="13"
+      viewBox="0 0 24 24"
+      fill="none"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <g className="is-read">
+        <path d="M7 4v16" />
+        <path d="m3 16 4 4 4-4" />
+      </g>
+      <g className="is-write">
+        <path d="M17 20V4" />
+        <path d="m13 8 4-4 4 4" />
+      </g>
+    </svg>
+  )
 }
 
 function Sparkline({
@@ -205,9 +232,9 @@ function Sparkline({
             vectorEffect="non-scaling-stroke"
           />
         ))}
-        {/* one line per minute: ten minutes, so ten divisions */}
-        {Array.from({ length: 9 }, (_, index) => {
-          const x = (SPARK_WIDTH / 10) * (index + 1)
+        {/* one line per 30 s sample interval: twenty divisions across ten minutes */}
+        {Array.from({ length: WINDOW_SAMPLES - 1 }, (_, index) => {
+          const x = (SPARK_WIDTH / WINDOW_SAMPLES) * (index + 1)
           return <line key={x} className="is-tick" x1={x} y1="0" x2={x} y2={SPARK_HEIGHT - 4} vectorEffect="non-scaling-stroke" />
         })}
       </g>
@@ -263,7 +290,11 @@ function Card({ machine }: { machine: Machine }) {
         {machine.metrics.map((metric) => (
           <div key={metric.label} className="metric">
             <span className="metric-label">
-              <metric.icon size={13} className={`is-${metric.tone}`} />
+              {metric.write ? (
+                <IoArrows />
+              ) : (
+                <metric.icon size={13} className={`is-${metric.tone}`} />
+              )}
               {metric.label}
               {metric.write && <span className="metric-unit">{metric.unit.trim()}</span>}
             </span>
@@ -275,7 +306,7 @@ function Card({ machine }: { machine: Machine }) {
               series={metric.series}
               write={metric.write}
               tone={metric.tone}
-              label={`${metric.label}, last 10 minutes${
+              label={`${metric.label}, last 10 minutes, one sample every ${SAMPLE_SECONDS} s${
                 metric.write ? `, read ${amount(metric)}${metric.unit}, write ${last(metric.write, metric)}${metric.unit}` : ''
               }`}
             />
