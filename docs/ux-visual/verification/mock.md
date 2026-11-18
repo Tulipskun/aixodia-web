@@ -179,3 +179,17 @@ for the capacity, `100.4 / 128 GB` spilled 15px out of its column at 390px and
 
 Audits: `pageScrollY 0`, `offScale []`, 5 font sizes, no low contrast, no overflow
 at 360×780, 390×844, 430×932 and 1440×900. `npm test` 19/19.
+
+## Round 12 — the mock now runs the hard case
+
+The 128 GB proof was a temporary build; the mock data carries it now, so the
+deployed page is the test.
+
+- Alpha: RAM `total: '128'`, series around 100.4 GB → reads `100.x/128` with the
+  label `RAM GB`.
+- I/O widened too: reads around 184 MB/s, writes around 96.7 MB/s → `184.x/96.x`,
+  which is the longest value the third column can hold.
+- Disk stays 164 / 256 GB.
+
+Audits: no overflow, `pageScrollY 0`, `offScale []`, 5 font sizes at 360×780,
+390×844, 430×932 and 1440×900. `npm test` 19/19.
