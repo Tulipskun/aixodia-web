@@ -194,14 +194,20 @@ button:disabled { cursor: not-allowed; }
 }
 
 .disk-label {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--s1);
+  /* Inline, not flex: as a flex container its baseline comes from the icon and the
+     word drifts 4px above the number. Inline text keeps one baseline for both. */
+  display: inline;
+  line-height: 1;
   font-family: var(--mono);
   font-size: var(--fs-meta);
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--muted);
+}
+
+.disk-label svg {
+  vertical-align: -2px;
+  margin-right: var(--s1);
 }
 
 .disk-label svg.is-accent { color: var(--accent); opacity: 0.9; }
@@ -210,6 +216,7 @@ button:disabled { cursor: not-allowed; }
    qualifier small and muted beside it. */
 .disk-value {
   justify-self: end;
+  line-height: 1;
   font-family: var(--mono);
   font-size: var(--fs-body);
   font-weight: 600;

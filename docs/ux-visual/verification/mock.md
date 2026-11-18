@@ -144,3 +144,20 @@ at 390×844 / 430×932 / 1440×900. `npm test` 19/19.
 
 Audits: `pageScrollY 0`, `offScale []`, 5 font sizes, no low contrast at
 390×844 / 430×932 / 1440×900. `npm test` 19/19.
+
+## Round 10 — the disk word and the disk number share a baseline
+
+Reported: "ตัวเลขไม่ตรงกับคำว่า disk". Measured, and it was real.
+
+- Cause: `.disk-label` was a flex container, so its baseline was taken from the
+  13px `HardDrive` icon (the first flex item) instead of from the word. With the
+  grid's `align-items: baseline`, the icon's bottom was put on the value's
+  baseline and the word sat 4px above the number (measured: label ink bottom
+  128px vs value 132px).
+- Fix: the label is inline text with `line-height: 1` and the icon aligned by
+  `vertical-align: -2px`, so the label's own text baseline is the one being
+  aligned. Measured again: both ink bottoms at y=138 on the 390px screenshot, and
+  the 3× crop agrees.
+
+Audits: `pageScrollY 0`, `offScale []`, 5 font sizes, no low contrast at
+390×844 / 430×932 / 1440×900. `npm test` 19/19.
