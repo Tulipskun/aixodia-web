@@ -390,3 +390,20 @@ Audits clean at 360, 390 and 1440; `npm test` 19/19.
   shadow, which is the intent, not a size difference.
 
 Audits clean at 360, 390, 430 and 1440; `npm test` 19/19.
+
+## Round 26 — the gutter is a margin, and one rhythm of 12
+
+Two corrections to round 25:
+
+1. **It was padding, not margin.** The card is back to `padding: 16px` on all four
+   sides; the space around the card is now produced outside it. The shell lost its
+   own side padding, the top bar passes its inset through its own padding, and the
+   screen owns the gutter: `padding: 12px 12px 16px` with `gap: 12px`.
+2. **The gaps are now equal**, which is what "not equal" was about — the sides were
+   16 while the vertical rhythm was 12. Measured at 390: `leftGutter 12`,
+   `rightGutter 12`, `topGap 12`, `cardGap 12`.
+
+The two cards themselves were already identical and still are: `204.5px` each,
+`366px` wide (`equal` within 0.0px).
+
+Audits clean at 360, 390, 430 and 1440; `npm test` 19/19.
