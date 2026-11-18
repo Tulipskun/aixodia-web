@@ -368,3 +368,13 @@ mark per screen, so `useId` would be noise.
 
 Audits: `pageScrollY 0`, `offScale []`, 4 font sizes, 0 low contrast, no overflow at
 360, 390, 430 and 1440. `npm test` 19/19.
+
+## Round 24 — the mark is a file, not a component
+
+`public/brand/aixodia-mark.svg` now holds the emblem, with the palette written out as
+the token values (`surface2`, `accent`, `info`, `text`). The inline `BrandMark`
+component and its `.mark-*` rules are deleted: one file serves the bar (`<img src>`)
+and the tab icon (`<link rel="icon">` in `mock.html`). Vite copies `public/` to
+`dist/brand/`, checked.
+
+Audits clean at 360, 390 and 1440; `npm test` 19/19.
