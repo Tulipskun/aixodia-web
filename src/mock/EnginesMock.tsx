@@ -4,15 +4,11 @@
 //! wired to the registry. Everything below is a literal.
 
 import { useId } from 'react'
-import type { LucideIcon } from 'lucide-react'
 import {
-  ArrowUp,
   Boxes,
-  Cpu,
   Ellipsis,
   HardDrive,
   Home,
-  MemoryStick,
   Menu,
   MonitorSmartphone,
   Sparkles,
@@ -21,7 +17,6 @@ import {
 
 interface Metric {
   label: string
-  icon: LucideIcon
   tone: 'accent' | 'cool' | 'warm'
   /** Suffix after the reading, e.g. "%" or " MB/s". */
   unit: string
@@ -30,8 +25,7 @@ interface Metric {
   total?: string
   /** Oldest to newest, one sample every 30 s: 20 samples is ten minutes. */
   series: number[]
-  /** A second line on the same scale, e.g. writes next to reads. */
-  write?: number[]
+
 }
 
 interface Storage {
@@ -62,7 +56,6 @@ const MACHINES: Machine[] = [
     metrics: [
       {
         label: 'CPU',
-        icon: Cpu,
         tone: 'accent',
         unit: '%',
         digits: 0,
@@ -70,21 +63,11 @@ const MACHINES: Machine[] = [
       },
       {
         label: 'RAM',
-        icon: MemoryStick,
         tone: 'cool',
         unit: ' GB',
         digits: 1,
         total: '128',
         series: sampleSeries(19, 100.4, 1.6),
-      },
-      {
-        label: 'I/O',
-        icon: ArrowUp,
-        tone: 'warm',
-        unit: ' MB/s',
-        digits: 1,
-        series: sampleSeries(31, 184, 60),
-        write: sampleSeries(43, 96.7, 28),
       },
     ],
     storage: { used: '164', total: '256 GB', percent: 64 },
@@ -96,9 +79,8 @@ const MACHINES: Machine[] = [
     meta: 'Last seen 4h ago',
     reason: 'Offline since 4h ago',
     metrics: [
-      { label: 'CPU', icon: Cpu, tone: 'accent', unit: '%', digits: 0, series: [] },
-      { label: 'RAM', icon: MemoryStick, tone: 'cool', unit: ' GB', digits: 1, total: '128', series: [] },
-      { label: 'I/O', icon: ArrowUp, tone: 'warm', unit: ' MB/s', digits: 1, series: [] },
+      { label: 'CPU', tone: 'accent', unit: '%', digits: 0, series: [] },
+      { label: 'RAM', tone: 'cool', unit: ' GB', digits: 1, total: '128', series: [] },
     ],
     storage: { used: '—', total: '', percent: 0 },
   },
@@ -125,6 +107,11 @@ function sampleSeries(seed: number, base: number, swing: number): number[] {
   })
 }
 
+
+/** The capacity after the reading, e.g. "/ 128 GB". */
+function qualifier(metric: Metric): string | null {
+  return metric.total ? ` / ${metric.total}${metric.unit}` : null
+}
 
 /** The last sample of a series, formatted. */
 function last(samples: number[] | undefined, metric: Metric): string {
@@ -172,42 +159,7 @@ function Ring({ percent: value, tone }: { percent: number; tone: Metric['tone'] 
 }
 
 /** The down-up glyph, split into two paths so each direction can carry its colour. */
-function IoArrows() {
-  return (
-    <svg
-      className="io-arrows"
-      width="13"
-      height="13"
-      viewBox="0 0 24 24"
-      fill="none"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <g className="is-read">
-        <path d="M7 4v16" />
-        <path d="m3 16 4 4 4-4" />
-      </g>
-      <g className="is-write">
-        <path d="M17 20V4" />
-        <path d="m13 8 4-4 4 4" />
-      </g>
-    </svg>
-  )
-}
-
-function Sparkline({
-  series,
-  write,
-  tone,
-  label,
-}: {
-  series: number[]
-  write?: number[]
-  tone: Metric['tone']
-  label: string
-}) {
+function Sparkline({ series, tone, label }: { series: number[]; tone: Metric['tone']; label: string }) {
   const gradientId = useId()
   if (series.length < 2) {
     return (
@@ -218,19 +170,17 @@ function Sparkline({
   }
   // Scale from zero with headroom, so two charts at the same height mean the same
   // thing instead of each one inventing its own drama.
-  // One scale for both lines, from zero, so read and write are comparable.
-  const high = Math.max(...series, ...(write ?? [])) * 1.15 || 1
-  const lineFor = (samples: number[]) =>
-    `M ${samples
-      .map((value, index) => {
-        const x = 2 + (index * (SPARK_WIDTH - 4)) / (samples.length - 1)
-        const y = SPARK_HEIGHT - 4 - (value / high) * (SPARK_HEIGHT - 12)
-        return `${x.toFixed(2)},${y.toFixed(2)}`
-      })
-      .join(' L ')}`
-  const line = lineFor(series)
-  // Straight segments: every one of the 60 samples shows up as its own corner.
-  const writeLine = write ? lineFor(write) : null
+  // Scale from zero with headroom, so two charts at the same height mean the same
+  // thing instead of each one inventing its own drama.
+  const high = Math.max(...series) * 1.15 || 1
+  // Straight segments: every one of the samples shows up as its own corner.
+  const line = `M ${series
+    .map((value, index) => {
+      const x = 2 + (index * (SPARK_WIDTH - 4)) / (series.length - 1)
+      const y = SPARK_HEIGHT - 4 - (value / high) * (SPARK_HEIGHT - 12)
+      return `${x.toFixed(2)},${y.toFixed(2)}`
+    })
+    .join(' L ')}`
   return (
     <svg
       className={`spark is-${tone}`}
@@ -275,8 +225,7 @@ function Sparkline({
         y2={SPARK_HEIGHT - 4}
         vectorEffect="non-scaling-stroke"
       />
-      <path className={`spark-line${writeLine ? ' is-read' : ''}`} d={line} vectorEffect="non-scaling-stroke" />
-      {writeLine && <path className="spark-line is-write" d={writeLine} vectorEffect="non-scaling-stroke" />}
+      <path className="spark-line" d={line} vectorEffect="non-scaling-stroke" />
     </svg>
   )
 }
@@ -318,39 +267,22 @@ function Card({ machine }: { machine: Machine }) {
       <div className="metrics">
         {machine.metrics.map((metric) => (
           <div key={metric.label} className="metric">
-            <span className="metric-head">
-              <span className="metric-label">
-                {metric.write ? (
-                  <IoArrows />
-                ) : (
-                  <metric.icon size={13} className={`is-${metric.tone}`} />
-                )}
-                {metric.label}
-              </span>
-              {percent(metric) !== null ? (
-                <Ring percent={percent(metric) as number} tone={metric.tone} />
-              ) : (
-                metric.write && (
-                  <span className="metric-out">
-                    <ArrowUp size={10} />
-                    {last(metric.write, metric)}
-                  </span>
-                )
-              )}
+            <span className="metric-label">
+              {percent(metric) !== null && <Ring percent={percent(metric) as number} tone={metric.tone} />}
+              {metric.label}
             </span>
             <strong className="metric-value">
               {amount(metric)}
-              {metric.series.length > 0 && <span className="metric-unit">{metric.unit}</span>}
+              {metric.series.length > 0 && (
+                <span className="metric-unit">{qualifier(metric) ?? metric.unit}</span>
+              )}
             </strong>
             <Sparkline
               series={metric.series}
-              write={metric.write}
               tone={metric.tone}
               label={`${metric.label}, last 10 minutes, one sample every ${SAMPLE_SECONDS} s, now ${amount(
                 metric,
-              )}${metric.unit}${metric.total ? ` of ${metric.total}${metric.unit}` : ''}${
-                metric.write ? `, write ${last(metric.write, metric)}${metric.unit}` : ''
-              }`}
+              )}${metric.unit}${metric.total ? ` of ${metric.total}${metric.unit}` : ''}`}
             />
             {offline && <span className="metric-note">no data</span>}
           </div>

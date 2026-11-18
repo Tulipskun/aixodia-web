@@ -309,7 +309,7 @@ button:disabled { cursor: not-allowed; }
 
 .metrics {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   padding: var(--s3) 0;
   border-bottom: 1px solid var(--hairline);
 }
@@ -321,15 +321,6 @@ button:disabled { cursor: not-allowed; }
   gap: var(--s1);
   min-width: 0;
   padding-right: var(--s3);
-}
-
-/* Label on the left, the ring that says "how full" on the right. */
-.metric-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--s1);
-  min-width: 0;
 }
 
 .metric + .metric { padding-left: var(--s3); }
@@ -356,8 +347,6 @@ button:disabled { cursor: not-allowed; }
   color: var(--muted);
 }
 
-.metric-label svg { flex: 0 0 auto; opacity: 0.9; }
-
 .ring { flex: 0 0 auto; }
 .ring-track,
 .ring-arc {
@@ -369,17 +358,6 @@ button:disabled { cursor: not-allowed; }
 .ring-arc { stroke: var(--accent); stroke-linecap: round; }
 .ring.is-cool .ring-arc { stroke: var(--info); }
 .ring.is-warm .ring-arc { stroke: var(--warn); }
-
-/* Where there is no percentage to draw, the second reading takes the corner. */
-.metric-out {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--s1);
-  font-family: var(--mono);
-  font-size: var(--fs-meta);
-  color: var(--warn);
-  white-space: nowrap;
-}
 
 .metric-value {
   font-family: var(--mono);
@@ -396,19 +374,6 @@ button:disabled { cursor: not-allowed; }
   font-weight: 400;
   color: var(--muted);
 }
-
-/* The label's icon carries the metric's colour; the numbers stay neutral. */
-.metric-label svg.is-accent { color: var(--accent); }
-.metric-label svg.is-cool { color: var(--info); }
-.metric-label svg.is-warm { color: var(--warn); }
-
-/* Down is data coming in, up is data going out: one colour per direction, on the
-   two halves of the same 13px glyph so the label row keeps its height. */
-.io-arrows { flex: 0 0 auto; opacity: 0.9; }
-.io-arrows .is-read { stroke: var(--info); }
-.io-arrows .is-write { stroke: var(--warn); }
-
-.metric-label .metric-unit { letter-spacing: 0; }
 
 .spark {
   display: block;
@@ -440,9 +405,6 @@ button:disabled { cursor: not-allowed; }
 }
 
 .spark-base { stroke: rgba(145, 142, 255, 0.2); stroke-width: 1; }
-
-.spark-line.is-read { stroke: var(--info); }
-.spark-line.is-write { stroke: var(--warn); }
 
 .spark.is-cool { --spark-ink: var(--info); }
 .spark.is-warm { --spark-ink: var(--warn); }

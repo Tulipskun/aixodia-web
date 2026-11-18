@@ -210,3 +210,20 @@ The unit row on top (`CPU %`, `RAM GB`, `I/O MB/S`) read as clutter, so:
 
 Audits: `pageScrollY 0`, `offScale []`, 5 font sizes, no low contrast, no overflow
 at 360×780, 390×844, 430×932 and 1440×900. `npm test` 19/19.
+
+## Round 14 — I/O goes, the ring moves onto the icon
+
+- **I/O is gone.** One machine number has no capacity and no percentage, so it was
+  the only column without a ring and the only one needing a second reading in its
+  header. Removed with it: the `write` series, the two-colour `IoArrows` glyph, the
+  `.metric-out` corner, the read/write line classes, the `icon` field on a metric
+  (nothing read it any more) and the now-unused `Cpu` / `MemoryStick` / `LucideIcon`
+  imports.
+- **Ring first, then the label**, where the icon used to be — the ring is now the
+  column's mark, and its colour carries the metric tone.
+- Two columns instead of three, so the RAM value has room to be honest again:
+  `100.2 / 128 GB`, unit printed once (an intermediate build printed it twice, and
+  the pixel check caught it).
+
+Audits: `pageScrollY 0`, `offScale []`, 5 font sizes, no low contrast, no overflow
+at 360×780, 390×844, 430×932 and 1440×900. `npm test` 19/19.
