@@ -347,6 +347,7 @@ button:disabled { cursor: not-allowed; }
 
 /* Read and write are told apart by colour, the same colours as their lines. */
 .metric-value .is-read { color: var(--info); }
+.metric-sep { font-size: var(--fs-meta); font-weight: 400; color: var(--dim); }
 .metric-value .metric-unit.is-write { color: var(--warn); }
 
 .metric-label .metric-unit { letter-spacing: 0; }

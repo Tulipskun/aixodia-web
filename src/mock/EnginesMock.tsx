@@ -138,7 +138,7 @@ function amount(metric: Metric): string {
 
 function unit(metric: Metric): string {
   if (metric.total) return ` / ${metric.total}`
-  if (metric.write) return ` / ${last(metric.write, metric)}`
+  if (metric.write) return last(metric.write, metric)
   return metric.unit
 }
 
@@ -272,6 +272,7 @@ function Card({ machine }: { machine: Machine }) {
               {metric.write ? (
                 <>
                   <span className="is-read">{amount(metric)}</span>
+                  <span className="metric-sep"> / </span>
                   <span className="metric-unit is-write">{unit(metric)}</span>
                 </>
               ) : (
