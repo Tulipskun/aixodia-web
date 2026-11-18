@@ -30,6 +30,8 @@ interface Metric {
   total?: string
   /** Oldest to newest, one sample every 10 s: 60 samples is ten minutes. */
   series: number[]
+  /** A second line on the same scale, e.g. writes next to reads. */
+  write?: number[]
 }
 
 interface Storage {
@@ -78,10 +80,11 @@ const MACHINES: Machine[] = [
       {
         label: 'I/O',
         icon: ArrowDownUp,
-        tone: 'warm',
+        tone: 'cool',
         unit: ' MB/s',
         digits: 1,
-        series: sampleSeries(31, 12, 14),
+        series: sampleSeries(31, 12, 12),
+        write: sampleSeries(43, 4.4, 5),
       },
     ],
     storage: { used: '164', total: '256 GB', percent: 64 },
@@ -122,23 +125,34 @@ function sampleSeries(seed: number, base: number, swing: number): number[] {
   })
 }
 
-/** One reading, in the machine's units. */
-function reading(metric: Metric, value: number): string {
-  const rounded = value.toFixed(metric.digits)
-  return metric.total ? `${rounded} / ${metric.total}` : `${rounded}${metric.unit}`
+
+/** The last sample of a series, formatted. */
+function last(samples: number[] | undefined, metric: Metric): string {
+  return samples?.length ? samples[samples.length - 1].toFixed(metric.digits) : '—'
 }
 
-
-/** The reading without its unit; the unit is set small beside it. */
+/** The headline number of the reading; the qualifier is set small beside it. */
 function amount(metric: Metric): string {
-  return metric.series.length ? metric.series[metric.series.length - 1].toFixed(metric.digits) : '—'
+  return last(metric.series, metric)
 }
 
 function unit(metric: Metric): string {
-  return metric.total ? ` / ${metric.total}` : metric.unit
+  if (metric.total) return ` / ${metric.total}`
+  if (metric.write) return ` / ${last(metric.write, metric)}`
+  return metric.unit
 }
 
-function Sparkline({ series, tone, label }: { series: number[]; tone: Metric['tone']; label: string }) {
+function Sparkline({
+  series,
+  write,
+  tone,
+  label,
+}: {
+  series: number[]
+  write?: number[]
+  tone: Metric['tone']
+  label: string
+}) {
   const gradientId = useId()
   if (series.length < 2) {
     return (
@@ -149,15 +163,19 @@ function Sparkline({ series, tone, label }: { series: number[]; tone: Metric['to
   }
   // Scale from zero with headroom, so two charts at the same height mean the same
   // thing instead of each one inventing its own drama.
-  const high = Math.max(...series) * 1.15 || 1
-  const step = (SPARK_WIDTH - 4) / (series.length - 1)
-  const points = series.map((value, index) => {
-    const x = 2 + index * step
-    const y = SPARK_HEIGHT - 4 - (value / high) * (SPARK_HEIGHT - 12)
-    return `${x.toFixed(2)},${y.toFixed(2)}`
-  })
+  // One scale for both lines, from zero, so read and write are comparable.
+  const high = Math.max(...series, ...(write ?? [])) * 1.15 || 1
+  const lineFor = (samples: number[]) =>
+    `M ${samples
+      .map((value, index) => {
+        const x = 2 + (index * (SPARK_WIDTH - 4)) / (samples.length - 1)
+        const y = SPARK_HEIGHT - 4 - (value / high) * (SPARK_HEIGHT - 12)
+        return `${x.toFixed(2)},${y.toFixed(2)}`
+      })
+      .join(' L ')}`
+  const line = lineFor(series)
   // Straight segments: every one of the 60 samples shows up as its own corner.
-  const line = `M ${points.join(' L ')}`
+  const writeLine = write ? lineFor(write) : null
   return (
     <svg
       className={`spark is-${tone}`}
@@ -202,7 +220,8 @@ function Sparkline({ series, tone, label }: { series: number[]; tone: Metric['to
         y2={SPARK_HEIGHT - 4}
         vectorEffect="non-scaling-stroke"
       />
-      <path className="spark-line" d={line} vectorEffect="non-scaling-stroke" />
+      <path className={`spark-line${writeLine ? ' is-read' : ''}`} d={line} vectorEffect="non-scaling-stroke" />
+      {writeLine && <path className="spark-line is-write" d={writeLine} vectorEffect="non-scaling-stroke" />}
     </svg>
   )
 }
@@ -247,15 +266,28 @@ function Card({ machine }: { machine: Machine }) {
             <span className="metric-label">
               <metric.icon size={13} />
               {metric.label}
+              {metric.write && <span className="metric-unit">{metric.unit.trim()}</span>}
             </span>
             <strong className="metric-value">
-              {amount(metric)}
-              {metric.series.length > 0 && <span className="metric-unit">{unit(metric)}</span>}
+              {metric.write ? (
+                <>
+                  <span className="is-read">{amount(metric)}</span>
+                  <span className="metric-unit is-write">{unit(metric)}</span>
+                </>
+              ) : (
+                <>
+                  {amount(metric)}
+                  {metric.series.length > 0 && <span className="metric-unit">{unit(metric)}</span>}
+                </>
+              )}
             </strong>
             <Sparkline
               series={metric.series}
+              write={metric.write}
               tone={metric.tone}
-              label={`${metric.label}, last 10 minutes, now ${reading(metric, Number(amount(metric)))}`}
+              label={`${metric.label}, last 10 minutes${
+                metric.write ? `, read ${amount(metric)}${metric.unit}, write ${last(metric.write, metric)}${metric.unit}` : ''
+              }`}
             />
             {offline && <span className="metric-note">no data</span>}
           </div>
@@ -263,7 +295,17 @@ function Card({ machine }: { machine: Machine }) {
       </div>
 
       <p className="chart-caption">
-        last 10 min · 1 line = 1 min · 1 sample / {SAMPLE_SECONDS} s
+        {machine.metrics.some((metric) => metric.write?.length) ? (
+          <span className="legend">
+            <i className="legend-dot is-read" />
+            read
+            <i className="legend-dot is-write" />
+            write
+          </span>
+        ) : (
+          <span />
+        )}
+        <span>10 min · 1 line = 1 min</span>
       </p>
 
       <div className="actions">

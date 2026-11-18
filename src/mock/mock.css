@@ -345,6 +345,12 @@ button:disabled { cursor: not-allowed; }
   color: var(--muted);
 }
 
+/* Read and write are told apart by colour, the same colours as their lines. */
+.metric-value .is-read { color: var(--info); }
+.metric-value .metric-unit.is-write { color: var(--warn); }
+
+.metric-label .metric-unit { letter-spacing: 0; }
+
 .spark {
   display: block;
   width: 100%;
@@ -376,6 +382,9 @@ button:disabled { cursor: not-allowed; }
 
 .spark-base { stroke: rgba(145, 142, 255, 0.2); stroke-width: 1; }
 
+.spark-line.is-read { stroke: var(--info); }
+.spark-line.is-write { stroke: var(--warn); }
+
 .spark.is-cool { --spark-ink: var(--info); }
 .spark.is-warm { --spark-ink: var(--warn); }
 
@@ -403,16 +412,36 @@ button:disabled { cursor: not-allowed; }
 
 .metric:last-child .metric-note { right: 0; }
 
-/* Caption for the grid: what a division means, in one line. */
+/* Caption for the grid: what a division means, and which line is which. */
 .chart-caption {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s2);
   margin: 0;
   padding-top: var(--s2);
   font-family: var(--mono);
   font-size: var(--fs-meta);
   letter-spacing: 0.02em;
   color: var(--muted);
-  text-align: right;
 }
+
+.legend {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s1);
+  white-space: nowrap;
+}
+
+.legend-dot {
+  width: var(--s2);
+  height: 2px;
+  border-radius: 2px;
+  background: var(--muted);
+}
+
+.legend-dot.is-read { background: var(--info); }
+.legend-dot.is-write { background: var(--warn); }
 
 /* --------------------------------------------------------------- actions */
 

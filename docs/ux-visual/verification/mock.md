@@ -88,3 +88,19 @@ min/avg/max table instead, which was the wrong reading of "ตารางแส
 
 Audits: `pageScrollY 0`, `offScale []`, 5 font sizes, no low contrast, no overflow
 at 390×844 / 430×932 / 1440×900. `npm test` 19/19, build clean.
+
+## Round 6 — I/O is two lines, read and write
+
+I/O is not one number: it is traffic in and traffic out, so the column now shows
+both, on one zero-based scale.
+
+- `Metric.write` carries the second series. Reads are cyan (`--info`), writes
+  amber (`--warn`), and the two numbers in the reading are coloured to match, so
+  the mapping needs no extra label.
+- The unit moves to the label row (`I/O MB/S`) to keep `11.4 / 2.9` inside a third
+  of a 390px screen — no ellipsis, no spill.
+- Caption is one row: colour legend on the left, `10 min · 1 line = 1 min` on the
+  right (the sample rate is in the tooltip/aria text, not crowding the row).
+
+Audits: `pageScrollY 0`, `offScale []`, 5 font sizes, no low contrast, no overflow
+at 390×844 / 430×932 / 1440×900. `npm test` 19/19.
