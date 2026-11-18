@@ -21,7 +21,7 @@ const DEFAULT_ENGINE_ENTRY = {
 const AUTH_PREFIXES = ['/auth/']
 const ENGINE_PREFIXES = ['/api/', '/healthz', '/cdn-cgi/']
 
-const DEFAULT_REGISTRY_URL = 'https://engines.aixodia.dpdns.org/engines'
+const DEFAULT_REGISTRY_URL = 'https://engine.aixodia.dpdns.org/api/engines'
 
 function sanitizeId(raw, fallback) {
   const clean = String(raw || '')
@@ -33,10 +33,9 @@ function sanitizeId(raw, fallback) {
 }
 
 /**
- * Which engines exist, asked of the Worker that routes to them (`GET /engines`
- * on the engine gateway, read from the `engines` table in D1). A registry that
- * cannot answer is not a reason to stop working: the default engine still
- * answers on its own hostname.
+ * Which engines exist, asked of the engine gateway (`GET /api/engines`, read
+ * from the `engines` table in D1). A registry that cannot answer is not a reason
+ * to stop working: the default engine still answers on its own hostname.
  */
 async function loadEngineRegistry(env = {}) {
   const registryUrl = String(env.ENGINE_REGISTRY_URL || DEFAULT_REGISTRY_URL).trim()
