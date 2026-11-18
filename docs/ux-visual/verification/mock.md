@@ -335,3 +335,18 @@ is now `--danger` (`#ff5c6c`), a new token, with no halo: the glow belongs to a 
 machine, the colour alone says the other one is not.
 
 Audits clean at 360, 390 and 1440; `npm test` 19/19.
+
+## Round 22 — no bottom bar, the top bar gets its own layer
+
+- The tab bar, its `Home`/`MCP` buttons and every `.tabbar` / `.tab` rule are gone,
+  along with the `Home` and `Boxes` imports.
+- The top bar is now a layer of its own: full-bleed (negative side margins), a
+  vertical surface gradient (`rgba(10,8,48,.94)` → `rgba(4,2,38,.82)`), a 14px
+  backdrop blur and a hairline under it. The screen's own padding moved to the
+  screen, so content still starts one step below the rule.
+
+Audits: `pageScrollY 0`, `offScale []`, 4 font sizes, 0 low contrast, no overflow at
+360, 390, 430 and 1440. `npm test` 19/19.
+
+Known and accepted: with two cards the screen is top-heavy on a tall phone; that is
+a property of the mock's two machines, not of the layout.

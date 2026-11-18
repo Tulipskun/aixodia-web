@@ -5,12 +5,10 @@
 
 import type { LucideIcon } from 'lucide-react'
 import {
-  Boxes,
   Cpu,
   HardDrive,
   MemoryStick,
   Ellipsis,
-  Home,
   Menu,
   MonitorSmartphone,
   Sparkles,
@@ -202,16 +200,6 @@ export function EnginesMock() {
         ))}
       </main>
 
-      <nav className="tabbar" aria-label="Sections">
-        <button type="button" className="tab is-active" aria-current="page">
-          <Home size={17} />
-          <span>Home</span>
-        </button>
-        <button type="button" className="tab">
-          <Boxes size={17} />
-          <span>MCP</span>
-        </button>
-      </nav>
     </div>
   )
 }

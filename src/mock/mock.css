@@ -63,8 +63,8 @@ button:disabled { cursor: not-allowed; }
 
 /* ---------------------------------------------------------------- shell */
 
-/* The column owns the viewport, so the screen scrolls inside it and the tab bar
-   never has to be positioned over content. */
+/* The column owns the viewport, so the screen scrolls inside it under a bar that
+   never moves. */
 .shell {
   width: 100%;
   max-width: 460px;
@@ -78,13 +78,21 @@ button:disabled { cursor: not-allowed; }
 
 /* --------------------------------------------------------------- topbar */
 
+/* The bar is its own layer: full-bleed, translucent over the page glow, with a
+   hairline under it, so the screen reads as content sliding beneath. */
 .topbar {
+  position: relative;
+  z-index: 2;
   flex: 0 0 auto;
   display: grid;
   grid-template-columns: 40px 1fr 40px;
   align-items: center;
   gap: var(--s3);
-  padding: var(--s3) 0 var(--s2);
+  margin: 0 calc(var(--s4) * -1);
+  padding: var(--s3) var(--s4);
+  border-bottom: 1px solid var(--hairline);
+  background: linear-gradient(180deg, rgba(10, 8, 48, 0.94), rgba(4, 2, 38, 0.82));
+  backdrop-filter: blur(14px);
 }
 
 .icon-button,
@@ -144,7 +152,7 @@ button:disabled { cursor: not-allowed; }
   display: flex;
   flex-direction: column;
   gap: var(--s3);
-  padding-bottom: var(--s2);
+  padding: var(--s3) 0 var(--s4);
   scrollbar-width: thin;
 }
 
@@ -328,43 +336,6 @@ button:disabled { cursor: not-allowed; }
   border-color: var(--hairline);
   color: var(--muted);
 }
-
-/* --------------------------------------------------------------- tabbar */
-
-.tabbar {
-  flex: 0 0 auto;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: var(--s1);
-  margin: 0 calc(var(--s4) * -1);
-  padding: var(--s2) var(--s4) calc(var(--s2) + env(safe-area-inset-bottom));
-  border-top: 1px solid var(--border);
-  background: rgba(4, 2, 38, 0.92);
-  backdrop-filter: blur(14px);
-}
-
-.tab {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--s1);
-  padding: var(--s1) 0;
-  border: 0;
-  border-radius: var(--s3);
-  background: transparent;
-  color: var(--muted);
-  font-size: var(--fs-label);
-  font-weight: 500;
-}
-
-.tab:hover { color: var(--text); }
-
-.tab.is-active {
-  color: var(--text);
-  background: rgba(119, 114, 255, 0.14);
-}
-
-.tab.is-active svg { color: var(--accent); }
 
 @media (prefers-reduced-motion: reduce) {
   .action, .icon-button { transition: none; }
