@@ -26,7 +26,7 @@ interface Metric {
   /** Suffix after the reading, e.g. "%" or " MB/s". */
   unit: string
   digits: number
-  /** Turned into "used / total" for readings that have a capacity. */
+  /** Capacity, as a plain number: the unit is in the label row. */
   total?: string
   /** Oldest to newest, one sample every 30 s: 20 samples is ten minutes. */
   series: number[]
@@ -74,7 +74,7 @@ const MACHINES: Machine[] = [
         tone: 'cool',
         unit: ' GB',
         digits: 1,
-        total: '8 GB',
+        total: '8',
         series: sampleSeries(19, 5.2, 1.1),
       },
       {
@@ -97,7 +97,7 @@ const MACHINES: Machine[] = [
     reason: 'Offline since 4h ago',
     metrics: [
       { label: 'CPU', icon: Cpu, tone: 'accent', unit: '%', digits: 0, series: [] },
-      { label: 'RAM', icon: MemoryStick, tone: 'cool', unit: ' GB', digits: 1, total: '8 GB', series: [] },
+      { label: 'RAM', icon: MemoryStick, tone: 'cool', unit: ' GB', digits: 1, total: '8', series: [] },
       { label: 'I/O', icon: ArrowUp, tone: 'warm', unit: ' MB/s', digits: 1, series: [] },
     ],
     storage: { used: '—', total: '', percent: 0 },
@@ -136,10 +136,11 @@ function amount(metric: Metric): string {
   return last(metric.series, metric)
 }
 
-function unit(metric: Metric): string {
-  if (metric.total) return ` / ${metric.total}`
-  if (metric.write) return ` / ${last(metric.write, metric)}`
-  return metric.unit
+/** What sits after the number: a capacity, a second reading, or nothing. */
+function qualifier(metric: Metric): string | null {
+  if (metric.total) return `/${metric.total}`
+  if (metric.write) return `/${last(metric.write, metric)}`
+  return null
 }
 
 /** The down-up glyph, split into two paths so each direction can carry its colour. */
@@ -296,18 +297,22 @@ function Card({ machine }: { machine: Machine }) {
                 <metric.icon size={13} className={`is-${metric.tone}`} />
               )}
               {metric.label}
-              {metric.write && <span className="metric-unit">{metric.unit.trim()}</span>}
+              <span className="metric-unit">{metric.unit.trim()}</span>
             </span>
             <strong className="metric-value">
               {amount(metric)}
-              {metric.series.length > 0 && <span className="metric-unit">{unit(metric)}</span>}
+              {metric.series.length > 0 && qualifier(metric) && (
+                <span className="metric-unit">{qualifier(metric)}</span>
+              )}
             </strong>
             <Sparkline
               series={metric.series}
               write={metric.write}
               tone={metric.tone}
-              label={`${metric.label}, last 10 minutes, one sample every ${SAMPLE_SECONDS} s${
-                metric.write ? `, read ${amount(metric)}${metric.unit}, write ${last(metric.write, metric)}${metric.unit}` : ''
+              label={`${metric.label}, last 10 minutes, one sample every ${SAMPLE_SECONDS} s, now ${amount(
+                metric,
+              )}${metric.unit}${metric.total ? ` of ${metric.total}${metric.unit}` : ''}${
+                metric.write ? `, write ${last(metric.write, metric)}${metric.unit}` : ''
               }`}
             />
             {offline && <span className="metric-note">no data</span>}

@@ -161,3 +161,21 @@ Reported: "ตัวเลขไม่ตรงกับคำว่า disk". M
 
 Audits: `pageScrollY 0`, `offScale []`, 5 font sizes, no low contrast at
 390×844 / 430×932 / 1440×900. `npm test` 19/19.
+
+## Round 11 — a 128 GB machine no longer overflows the column
+
+Asked whether `RAM 5.1 / 128 GB` would overflow. It did: with one small unit size
+for the capacity, `100.4 / 128 GB` spilled 15px out of its column at 390px and
+13px at 360px (proof screenshot `ram-128-360.png`, kept in the docs).
+
+- The unit moved to the label row for all three columns — `CPU %`, `RAM GB`,
+  `I/O MB/S` — so values are numbers only: `46`, `100.4/128`, `11.4/2.9`.
+- The capacity qualifier lost its spaces (`/128`), and column padding dropped one
+  step (16 → 12) to buy the middle column the room it needed.
+- Re-measured with a 128 GB machine and 100.4 GB used: no spill at 360 or 390,
+  and the divider keeps a visible gap. Normal 8 GB data is unchanged in look.
+- The chart's aria text now states "now 5.2 GB of 8 GB", because the capacity is
+  no longer spelled out in the visible line.
+
+Audits: `pageScrollY 0`, `offScale []`, 5 font sizes, no low contrast, no overflow
+at 360×780, 390×844, 430×932 and 1440×900. `npm test` 19/19.
