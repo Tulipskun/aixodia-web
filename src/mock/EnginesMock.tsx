@@ -128,10 +128,6 @@ function reading(metric: Metric, value: number): string {
   return metric.total ? `${rounded} / ${metric.total}` : `${rounded}${metric.unit}`
 }
 
-/** A table cell: the number and its own unit, never the capacity again. */
-function cell(metric: Metric, value: number): string {
-  return `${value.toFixed(metric.digits)}${metric.unit}`
-}
 
 /** The reading without its unit; the unit is set small beside it. */
 function amount(metric: Metric): string {
@@ -181,6 +177,23 @@ function Sparkline({ series, tone, label }: { series: number[]; tone: Metric['to
         d={`${line} L ${SPARK_WIDTH} ${SPARK_HEIGHT} L 0 ${SPARK_HEIGHT} Z`}
         fill={`url(#fill-${gradientId})`}
       />
+      <g className="spark-grid" aria-hidden="true">
+        {[0.25, 0.5, 0.75, 1].map((share) => (
+          <line
+            key={share}
+            x1="0"
+            y1={SPARK_HEIGHT - 4 - share * (SPARK_HEIGHT - 12)}
+            x2={SPARK_WIDTH}
+            y2={SPARK_HEIGHT - 4 - share * (SPARK_HEIGHT - 12)}
+            vectorEffect="non-scaling-stroke"
+          />
+        ))}
+        {/* one line per minute: ten minutes, so ten divisions */}
+        {Array.from({ length: 9 }, (_, index) => {
+          const x = (SPARK_WIDTH / 10) * (index + 1)
+          return <line key={x} className="is-tick" x1={x} y1="0" x2={x} y2={SPARK_HEIGHT - 4} vectorEffect="non-scaling-stroke" />
+        })}
+      </g>
       <line
         className="spark-base"
         x1="0"
@@ -191,48 +204,6 @@ function Sparkline({ series, tone, label }: { series: number[]; tone: Metric['to
       />
       <path className="spark-line" d={line} vectorEffect="non-scaling-stroke" />
     </svg>
-  )
-}
-
-function RangeTable({ metrics }: { metrics: Metric[] }) {
-  return (
-    <div className="range-block">
-      <p className="range-caption">last 10 min · 1 sample / {SAMPLE_SECONDS} s</p>
-      <table className="range">
-        <thead>
-          <tr>
-            <th scope="col">metric</th>
-            <th scope="col">min</th>
-            <th scope="col">avg</th>
-            <th scope="col">max</th>
-          </tr>
-        </thead>
-        <tbody>
-          {metrics.map((metric) => {
-            const cells = metric.series.length
-              ? [
-                  Math.min(...metric.series),
-                  metric.series.reduce((sum, value) => sum + value, 0) / metric.series.length,
-                  Math.max(...metric.series),
-                ].map((value) => cell(metric, value))
-              : ['—', '—', '—']
-            return (
-              <tr key={metric.label}>
-                <th scope="row">
-                  <span className="range-label">
-                    <metric.icon size={13} />
-                    {metric.label}
-                  </span>
-                </th>
-                {cells.map((cell, index) => (
-                  <td key={index}>{cell}</td>
-                ))}
-              </tr>
-            )
-          })}
-        </tbody>
-      </table>
-    </div>
   )
 }
 
@@ -291,7 +262,9 @@ function Card({ machine }: { machine: Machine }) {
         ))}
       </div>
 
-      <RangeTable metrics={machine.metrics} />
+      <p className="chart-caption">
+        last 10 min · 1 line = 1 min · 1 sample / {SAMPLE_SECONDS} s
+      </p>
 
       <div className="actions">
         {ACTIONS.map(({ id, label, icon: Icon }) => (

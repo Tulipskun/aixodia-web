@@ -72,3 +72,19 @@ contrast, no wrapped controls, no overlapping at 390×844 / 430×932 / 1440×900
 
 Audits: `pageScrollY 0`, `offScale []`, 5 font sizes, no low contrast, no overflow
 at 390×844 / 430×932 / 1440×900. `npm test` 19/19, build clean.
+
+## Round 5 — guide lines inside the chart, not a data table
+
+The request was gridlines telling you where you are on the axis; round 4 gave a
+min/avg/max table instead, which was the wrong reading of "ตารางแสดง".
+
+- The table, its caption and its CSS are deleted (no dead component left).
+- Each chart now draws its own grid: faint horizontal bands at 25/50/75/100% of
+  the zero-based scale, plus a dashed vertical line per minute (ten minutes, nine
+  interior lines). The baseline is the solid one.
+- One caption line states what a division means: `last 10 min · 1 line = 1 min ·
+  1 sample / 10 s`.
+- The trace stays a plain polyline through all 60 samples with no end marker.
+
+Audits: `pageScrollY 0`, `offScale []`, 5 font sizes, no low contrast, no overflow
+at 390×844 / 430×932 / 1440×900. `npm test` 19/19, build clean.

@@ -364,7 +364,17 @@ button:disabled { cursor: not-allowed; }
 
 .spark-stop { stop-color: var(--spark-ink); }
 
-.spark-base { stroke: rgba(145, 142, 255, 0.16); stroke-width: 1; }
+.spark-grid line {
+  stroke: rgba(145, 142, 255, 0.1);
+  stroke-width: 1;
+}
+
+.spark-grid line.is-tick {
+  stroke: rgba(145, 142, 255, 0.14);
+  stroke-dasharray: 2 3;
+}
+
+.spark-base { stroke: rgba(145, 142, 255, 0.2); stroke-width: 1; }
 
 .spark.is-cool { --spark-ink: var(--info); }
 .spark.is-warm { --spark-ink: var(--warn); }
@@ -393,55 +403,16 @@ button:disabled { cursor: not-allowed; }
 
 .metric:last-child .metric-note { right: 0; }
 
-/* ----------------------------------------------------------------- table */
-
-.range-block { padding-top: var(--s2); }
-
-.range-caption {
-  margin: 0 0 var(--s1);
+/* Caption for the grid: what a division means, in one line. */
+.chart-caption {
+  margin: 0;
+  padding-top: var(--s2);
   font-family: var(--mono);
   font-size: var(--fs-meta);
-  letter-spacing: 0.04em;
+  letter-spacing: 0.02em;
   color: var(--muted);
   text-align: right;
 }
-
-.range {
-  width: 100%;
-  border-collapse: collapse;
-  font-family: var(--mono);
-  font-size: var(--fs-label);
-  font-variant-numeric: tabular-nums;
-}
-
-.range th,
-.range td { padding: var(--s1) 0; }
-
-.range thead th {
-  font-size: var(--fs-meta);
-  font-weight: 400;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--muted);
-  text-align: right;
-  border-bottom: 1px solid var(--hairline);
-}
-
-.range thead th:first-child { text-align: left; }
-
-.range tbody th { font-weight: 400; text-align: left; }
-
-.range-label {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--s1);
-  color: var(--muted);
-}
-
-.range td { text-align: right; color: var(--text); }
-
-.range tbody tr + tr th,
-.range tbody tr + tr td { border-top: 1px solid rgba(145, 142, 255, 0.06); }
 
 /* --------------------------------------------------------------- actions */
 
