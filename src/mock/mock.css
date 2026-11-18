@@ -1,4 +1,4 @@
-/* The engines screen, mocked. Same palette and type as the console so the mock
+/* The machines screen, mocked. Same palette and type as the console so the mock
    is judged as the real thing would look, but nothing here is shared with it. */
 
 :root {
@@ -16,7 +16,6 @@
   --success: #45d6b0;
   --warn: #f6c66b;
   --info: #69c8ff;
-  --danger: #ff6b8a;
   --mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
   --sans: 'Inter', 'Noto Sans Thai', system-ui, -apple-system, 'Segoe UI', sans-serif;
   --brand: 'Saira', 'Inter', system-ui, sans-serif;
@@ -44,7 +43,7 @@ button:disabled { cursor: not-allowed; }
 
 /* ---------------------------------------------------------------- shell */
 
-.mock-shell {
+.shell {
   width: 100%;
   max-width: 460px;
   min-height: 100vh;
@@ -57,7 +56,7 @@ button:disabled { cursor: not-allowed; }
 
 /* --------------------------------------------------------------- topbar */
 
-.mock-topbar {
+.topbar {
   position: sticky;
   top: 0;
   z-index: 5;
@@ -65,13 +64,13 @@ button:disabled { cursor: not-allowed; }
   grid-template-columns: 40px 1fr 40px;
   align-items: center;
   gap: 12px;
-  padding: 10px 0 10px;
+  padding: 12px 0 10px;
   background: linear-gradient(to bottom, rgba(0, 0, 0, 0.94) 62%, transparent);
   backdrop-filter: blur(10px);
 }
 
-.mock-icon-button,
-.mock-avatar {
+.icon-button,
+.avatar {
   display: grid;
   place-items: center;
   width: 40px;
@@ -83,9 +82,9 @@ button:disabled { cursor: not-allowed; }
   transition: border-color 0.15s ease, color 0.15s ease;
 }
 
-.mock-icon-button:hover { border-color: var(--border-strong); color: var(--text); }
+.icon-button:hover { border-color: var(--border-strong); color: var(--text); }
 
-.mock-avatar {
+.avatar {
   border-radius: 50%;
   border-color: rgba(119, 114, 255, 0.4);
   background: linear-gradient(160deg, rgba(119, 114, 255, 0.32), rgba(105, 200, 255, 0.18));
@@ -95,21 +94,21 @@ button:disabled { cursor: not-allowed; }
   font-size: 15px;
 }
 
-.mock-brand {
+.brand {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 7px;
 }
 
-.mock-brand-name {
+.brand-name {
   font-family: var(--brand);
   font-weight: 700;
   font-size: 17px;
   letter-spacing: 0.01em;
 }
 
-.mock-brand-dot {
+.brand-dot {
   width: 6px;
   height: 6px;
   border-radius: 50%;
@@ -119,51 +118,18 @@ button:disabled { cursor: not-allowed; }
 
 /* --------------------------------------------------------------- screen */
 
-.mock-screen { flex: 1; padding-top: 4px; }
-
-.mock-screen-head {
+.screen {
+  flex: 1;
   display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
+  flex-direction: column;
   gap: 12px;
-  margin: 6px 0 12px;
+  padding-top: 4px;
 }
 
-.mock-eyebrow {
-  margin: 0 0 2px;
-  font-family: var(--mono);
-  font-size: 10px;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: var(--dim);
-}
+/* ----------------------------------------------------------------- card */
 
-.mock-screen-head h1 {
-  margin: 0;
-  font-family: var(--brand);
-  font-size: 21px;
-  font-weight: 600;
-  letter-spacing: -0.01em;
-}
-
-.mock-chip {
-  padding: 3px 9px;
-  border-radius: 999px;
-  border: 1px dashed var(--border-strong);
-  font-family: var(--mono);
-  font-size: 10px;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--dim);
-}
-
-.mock-list { display: flex; flex-direction: column; gap: 12px; }
-
-/* --------------------------------------------------------------- engine */
-
-.mock-engine {
-  position: relative;
-  padding: 14px;
+.card {
+  padding: 15px;
   border-radius: var(--radius);
   border: 1px solid var(--border);
   background:
@@ -172,20 +138,20 @@ button:disabled { cursor: not-allowed; }
   box-shadow: 0 18px 44px rgba(0, 0, 0, 0.45);
 }
 
-.mock-engine.is-offline {
+.card.is-offline {
   background: var(--surface);
   border-style: dashed;
   box-shadow: none;
 }
 
-.mock-engine-head {
+.card-head {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: 10px;
 }
 
-.mock-engine-title h2 {
+.card-title h2 {
   margin: 0;
   font-family: var(--brand);
   font-size: 18px;
@@ -193,14 +159,14 @@ button:disabled { cursor: not-allowed; }
   letter-spacing: -0.01em;
 }
 
-.mock-engine-title p {
+.card-title p {
   margin: 2px 0 0;
   font-family: var(--mono);
   font-size: 11px;
   color: var(--dim);
 }
 
-.mock-state {
+.pill {
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -214,67 +180,44 @@ button:disabled { cursor: not-allowed; }
   white-space: nowrap;
 }
 
-.mock-state-dot {
+.pill-dot {
   width: 6px;
   height: 6px;
   border-radius: 50%;
   background: var(--dim);
 }
 
-.mock-state.is-online {
+.pill.is-online {
   border-color: rgba(69, 214, 176, 0.34);
   background: rgba(69, 214, 176, 0.1);
   color: var(--success);
 }
 
-.mock-state.is-online .mock-state-dot {
+.pill.is-online .pill-dot {
   background: var(--success);
   box-shadow: 0 0 8px rgba(69, 214, 176, 0.85);
 }
 
-.mock-state.is-offline { color: var(--dim); }
+.pill.is-offline { color: var(--dim-strong); }
+.pill.is-offline .pill-dot { background: var(--dim-strong); }
 
-/* --------------------------------------------------------------- gauges */
+/* ---------------------------------------------------------------- charts */
 
-.mock-gauges {
+.charts {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 6px;
-  margin: 12px 0 11px;
-  padding: 0;
-  list-style: none;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin: 14px 0 12px;
 }
 
-.mock-gauge {
+.chart {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 4px;
-  text-align: center;
+  gap: 3px;
   min-width: 0;
 }
 
-.mock-ring { width: 42px; height: 42px; }
-
-.mock-ring-track {
-  fill: none;
-  stroke: rgba(145, 142, 255, 0.14);
-  stroke-width: 3.5;
-}
-
-.mock-ring-fill {
-  fill: none;
-  stroke: var(--accent);
-  stroke-width: 3.5;
-  stroke-linecap: round;
-  transition: stroke-dasharray 0.4s ease;
-}
-
-.mock-ring.is-cool .mock-ring-fill { stroke: var(--info); }
-.mock-ring.is-warm .mock-ring-fill { stroke: var(--warn); }
-.mock-ring.is-dim .mock-ring-fill { stroke: transparent; }
-
-.mock-gauge-label {
+.chart-label {
   font-family: var(--mono);
   font-size: 9.5px;
   letter-spacing: 0.1em;
@@ -282,33 +225,94 @@ button:disabled { cursor: not-allowed; }
   color: var(--dim);
 }
 
-.mock-gauge-value {
+.spark {
+  display: block;
+  width: 100%;
+  height: 34px;
+  overflow: visible;
+}
+
+.spark-line {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 1.6;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+.spark-area { fill: rgba(119, 114, 255, 0.16); }
+
+.spark.is-cool .spark-line { stroke: var(--info); }
+.spark.is-cool .spark-area { fill: rgba(105, 200, 255, 0.14); }
+.spark.is-warm .spark-line { stroke: var(--warn); }
+.spark.is-warm .spark-area { fill: rgba(246, 198, 107, 0.13); }
+
+.spark.is-empty {
+  height: 34px;
+  border-bottom: 1px dashed rgba(145, 142, 255, 0.22);
+}
+
+.chart-value {
   font-family: var(--mono);
   font-size: 11px;
   font-weight: 500;
   color: var(--text);
   white-space: nowrap;
-  max-width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-.mock-engine.is-offline .mock-engine-title h2 { color: var(--dim-strong); }
-.mock-engine.is-offline .mock-gauge-label { color: var(--dim-strong); }
-.mock-engine.is-offline .mock-gauge-value { color: var(--dim-strong); }
-.mock-engine.is-offline .mock-engine-foot { color: var(--dim-strong); }
+/* --------------------------------------------------------------- storage */
 
-.mock-engine.is-offline .mock-ring-track { stroke: rgba(145, 142, 255, 0.2); }
+.storage { margin-bottom: 13px; }
+
+.storage-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+
+.storage-value {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text);
+}
+
+.bar {
+  height: 7px;
+  border-radius: 999px;
+  background: rgba(145, 142, 255, 0.14);
+  overflow: hidden;
+}
+
+.bar-fill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--accent), #9b8cff);
+  transition: width 0.4s ease;
+}
+
+/* --------------------------------------------------------------- offline */
+
+.card.is-offline .card-title h2 { color: var(--dim-strong); }
+.card.is-offline .chart-label,
+.card.is-offline .chart-value,
+.card.is-offline .storage-value { color: var(--dim-strong); }
+.card.is-offline .bar { background: rgba(145, 142, 255, 0.1); }
+.card.is-offline .bar-fill { background: none; }
 
 /* --------------------------------------------------------------- actions */
 
-.mock-actions {
+.actions {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 8px;
 }
 
-.mock-action {
+.action {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -323,28 +327,28 @@ button:disabled { cursor: not-allowed; }
   transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
 }
 
-.mock-action:hover:not(:disabled) {
+.action:hover:not(:disabled) {
   border-color: var(--border-strong);
   background: var(--surface-3);
   color: var(--text);
 }
 
-.mock-action.is-primary {
+.action.is-primary {
   border-color: rgba(119, 114, 255, 0.44);
   background: linear-gradient(140deg, rgba(119, 114, 255, 0.9), rgba(93, 88, 232, 0.86));
   color: #fff;
 }
 
-.mock-action.is-primary:hover:not(:disabled) { filter: brightness(1.08); }
+.action.is-primary:hover:not(:disabled) { filter: brightness(1.08); }
 
-.mock-action:disabled {
+.action:disabled {
   background: transparent;
   border-style: dashed;
   border-color: var(--border-strong);
   color: var(--dim-strong);
 }
 
-.mock-engine-foot {
+.card-foot {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -354,27 +358,27 @@ button:disabled { cursor: not-allowed; }
   color: var(--dim);
 }
 
-.mock-foot-live { color: var(--success); }
+.foot-live { color: var(--success); }
 
 /* --------------------------------------------------------------- tabbar */
 
-.mock-tabbar {
+.tabbar {
   /* Sticky rather than fixed: it is the last child of the shell, so it can never
      float in the middle of the page or hide the last card behind it. */
   position: sticky;
   bottom: 0;
-  margin: 20px -18px 0;
+  margin: 14px -18px 0;
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 6px;
   padding: 8px 18px calc(8px + env(safe-area-inset-bottom));
-  border-radius: 16px 16px 0 0;
   border-top: 1px solid var(--border);
+  border-radius: 16px 16px 0 0;
   background: rgba(4, 2, 38, 0.92);
   backdrop-filter: blur(14px);
 }
 
-.mock-tab {
+.tab {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -388,16 +392,16 @@ button:disabled { cursor: not-allowed; }
   font-weight: 500;
 }
 
-.mock-tab:hover { color: var(--muted); }
+.tab:hover { color: var(--muted); }
 
-.mock-tab.is-active {
+.tab.is-active {
   color: var(--text);
   background: rgba(119, 114, 255, 0.14);
 }
 
-.mock-tab.is-active svg { color: var(--accent); }
+.tab.is-active svg { color: var(--accent); }
 
 @media (min-width: 520px) {
   body { padding: 12px 0; }
-  .mock-shell { padding-bottom: 12px; }
+  .shell { padding-bottom: 12px; }
 }
