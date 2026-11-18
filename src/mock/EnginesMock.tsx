@@ -35,6 +35,7 @@ interface Machine {
   id: string
   name: string
   online: boolean
+  /** Uptime when it is up, silence when it is not. */
   meta: string
   /** Why the controls are unavailable, when they are. */
   reason?: string
@@ -47,7 +48,7 @@ const MACHINES: Machine[] = [
     id: 'alpha',
     name: 'Alpha',
     online: true,
-    meta: 'Debian 13 · up 12h 40m',
+    meta: 'up 12h 40m',
     metrics: [
       {
         label: 'CPU',
@@ -81,7 +82,7 @@ const MACHINES: Machine[] = [
     id: 'beta',
     name: 'Beta',
     online: false,
-    meta: 'Last seen 4h ago',
+    meta: 'last seen 4h ago',
     reason: 'Offline since 4h ago',
     metrics: [
       { label: 'CPU', icon: Cpu, tone: 'accent', unit: '%', digits: 0, series: [] },
@@ -134,14 +135,11 @@ function Card({ machine }: { machine: Machine }) {
   return (
     <article className={`card${offline ? ' is-offline' : ''}`} aria-label={machine.name}>
       <header className="card-head">
-        <div className="card-title">
-          <h2>{machine.name}</h2>
-          <span className={`pill is-${machine.online ? 'online' : 'offline'}`}>
-            <span className="pill-dot" aria-hidden="true" />
-            {machine.online ? 'online' : 'offline'}
-          </span>
-        </div>
-        <p className="meta">{machine.meta}</p>
+        <h2>{machine.name}</h2>
+        <p className={`state${machine.online ? ' is-online' : ''}`}>
+          <span className="state-dot" aria-hidden="true" />
+          <span className="state-text">{machine.meta}</span>
+        </p>
       </header>
 
       <div className="metrics">

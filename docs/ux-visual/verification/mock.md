@@ -310,3 +310,20 @@ in the muted mono label style, the reading under it in the value style —
 
 Audits: `pageScrollY 0`, `offScale []`, 4 font sizes, 0 low contrast, no overflow at
 360×780, 390×844, 430×932, 1440×900. `npm test` 19/19.
+
+## Round 20 — state is a glowing dot and a duration, nothing else
+
+- The pill, its border, its plate and its "online"/"offline" word are gone. The
+  right end of the header is a 6px dot with a two-stop halo (`0 0 6px` plus
+  `0 0 14px`) when the machine is up, and a plain `--dim` dot when it is not.
+- The duration follows the dot: `up 12h 40m`, and `last seen 4h ago` when offline.
+  `Debian 13 ·` is gone from the meta line.
+- The header centres what it holds, so the dot, the duration and the 20px name all
+  share one mid-line — measured, `nameMid 92 / stateMid 92 / dotMid 92` on the first
+  card and `308.5` for all three on the second (a visual check claimed the dot sat
+  low; the numbers say otherwise).
+- `.pill`, `.pill-dot` and `.meta` are deleted; `.state`, `.state-dot`, `.state-text`
+  replace them.
+
+Audits: `pageScrollY 0`, `offScale []`, 4 font sizes, 0 low contrast, no overflow at
+360, 390, 430 and 1440. `npm test` 19/19.
