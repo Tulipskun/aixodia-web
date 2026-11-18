@@ -323,6 +323,15 @@ button:disabled { cursor: not-allowed; }
   padding-right: var(--s3);
 }
 
+/* Label on the left, the ring that says "how full" on the right. */
+.metric-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s1);
+  min-width: 0;
+}
+
 .metric + .metric { padding-left: var(--s3); }
 
 .metric + .metric::before {
@@ -348,6 +357,29 @@ button:disabled { cursor: not-allowed; }
 }
 
 .metric-label svg { flex: 0 0 auto; opacity: 0.9; }
+
+.ring { flex: 0 0 auto; }
+.ring-track,
+.ring-arc {
+  fill: none;
+  stroke-width: 2.5;
+}
+
+.ring-track { stroke: rgba(145, 142, 255, 0.18); }
+.ring-arc { stroke: var(--accent); stroke-linecap: round; }
+.ring.is-cool .ring-arc { stroke: var(--info); }
+.ring.is-warm .ring-arc { stroke: var(--warn); }
+
+/* Where there is no percentage to draw, the second reading takes the corner. */
+.metric-out {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s1);
+  font-family: var(--mono);
+  font-size: var(--fs-meta);
+  color: var(--warn);
+  white-space: nowrap;
+}
 
 .metric-value {
   font-family: var(--mono);

@@ -193,3 +193,20 @@ deployed page is the test.
 
 Audits: no overflow, `pageScrollY 0`, `offScale []`, 5 font sizes at 360×780,
 390×844, 430×932 and 1440×900. `npm test` 19/19.
+
+## Round 13 — unit back on the value, a ring for the percentage
+
+The unit row on top (`CPU %`, `RAM GB`, `I/O MB/S`) read as clutter, so:
+
+- Labels are just `CPU`, `RAM`, `I/O` again, and each value carries its own unit at
+  small size: `52%`, `100.2 GB`, `155.6 MB/s`.
+- Each metric head now ends with an 18px **ring** that shows how full the metric
+  is: CPU 52% of 100, RAM 78% of 128 GB. The ring is `--accent` / `--info` per
+  metric, drawn as a 2.5px arc on a 18% track, with an `aria-label` percentage.
+- Capacity is no longer printed as `/128`; the ring carries that relationship and
+  the chart's aria text still states "of 128 GB".
+- I/O has no percentage, so the corner of its head carries the write reading
+  (`↑ 101.4` in amber) instead of a ring.
+
+Audits: `pageScrollY 0`, `offScale []`, 5 font sizes, no low contrast, no overflow
+at 360×780, 390×844, 430×932 and 1440×900. `npm test` 19/19.

@@ -136,11 +136,39 @@ function amount(metric: Metric): string {
   return last(metric.series, metric)
 }
 
-/** What sits after the number: a capacity, a second reading, or nothing. */
-function qualifier(metric: Metric): string | null {
-  if (metric.total) return `/${metric.total}`
-  if (metric.write) return `/${last(metric.write, metric)}`
+/** How full the metric is, when that question has an answer. */
+function percent(metric: Metric): number | null {
+  if (!metric.series.length) return null
+  const value = Number(amount(metric))
+  if (metric.total) return Math.min(100, (value / Number(metric.total)) * 100)
+  if (metric.unit === '%') return Math.min(100, value)
   return null
+}
+
+/** A 20px ring: how much of the metric's headroom is in use. */
+function Ring({ percent: value, tone }: { percent: number; tone: Metric['tone'] }) {
+  const radius = 8
+  const circumference = 2 * Math.PI * radius
+  return (
+    <svg
+      className={`ring is-${tone}`}
+      width="18"
+      height="18"
+      viewBox="0 0 20 20"
+      role="img"
+      aria-label={`${Math.round(value)} percent`}
+    >
+      <circle className="ring-track" cx="10" cy="10" r={radius} />
+      <circle
+        className="ring-arc"
+        cx="10"
+        cy="10"
+        r={radius}
+        strokeDasharray={`${(value / 100) * circumference} ${circumference}`}
+        transform="rotate(-90 10 10)"
+      />
+    </svg>
+  )
 }
 
 /** The down-up glyph, split into two paths so each direction can carry its colour. */
@@ -290,20 +318,29 @@ function Card({ machine }: { machine: Machine }) {
       <div className="metrics">
         {machine.metrics.map((metric) => (
           <div key={metric.label} className="metric">
-            <span className="metric-label">
-              {metric.write ? (
-                <IoArrows />
+            <span className="metric-head">
+              <span className="metric-label">
+                {metric.write ? (
+                  <IoArrows />
+                ) : (
+                  <metric.icon size={13} className={`is-${metric.tone}`} />
+                )}
+                {metric.label}
+              </span>
+              {percent(metric) !== null ? (
+                <Ring percent={percent(metric) as number} tone={metric.tone} />
               ) : (
-                <metric.icon size={13} className={`is-${metric.tone}`} />
+                metric.write && (
+                  <span className="metric-out">
+                    <ArrowUp size={10} />
+                    {last(metric.write, metric)}
+                  </span>
+                )
               )}
-              {metric.label}
-              <span className="metric-unit">{metric.unit.trim()}</span>
             </span>
             <strong className="metric-value">
               {amount(metric)}
-              {metric.series.length > 0 && qualifier(metric) && (
-                <span className="metric-unit">{qualifier(metric)}</span>
-              )}
+              {metric.series.length > 0 && <span className="metric-unit">{metric.unit}</span>}
             </strong>
             <Sparkline
               series={metric.series}
