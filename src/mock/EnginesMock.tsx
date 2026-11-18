@@ -4,10 +4,24 @@
 //! wired to the registry. Everything below is a literal.
 
 import { useId } from 'react'
-import { Boxes, Ellipsis, Home, Menu, MonitorSmartphone, Sparkles, SquareTerminal } from 'lucide-react'
+import type { LucideIcon } from 'lucide-react'
+import {
+  ArrowDownUp,
+  Boxes,
+  Cpu,
+  Ellipsis,
+  HardDrive,
+  Home,
+  MemoryStick,
+  Menu,
+  MonitorSmartphone,
+  Sparkles,
+  SquareTerminal,
+} from 'lucide-react'
 
 interface Metric {
   label: string
+  icon: LucideIcon
   value: string
   /** Oldest to newest; the chart is scaled to its own range. */
   series: number[]
@@ -24,7 +38,6 @@ interface Machine {
   id: string
   name: string
   online: boolean
-  version: string
   meta: string
   /** Why the controls are unavailable, when they are. */
   reason?: string
@@ -37,23 +50,25 @@ const MACHINES: Machine[] = [
     id: 'alpha',
     name: 'Alpha',
     online: true,
-    version: 'v1.177',
     meta: 'Debian 13 · up 12h 40m',
     metrics: [
       {
         label: 'CPU',
+        icon: Cpu,
         value: '50%',
         tone: 'accent',
         series: [20, 32, 26, 44, 39, 57, 47, 52],
       },
       {
         label: 'RAM',
+        icon: MemoryStick,
         value: '5 / 8 GB',
         tone: 'cool',
         series: [41, 45, 48, 52, 55, 58, 60, 62],
       },
       {
         label: 'I/O',
+        icon: ArrowDownUp,
         value: '12.4 MB/s',
         tone: 'warm',
         series: [7, 12, 5, 19, 24, 10, 7, 15],
@@ -65,13 +80,12 @@ const MACHINES: Machine[] = [
     id: 'beta',
     name: 'Beta',
     online: false,
-    version: 'v1.170',
     meta: 'Last seen 4h ago',
     reason: 'Offline since 4h ago',
     metrics: [
-      { label: 'CPU', value: '—', tone: 'accent', series: [] },
-      { label: 'RAM', value: '—', tone: 'cool', series: [] },
-      { label: 'I/O', value: '—', tone: 'warm', series: [] },
+      { label: 'CPU', icon: Cpu, value: '—', tone: 'accent', series: [] },
+      { label: 'RAM', icon: MemoryStick, value: '—', tone: 'cool', series: [] },
+      { label: 'I/O', icon: ArrowDownUp, value: '—', tone: 'warm', series: [] },
     ],
     storage: { used: '—', total: '', percent: 0 },
   },
@@ -158,10 +172,7 @@ function Card({ machine }: { machine: Machine }) {
     <article className={`card${offline ? ' is-offline' : ''}`} aria-label={machine.name}>
       <header className="card-head">
         <div className="card-identity">
-          <h2>
-            {machine.name}
-            <span className="version">{machine.version}</span>
-          </h2>
+          <h2>{machine.name}</h2>
           <p className="meta">{machine.meta}</p>
         </div>
         <div className="card-aside">
@@ -174,7 +185,10 @@ function Card({ machine }: { machine: Machine }) {
             role="img"
             aria-label={`Storage ${machine.storage.used} of ${machine.storage.total}, ${machine.storage.percent} percent`}
           >
-            <span className="disk-label">disk</span>
+            <span className="disk-label">
+              <HardDrive size={13} />
+              disk
+            </span>
             <span className="disk-value">
               {machine.storage.used}
               {machine.storage.total ? ` / ${machine.storage.total}` : ''}
@@ -189,7 +203,10 @@ function Card({ machine }: { machine: Machine }) {
       <div className="metrics">
         {machine.metrics.map((metric) => (
           <div key={metric.label} className="metric">
-            <span className="metric-label">{metric.label}</span>
+            <span className="metric-label">
+              <metric.icon size={13} />
+              {metric.label}
+            </span>
             <strong className="metric-value">{metric.value}</strong>
             <Sparkline
               series={metric.series}

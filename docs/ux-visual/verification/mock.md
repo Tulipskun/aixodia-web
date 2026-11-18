@@ -45,3 +45,13 @@ jagged decoration.
 Audits after round 2: `pageScrollY 0`, `offScale []`, 5 font sizes, no low
 contrast, no wrapped controls, no overlapping at 390×844 / 430×932 / 1440×900.
 `npm test` 19/19, build clean.
+
+## Round 3 — icons on the labels, version chip removed
+
+- CPU (`Cpu`), RAM (`MemoryStick`), I/O (`ArrowDownUp`) and the disk meter
+  (`HardDrive`) each carry a 13px icon inline before the label, aligned on the
+  label's baseline row.
+- The `v1.177` chip is gone, and so is the `version` field on `Machine` — no dead
+  data left behind.
+- Audits still clean at 390×844 and 1440×900: `pageScrollY 0`, `offScale []`, 5
+  font sizes, no low contrast, no small targets.
