@@ -165,7 +165,9 @@ button:disabled { cursor: not-allowed; }
     linear-gradient(160deg, rgba(119, 114, 255, 0.1), transparent 46%),
     var(--surface);
   box-shadow: 0 18px 44px rgba(0, 0, 0, 0.45);
-  padding: var(--s4);
+  /* Sides are one step tighter than the top: the metric columns already end short
+     of the edge, so an equal 16 on every side read as a deep gutter. */
+  padding: var(--s4) var(--s3);
 }
 
 .card.is-offline {

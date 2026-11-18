@@ -378,3 +378,15 @@ and the tab icon (`<link rel="icon">` in `mock.html`). Vite copies `public/` to
 `dist/brand/`, checked.
 
 Audits clean at 360, 390 and 1440; `npm test` 19/19.
+
+## Round 25 — tighter card sides, and proof the two cards match
+
+- Card padding is `16px 12px` rather than 16 all round: the metric columns already
+  stop short of the edge, so an equal 16 on the sides read as a deep gutter next to
+  a shallow top.
+- The cards were already the same size; measured at 390, 360 and 430 the pairs are
+  `205×358`, `205×328`, `205×398` — header 30, metrics 65, actions 64 on both. The
+  offline card only looks lighter because its fill is `rgba(8,8,58,.55)` with no
+  shadow, which is the intent, not a size difference.
+
+Audits clean at 360, 390, 430 and 1440; `npm test` 19/19.
