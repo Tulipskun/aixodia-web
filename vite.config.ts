@@ -28,5 +28,13 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     sourcemap: false,
+    // `mock.html` is a second entry: the engines screen mocked up on its own, so
+    // it can be looked at without signing in or touching the console.
+    rollupOptions: {
+      input: {
+        main: 'index.html',
+        mock: 'mock.html',
+      },
+    },
   },
 })
