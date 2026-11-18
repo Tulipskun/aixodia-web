@@ -128,6 +128,38 @@ function reading(metric: Metric): { value: string; unit: string } {
     : { value: `${used}%`, unit: '' }
 }
 
+/** The AIxodia mark: a lit core inside two rings, with agents running the lanes
+ *  around it. Colours come from the palette, so it sits in the theme rather than on
+ *  top of it. */
+function BrandMark() {
+  return (
+    <svg className="brand-mark" viewBox="0 0 512 512" aria-hidden="true">
+      <defs>
+        <linearGradient id="brand-mark-core" x1="50%" y1="0%" x2="50%" y2="100%">
+          <stop offset="0%" stopColor="var(--info)" />
+          <stop offset="100%" stopColor="var(--accent)" />
+        </linearGradient>
+      </defs>
+      <circle className="mark-disc" cx="256" cy="256" r="210" />
+      <circle className="mark-inner" cx="256" cy="256" r="104" />
+      <path
+        className="mark-core"
+        d="M 247.47 215.38 Q 256.00 198.00 264.53 215.38 L 273.44 233.53 Q 275.09 236.91 278.47 238.56 L 296.62 247.47 Q 314.00 256.00 296.62 264.53 L 278.47 273.44 Q 275.09 275.09 273.44 278.47 L 264.53 296.62 Q 256.00 314.00 247.47 296.62 L 238.56 278.47 Q 236.91 275.09 233.53 273.44 L 215.38 264.53 Q 198.00 256.00 215.38 247.47 L 233.53 238.56 Q 236.91 236.91 238.56 233.53 Z"
+      />
+      <g className="mark-agents">
+        <path
+          className="is-lead"
+          d="M 251.40 76.68 Q 256.00 68.00 260.60 76.68 L 277.50 108.60 Q 283.00 119.00 271.90 115.10 L 257.06 109.87 Q 256.00 109.50 254.94 109.87 L 240.10 115.10 Q 229.00 119.00 234.50 108.60 Z"
+        />
+        <path d="M 425.12 196.22 Q 434.80 197.90 427.96 204.96 L 402.82 230.90 Q 394.64 239.34 394.92 227.58 L 395.30 211.85 Q 395.33 210.73 394.65 209.83 L 385.09 197.33 Q 377.95 187.99 389.54 190.01 Z" />
+        <path d="M 365.12 398.37 Q 366.50 408.10 357.68 403.77 L 325.25 387.88 Q 314.68 382.71 325.95 379.34 L 341.03 374.84 Q 342.11 374.52 342.75 373.59 L 351.69 360.65 Q 358.37 350.97 360.03 362.61 Z" />
+        <path d="M 154.32 403.77 Q 145.50 408.10 146.88 398.37 L 151.97 362.61 Q 153.63 350.97 160.31 360.65 L 169.25 373.59 Q 169.89 374.52 170.97 374.84 L 186.05 379.34 Q 197.32 382.71 186.75 387.88 Z" />
+        <path d="M 84.04 204.96 Q 77.20 197.90 86.88 196.22 L 122.46 190.01 Q 134.05 187.99 126.91 197.33 L 117.35 209.83 Q 116.67 210.73 116.70 211.85 L 117.08 227.58 Q 117.36 239.34 109.18 230.90 Z" />
+      </g>
+    </svg>
+  )
+}
+
 function Card({ machine }: { machine: Machine }) {
   const offline = !machine.online
   return (
@@ -186,8 +218,8 @@ export function EnginesMock() {
           <Menu size={18} />
         </button>
         <div className="brand">
+          <BrandMark />
           <span className="brand-name">AIxodia</span>
-          <span className="brand-dot" aria-hidden="true" />
         </div>
         <button type="button" className="avatar" aria-label="Account">
           P

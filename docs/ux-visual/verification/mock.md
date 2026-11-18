@@ -350,3 +350,21 @@ Audits: `pageScrollY 0`, `offScale []`, 4 font sizes, 0 low contrast, no overflo
 
 Known and accepted: with two cards the screen is top-heavy on a tall phone; that is
 a property of the mock's two machines, not of the layout.
+
+## Round 23 — the brand mark, drawn in the palette
+
+The green dot after "AIxodia" is gone. In front of the name is the emblem from the
+supplied SVG — disc, two rings, four-point core, five agent lanes — redrawn inline
+as `BrandMark` so it can take theme colours instead of its own:
+
+- disc: `--surface-2` with a `--accent` stroke at 55%
+- inner ring: `--info` at 50%
+- core: gradient `--info` → `--accent`
+- agents: `--info` at 90%, the lead lane `--text`
+
+Size went 22 → 24 → **28px** because the lane arrows were invisible at 22 (checked
+with a zoomed screenshot, not by eye at 100%). The gradient id is static — one
+mark per screen, so `useId` would be noise.
+
+Audits: `pageScrollY 0`, `offScale []`, 4 font sizes, 0 low contrast, no overflow at
+360, 390, 430 and 1440. `npm test` 19/19.

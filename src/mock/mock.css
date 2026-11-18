@@ -135,13 +135,37 @@ button:disabled { cursor: not-allowed; }
   letter-spacing: 0.01em;
 }
 
-.brand-dot {
-  width: var(--s2);
-  height: var(--s2);
-  border-radius: 50%;
-  background: var(--success);
-  box-shadow: 0 0 10px var(--success);
+/* The mark is drawn in the palette, not in its own colours: the disc is the card
+   surface, the rings are the border and accent, the core runs info to accent. */
+.brand-mark {
+  width: 28px;
+  height: 28px;
+  flex: 0 0 auto;
+  display: block;
 }
+
+.mark-disc {
+  fill: var(--surface-2);
+  stroke: var(--accent);
+  stroke-opacity: 0.55;
+  stroke-width: 14;
+}
+
+.mark-inner {
+  fill: none;
+  stroke: var(--info);
+  stroke-opacity: 0.5;
+  stroke-width: 16;
+}
+
+.mark-core { fill: url(#brand-mark-core); }
+
+.mark-agents path {
+  fill: var(--info);
+  fill-opacity: 0.9;
+}
+
+.mark-agents .is-lead { fill: var(--text); }
 
 /* --------------------------------------------------------------- screen */
 
