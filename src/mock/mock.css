@@ -93,6 +93,117 @@ button:disabled { cursor: not-allowed; }
   flex-direction: column;
 }
 
+/* ----------------------------------------------------------------- drawer */
+
+/* A left panel over a scrim: the top bar stays put, the screen dims behind, and
+   the whole thing is out of the flow so the layout never shifts when it opens. */
+.scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 3;
+  background: rgba(0, 0, 0, 0.6);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+
+.scrim.is-open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.drawer {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 4;
+  width: 268px;
+  max-width: 82vw;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s4);
+  padding: var(--s4) var(--s3);
+  border-right: 1px solid var(--hairline);
+  background: linear-gradient(180deg, rgba(10, 8, 48, 0.98), rgba(4, 2, 38, 0.98));
+  transform: translateX(-100%);
+  transition: transform 0.22s ease;
+}
+
+.drawer.is-open { transform: none; }
+
+.drawer-head {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  min-width: 0;
+}
+
+.drawer-brand {
+  flex: 1 1 auto;
+  font-family: var(--brand);
+  font-weight: 700;
+  font-size: var(--fs-body);
+  letter-spacing: 0.01em;
+}
+
+.drawer-close {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border-radius: var(--s2);
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--muted);
+  transition: border-color 0.15s ease, color 0.15s ease, transform 0.12s ease;
+}
+
+.drawer-close:hover { border-color: var(--border-strong); color: var(--text); }
+.drawer-close:active { transform: scale(0.92); }
+
+.drawer-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s1);
+}
+
+.drawer-item {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  padding: var(--s2) var(--s3);
+  border: 1px solid transparent;
+  border-radius: var(--s2);
+  background: transparent;
+  color: var(--muted);
+  font-size: var(--fs-body);
+  text-align: left;
+  transition: background 0.15s ease, color 0.15s ease, transform 0.12s ease;
+}
+
+.drawer-item:hover { background: var(--surface-2); color: var(--text); }
+.drawer-item:active { transform: scale(0.98); }
+
+.drawer-item.is-current {
+  background: rgba(119, 114, 255, 0.14);
+  border-color: var(--border);
+  color: var(--text);
+}
+
+.drawer-item.is-current svg { color: var(--accent); }
+
+.drawer-item svg { flex: 0 0 auto; opacity: 0.9; }
+
+.drawer-foot {
+  margin: auto 0 0;
+  padding: 0 var(--s3);
+  font-family: var(--mono);
+  font-size: var(--fs-meta);
+  color: var(--dim);
+}
+
 /* --------------------------------------------------------------- topbar */
 
 /* The bar is its own layer: full-bleed, translucent over the page glow, with a
@@ -276,6 +387,8 @@ button:disabled { cursor: not-allowed; }
 
 .metrics {
   display: grid;
+  /* Equal thirds: a reading that is wider than its panel is worse than one a
+     little smaller, so the value below scales with the viewport instead. */
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: var(--s2);
   /* Panels carry their own frames, so a rule above them only adds a third line to
@@ -356,7 +469,8 @@ button:disabled { cursor: not-allowed; }
 
 .metric-value {
   font-family: var(--mono);
-  font-size: var(--fs-body);
+  /* Fits "100.2/128 GB" in a third of a 360px card without clipping. */
+  font-size: clamp(11px, 3.2vw, var(--fs-body));
   font-weight: 600;
   color: var(--text);
   white-space: nowrap;
@@ -432,8 +546,16 @@ button:disabled { cursor: not-allowed; }
   color: var(--muted);
 }
 
+/* Below 355 there is not enough width for three panels at full size, so the
+   panels give up their side padding rather than clipping the readings. */
+@media (max-width: 355px) {
+  .metric { padding: var(--s2) var(--s1); }
+  .metric-value { font-size: 10px; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .action, .icon-button, .avatar { transition: none; }
+  .drawer, .scrim, .drawer-item, .drawer-close { transition: none; }
   .action:active:not(:disabled),
   .icon-button:active,
   .avatar:active { transform: none; }

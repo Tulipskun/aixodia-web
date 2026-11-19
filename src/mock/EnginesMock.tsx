@@ -1,18 +1,24 @@
-//! A static mock of the machines screen: no fetching, no state, no calls.
+//! A static mock of the machines screen: no fetching, no calls. The only state is
+//! whether the drawer is open.
 //!
 //! It exists so the shape of the screen can be argued about before any of it is
 //! wired to the registry. Everything below is a literal.
 
+import { useState } from 'react'
 import type { LucideIcon } from 'lucide-react'
 import {
+  Boxes,
   Cpu,
-  HardDrive,
-  MemoryStick,
   Ellipsis,
+  HardDrive,
+  History,
+  MemoryStick,
   Menu,
   MonitorSmartphone,
+  Settings,
   Sparkles,
   SquareTerminal,
+  X,
 } from 'lucide-react'
 
 interface Metric {
@@ -63,7 +69,7 @@ const MACHINES: Machine[] = [
         icon: MemoryStick,
         tone: 'cool',
         unit: 'GB',
-        digits: 0,
+        digits: 1,
         total: '128',
         series: sampleSeries(19, 100.4, 1.6),
       },
@@ -72,10 +78,9 @@ const MACHINES: Machine[] = [
         icon: HardDrive,
         tone: 'warm',
         unit: 'GB',
-        digits: 0,
+        digits: 1,
         total: '256',
-        // Slow to move and slow to fill: a short window still draws.
-        series: sampleSeries(3, 164, 0.6).slice(0, 17),
+        series: Array.from({ length: WINDOW_SAMPLES }, () => 164.2),
       },
     ],
   },
@@ -88,9 +93,16 @@ const MACHINES: Machine[] = [
     metrics: [
       { label: 'CPU', icon: Cpu, tone: 'accent', unit: '%', digits: 0, series: [] },
       { label: 'RAM', icon: MemoryStick, tone: 'cool', unit: 'GB', digits: 1, total: '128', series: [] },
-      { label: 'DISK', icon: HardDrive, tone: 'warm', unit: 'GB', digits: 0, total: '256', series: [] },
+      { label: 'DISK', icon: HardDrive, tone: 'warm', unit: 'GB', digits: 1, total: '256', series: [] },
     ],
   },
+]
+
+const DRAWER: { id: string; label: string; icon: LucideIcon; current?: boolean }[] = [
+  { id: 'engines', label: 'Engines', icon: Boxes, current: true },
+  { id: 'sessions', label: 'Sessions', icon: History },
+  { id: 'ai', label: 'AI', icon: Sparkles },
+  { id: 'settings', label: 'Settings', icon: Settings },
 ]
 
 const ACTIONS = [
@@ -172,7 +184,7 @@ function amount(metric: Metric): string {
 /** What the reading says: a share out of 100, or used over whole. */
 function reading(metric: Metric): { value: string; unit: string } {
   if (!metric.series.length) return { value: '—', unit: '' }
-  const used = String(Math.round(Number(amount(metric))))
+  const used = Number(amount(metric)).toFixed(metric.digits)
   return metric.total
     ? { value: `${used}/${metric.total}`, unit: metric.unit }
     : { value: `${used}%`, unit: '' }
@@ -233,11 +245,55 @@ function Card({ machine }: { machine: Machine }) {
   )
 }
 
+function Drawer({ open, onClose }: { open: boolean; onClose: () => void }) {
+  return (
+    <>
+      <div
+        className={`scrim${open ? ' is-open' : ''}`}
+        onClick={onClose}
+        aria-hidden="true"
+      />
+      <aside className={`drawer${open ? ' is-open' : ''}`} aria-label="Menu" aria-hidden={!open}>
+        <div className="drawer-head">
+          <img className="brand-mark" src="/brand/aixodia-mark.svg" alt="" width={24} height={24} />
+          <span className="drawer-brand">AIxodia</span>
+          <button type="button" className="drawer-close" onClick={onClose} aria-label="Close menu">
+            <X size={16} />
+          </button>
+        </div>
+
+        <nav className="drawer-list">
+          {DRAWER.map(({ id, label, icon: Icon, current }) => (
+            <button
+              key={id}
+              type="button"
+              className={`drawer-item${current ? ' is-current' : ''}`}
+              aria-current={current ? 'page' : undefined}
+            >
+              <Icon size={16} />
+              <span>{label}</span>
+            </button>
+          ))}
+        </nav>
+
+        <p className="drawer-foot">P · owner</p>
+      </aside>
+    </>
+  )
+}
+
 export function EnginesMock() {
+  const [menuOpen, setMenuOpen] = useState(false)
   return (
     <div className="shell">
       <header className="topbar">
-        <button type="button" className="icon-button" aria-label="Menu">
+        <button
+          type="button"
+          className="icon-button"
+          aria-label="Menu"
+          aria-expanded={menuOpen}
+          onClick={() => setMenuOpen(true)}
+        >
           <Menu size={18} />
         </button>
         <div className="brand">
@@ -248,6 +304,8 @@ export function EnginesMock() {
           P
         </button>
       </header>
+
+      <Drawer open={menuOpen} onClose={() => setMenuOpen(false)} />
 
       <main className="screen">
         {MACHINES.map((machine) => (

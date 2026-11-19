@@ -560,3 +560,26 @@ Vision read the crop as 25/18/12 instead of 16/12/8 — the crop was resized 1.5
 and every figure it gave is exactly 1.5× the measured one. The numbers stand.
 
 Audits clean at 360/390/430/1440; `npm test` 19/19.
+
+## Round 28 — a drawer, and one decimal where there is a capacity
+
+**Drawer.** The menu button now opens a left panel (`268px`, `max-width: 82vw`),
+out of the flow so the layout never shifts, over a `rgba(0,0,0,.6)` scrim. It
+carries the mark and *AIxodia*, a close button, four items (Engines current,
+Sessions, AI, Settings) and an owner line at the bottom. Opens with
+`translateX(-100%) → 0` over 220ms; closes from the close button or the scrim.
+Measured at 390: `x 0, w 268, h 844, scrim 1`, close `28×28`; closed:
+`x -268`, `open false`, `pageScrollY 0`, `pageOverflowX 0`.
+
+**One decimal.** RAM and DISK readings now carry one place: `100.2/128 GB`,
+`164.2/256 GB`; CPU stays whole (`52%`). Totals stay whole, being capacities.
+
+That made the third-column reading 86px wide, which overflowed a third of a 360
+card by 9px. Fixed by treating the panels as equal thirds and letting the value
+scale: `font-size: clamp(11px, 3.2vw, var(--fs-body))`, plus, below 355px, the
+panels give up their side padding (`padding: 8px 4px`, value `10px`). A fixed
+narrow CPU column was tried first and rejected — it made the first panel visibly
+smaller than the other two.
+
+Audits clean at 320, 360, 390, 430 and 1440: no spills, no wrapped controls,
+`pageScrollY 0`.
