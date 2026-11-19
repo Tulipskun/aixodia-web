@@ -25,7 +25,6 @@ import {
 interface Metric {
   label: string
   icon: LucideIcon
-  tone: 'accent' | 'cool' | 'warm'
   /** Suffix after the reading, e.g. "%" or " MB/s". */
   unit: string
   digits: number
@@ -60,7 +59,6 @@ const MACHINES: Machine[] = [
       {
         label: 'CPU',
         icon: Cpu,
-        tone: 'accent',
         unit: '%',
         digits: 0,
         series: sampleSeries(7, 46, 26),
@@ -68,7 +66,6 @@ const MACHINES: Machine[] = [
       {
         label: 'RAM',
         icon: MemoryStick,
-        tone: 'cool',
         unit: 'GB',
         digits: 1,
         total: '128',
@@ -77,7 +74,6 @@ const MACHINES: Machine[] = [
       {
         label: 'DISK',
         icon: HardDrive,
-        tone: 'warm',
         unit: 'GB',
         digits: 1,
         total: '256',
@@ -90,11 +86,10 @@ const MACHINES: Machine[] = [
     name: 'Beta',
     online: false,
     meta: 'last seen 4h ago',
-    reason: 'Offline since 4h ago',
     metrics: [
-      { label: 'CPU', icon: Cpu, tone: 'accent', unit: '%', digits: 0, series: [] },
-      { label: 'RAM', icon: MemoryStick, tone: 'cool', unit: 'GB', digits: 1, total: '128', series: [] },
-      { label: 'DISK', icon: HardDrive, tone: 'warm', unit: 'GB', digits: 1, total: '256', series: [] },
+      { label: 'CPU', icon: Cpu, unit: '%', digits: 0, series: [] },
+      { label: 'RAM', icon: MemoryStick, unit: 'GB', digits: 1, total: '128', series: [] },
+      { label: 'DISK', icon: HardDrive, unit: 'GB', digits: 1, total: '256', series: [] },
     ],
   },
 ]
@@ -152,7 +147,7 @@ function sampleSeries(seed: number, base: number, swing: number): number[] {
  *
  *  Partial data is the normal case, not an error: a short window draws a short
  *  window, one sample draws a level, none draws nothing. */
-function Spark({ values, ceiling, tone }: { values: number[]; ceiling: number; tone: string }) {
+function Spark({ values, ceiling }: { values: number[]; ceiling: number }) {
   if (!values.length) return null
   /* The box is the whole cell, so the margins the chart keeps are part of its
      geometry rather than CSS offsets: an absolutely positioned SVG with a viewBox
@@ -180,7 +175,7 @@ function Spark({ values, ceiling, tone }: { values: number[]; ceiling: number; t
 
   return (
     <svg
-      className={`metric-spark is-${tone}`}
+      className="metric-spark"
       viewBox="0 0 100 100"
       preserveAspectRatio="none"
       aria-hidden="true"
@@ -233,10 +228,9 @@ function Card({ machine }: { machine: Machine }) {
             <Spark
               values={metric.series}
               ceiling={metric.total ? Number(metric.total) : 100}
-              tone={metric.tone}
             />
             <span className="metric-label">
-              <metric.icon size={13} className={`is-${metric.tone}`} />
+              <metric.icon size={13} aria-hidden="true" />
               {metric.label}
             </span>
             <strong className="metric-value">
@@ -254,7 +248,6 @@ function Card({ machine }: { machine: Machine }) {
             type="button"
             className="action"
             disabled={offline}
-            title={offline ? machine.reason : label}
           >
             <Icon size={15} />
             <span>{label}</span>
@@ -466,6 +459,13 @@ export function EnginesMock() {
       <Drawer open={menuOpen} onClose={() => setMenuOpen(false)} drag={drag} panelRef={panelRef} />
 
       <main className="screen">
+        <div className="screen-head">
+          <h1>Engines</h1>
+          <span className="screen-count">
+            {MACHINES.length} {MACHINES.length === 1 ? 'engine' : 'engines'}
+          </span>
+        </div>
+
         {MACHINES.map((machine) => (
           <Card key={machine.id} machine={machine} />
         ))}

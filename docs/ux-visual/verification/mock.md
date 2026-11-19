@@ -718,3 +718,48 @@ PC (mouse) and Android (touch) can open the menu by swiping, no library:
 
 Audits at 320, 360, 390, 430 and 1440 stay clean (0 low contrast, `pageScrollY 0`);
 `npm test` 19/19.
+
+## Round 37 — take the AI out of it (impeccable.style pass)
+
+The structure was fine, but the surface read as a generated dashboard. Ran
+`npx impeccable detect` against the built page (not the source: the file scan skips
+element-level rules) and worked from its findings and rule catalogue.
+
+Findings, and what changed:
+
+- `[dark-glow]` — the brand name had a zero-offset lavender `text-shadow`. Removed;
+  the letters now sit on a hard dark edge and a short black falloff only. The mark's
+  lavender drop-shadow went the same way.
+- `[undersized-ui-text]` — 10px functional text (metric labels, units). The 10px
+  step is gone; `--fs-meta` was merged into `--fs-label` (11px), so the scale is
+  four sizes and nothing functional sits below 11px. The unused `--fs-value` went
+  too.
+- **AI colour palette / neon on dark** — navy surfaces with a purple→cyan pair is
+  the default AI look. Palette rebuilt on neutral greys (`#060607 … #1d1d21`), one
+  data accent (`#7fa6d3`), semantic green/red for live/down and nothing else.
+- **Ambient glow** — the two radial halos behind the page are gone; the page is a
+  flat `--bg`.
+- **Glassmorphism** — the top bar's translucent gradient and `backdrop-filter` are
+  gone; it is an opaque surface with a bottom hairline.
+- **Ghost card** — cards had a hairline *and* a wide shadow. Now an edge only, no
+  shadow; `--face`/`--face-lit`/`--lift-1`/`--lift-2` were deleted with it.
+- **Neumorphic controls** — buttons and the menu button lost their inset top-light
+  and inner shading; they are flat `--surface-2` faces and a hairline. Press is
+  still motion (`scale`) plus one neutral step, no accent wash.
+- **Rainbow metrics** — CPU/RAM/DISK each had its own hue. One accent now, so the
+  columns are told apart by position and label; `tone` was deleted from the data.
+- **Status halo** — the green glow around the live dot is gone; the dot is colour.
+
+Two additions the critique asked for, both earned:
+
+- A screen heading (`Engines` + `2 engines`) flush with the card edges — the screen
+  now says what it is before it lists anything.
+- `≥900px` lays the list out as two columns in a 1040px shell instead of a 460px
+  phone stranded mid-page. Measured: heading left `212`, cards `212`/`726`, both
+  cards `226` high; at 390 heading `12`, cards `12–378`.
+- Offline action rows are now visibly disabled (`opacity .5`), not just paler.
+
+Verified: `impeccable detect` returns **no findings** at 390x844 and 1440x900.
+Audits at 320/360/390/430/1440: 0 low contrast, no wrapped controls, no uneven
+rows, `pageScrollY 0`. Known and left alone: with two engines the area below the
+list is empty on a desktop screen; filling it would mean inventing content.

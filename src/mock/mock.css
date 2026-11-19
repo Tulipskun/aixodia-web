@@ -6,28 +6,25 @@
    of one-off numbers. */
 
 :root {
-  --bg: #000000;
-  --surface: #040226;
-  --surface-2: #08083a;
-  --surface-3: #11114d;
-  --border: rgba(145, 142, 255, 0.13);
-  --border-strong: rgba(145, 142, 255, 0.24);
-  --hairline: rgba(145, 142, 255, 0.1);
-  --text: #f4f3ff;
-  --muted: #aaa8d0;
-  --dim: #77749f;
-  --accent: #7772ff;
-  --success: #45d6b0;
-  --warn: #f6c66b;
-  --danger: #ff5c6c;
-  --info: #69c8ff;
+  --bg: #060607;
+  --surface: #0d0d0f;
+  --surface-2: #141417;
+  --surface-3: #1d1d21;
+  --border: rgba(255, 255, 255, 0.09);
+  --border-strong: rgba(255, 255, 255, 0.17);
+  --hairline: rgba(255, 255, 255, 0.07);
+  --text: #f2f2f3;
+  --muted: #a3a3ab;
+  --dim: #6f6f78;
+  --accent: #7fa6d3;
+  --success: #4fbf8b;
+  --danger: #e0636e;
 
-  /* Type: five sizes, no more. */
+  /* Type: five sizes, no more. Nothing functional goes below 11px. */
   --fs-display: 20px;
-  --fs-value: 15px;
+  --fs-title: 16px;
   --fs-body: 13px;
   --fs-label: 11px;
-  --fs-meta: 10px;
 
   /* Space: 4 / 8 / 12 / 16 / 24. */
   --s1: 4px;
@@ -38,21 +35,10 @@
 
   /* Depth: one language for every raised surface — a lit top edge, a shaded
      underside, and two shadows (one tight, one broad). */
-  --face: linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(0, 0, 0, 0.3));
-  --face-lit: linear-gradient(180deg, rgba(255, 255, 255, 0.12), rgba(0, 0, 0, 0.42));
-  --lift-1:
-    inset 0 1px 0 rgba(255, 255, 255, 0.07),
-    0 1px 2px rgba(0, 0, 0, 0.5),
-    0 6px 16px rgba(0, 0, 0, 0.38);
-  --lift-2:
-    inset 0 1px 0 rgba(255, 255, 255, 0.09),
-    0 2px 4px rgba(0, 0, 0, 0.55),
-    0 18px 40px rgba(0, 0, 0, 0.5);
-
   --mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
   --sans: 'Inter', 'Noto Sans Thai', system-ui, -apple-system, 'Segoe UI', sans-serif;
   --brand: 'Saira', 'Inter', system-ui, sans-serif;
-  --radius: 16px;
+  --radius: 12px;
 }
 
 * { box-sizing: border-box; }
@@ -61,10 +47,7 @@ html, body { height: 100%; }
 
 body {
   margin: 0;
-  background:
-    radial-gradient(720px 420px at 50% -10%, rgba(119, 114, 255, 0.16), transparent 70%),
-    radial-gradient(760px 420px at 50% 100%, rgba(105, 200, 255, 0.11), transparent 70%),
-    var(--bg);
+  background: var(--bg);
   color: var(--text);
   font-family: var(--sans);
   font-size: var(--fs-body);
@@ -138,7 +121,7 @@ button:disabled { cursor: not-allowed; }
   gap: var(--s4);
   padding: var(--s4) var(--s3);
   border-right: 1px solid var(--hairline);
-  background: linear-gradient(180deg, rgba(10, 8, 48, 0.98), rgba(4, 2, 38, 0.98));
+  background: var(--surface);
   transform: translateX(-100%);
   transition: transform 0.22s ease;
 }
@@ -200,7 +183,7 @@ button:disabled { cursor: not-allowed; }
 .drawer-item:active { transform: scale(0.98); }
 
 .drawer-item.is-current {
-  background: rgba(119, 114, 255, 0.14);
+  background: var(--surface-3);
   border-color: var(--border);
   color: var(--text);
 }
@@ -237,9 +220,7 @@ button:disabled { cursor: not-allowed; }
   gap: var(--s3);
   padding: var(--s3);
   border-bottom: 1px solid var(--hairline);
-  background: linear-gradient(180deg, rgba(10, 8, 48, 0.94), rgba(4, 2, 38, 0.82));
-  backdrop-filter: blur(14px);
-  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.5);
+  background: var(--surface);
 }
 
 .icon-button {
@@ -250,19 +231,10 @@ button:disabled { cursor: not-allowed; }
   padding: 0;
   border-radius: var(--s3);
   border: 1px solid var(--border);
-  /* Depth, not a flat plate: a lit top edge, a shaded bottom edge and a drop
-     shadow under it, so the control sits above the bar instead of in it. */
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.12), rgba(0, 0, 0, 0.42)),
-    var(--surface-3);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.16),
-    inset 0 -6px 10px rgba(0, 0, 0, 0.45),
-    0 2px 4px rgba(0, 0, 0, 0.55),
-    0 10px 20px rgba(0, 0, 0, 0.5);
+  background: var(--surface-2);
   color: var(--muted);
   transition: border-color 0.15s ease, color 0.15s ease, background 0.12s ease,
-    box-shadow 0.15s ease, transform 0.12s ease;
+    transform 0.12s ease;
 }
 
 /* Hover only where there is a real pointer: on touch, :hover sticks after a tap
@@ -273,12 +245,9 @@ button:disabled { cursor: not-allowed; }
 
 .icon-button:active {
   transform: scale(0.94);
-  border-color: rgba(119, 114, 255, 0.5);
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.16), rgba(0, 0, 0, 0.2)),
-    rgba(119, 114, 255, 0.4);
+  border-color: var(--border-strong);
+  background: var(--surface-3);
   color: var(--text);
-  box-shadow: inset 0 0 0 1px rgba(119, 114, 255, 0.28), 0 0 16px rgba(119, 114, 255, 0.25);
 }
 
 .brand {
@@ -293,14 +262,13 @@ button:disabled { cursor: not-allowed; }
   font-weight: 700;
   font-size: var(--fs-display);
   letter-spacing: 0.01em;
-  /* Lit from above with the page glow behind it: a hard dark edge under the
-     letters lifts them off the bar and the accent halo ties them to the mark.
-     Solid colour rather than clipped gradient, so a contrast check can read it. */
+  /* Lit from above: a hard dark edge and a short falloff lift the letters off
+     the bar. No coloured halo — a chromatic glow on a dark surface is decoration
+     that costs legibility and reads as a default, not a decision. */
   color: var(--text);
   text-shadow:
     0 1px 0 rgba(0, 0, 0, 0.7),
-    0 2px 6px rgba(0, 0, 0, 0.55),
-    0 0 18px rgba(119, 114, 255, 0.4);
+    0 2px 6px rgba(0, 0, 0, 0.5);
 }
 
 /* The mark is an SVG asset, so one file serves both the bar and the tab icon. */
@@ -310,10 +278,34 @@ button:disabled { cursor: not-allowed; }
   flex: 0 0 auto;
   display: block;
   filter: drop-shadow(0 1px 0 rgba(0, 0, 0, 0.5))
-    drop-shadow(0 3px 10px rgba(119, 114, 255, 0.45));
+    drop-shadow(0 3px 8px rgba(0, 0, 0, 0.55));
 }
 
 /* --------------------------------------------------------------- screen */
+
+/* The screen says what it is before it lists anything, and how many there are. */
+.screen-head {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s2);
+  /* Flush with the card edges: the heading and the thing it titles share a edge. */
+  padding: 0;
+  margin-bottom: var(--s1);
+}
+
+.screen-head h1 {
+  margin: 0;
+  font-family: var(--brand);
+  font-size: var(--fs-title);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.screen-count {
+  font-family: var(--mono);
+  font-size: var(--fs-label);
+  color: var(--muted);
+}
 
 .screen {
   flex: 1 1 auto;
@@ -331,22 +323,14 @@ button:disabled { cursor: not-allowed; }
 .card {
   border-radius: var(--radius);
   border: 1px solid var(--border);
-  background:
-    linear-gradient(160deg, rgba(119, 114, 255, 0.1), transparent 46%),
-    var(--face),
-    var(--surface);
-  box-shadow: var(--lift-2);
+  background: var(--surface-2);
   padding: var(--s4);
 }
 
 .card.is-offline {
-  /* Same material, less of it: the same base as an online card but without the
-     face gradient, so it sits dimmer and flatter instead of lighter and bluer. */
-  background:
-    linear-gradient(160deg, rgba(119, 114, 255, 0.04), transparent 46%),
-    var(--surface);
+  /* Same material, dimmer edge: what differs is the state, not the lighting. */
   border-color: var(--hairline);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03), 0 2px 6px rgba(0, 0, 0, 0.35);
+  background: var(--surface);
 }
 
 .card-head {
@@ -401,7 +385,6 @@ button:disabled { cursor: not-allowed; }
 
 .state.is-online .state-dot {
   background: var(--success);
-  box-shadow: 0 0 6px rgba(69, 214, 176, 0.9), 0 0 14px rgba(69, 214, 176, 0.45);
 }
 
 /* --------------------------------------------------------------- metrics */
@@ -461,8 +444,6 @@ button:disabled { cursor: not-allowed; }
   color: var(--accent);
 }
 
-.metric-spark.is-cool { color: var(--info); }
-.metric-spark.is-warm { color: var(--warn); }
 
 .spark-area {
   fill: currentColor;
@@ -493,16 +474,14 @@ button:disabled { cursor: not-allowed; }
   align-items: center;
   gap: var(--s1);
   font-family: var(--mono);
-  font-size: var(--fs-meta);
+  font-size: var(--fs-label);
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--muted);
 }
 
 .metric-label svg { flex: 0 0 auto; opacity: 0.9; }
-.metric-label svg.is-accent { color: var(--accent); }
-.metric-label svg.is-cool { color: var(--info); }
-.metric-label svg.is-warm { color: var(--warn); }
+.metric-label svg { color: var(--dim); }
 
 .metric-value {
   font-family: var(--mono);
@@ -516,7 +495,7 @@ button:disabled { cursor: not-allowed; }
 
 .metric-unit {
   margin-left: var(--s1);
-  font-size: var(--fs-meta);
+  font-size: var(--fs-label);
   font-weight: 400;
   color: var(--muted);
 }
@@ -545,24 +524,22 @@ button:disabled { cursor: not-allowed; }
   padding: 0 var(--s1);
   border-radius: var(--s3);
   border: 1px solid var(--border);
-  background: var(--face), var(--surface-2);
-  box-shadow: var(--lift-1);
+  background: var(--surface-2);
   color: var(--muted);
   font-size: var(--fs-label);
   font-weight: 500;
   letter-spacing: 0.01em;
   transition: border-color 0.15s ease, background 0.12s ease, color 0.15s ease,
-    box-shadow 0.15s ease, transform 0.12s ease;
+    transform 0.12s ease;
 }
 
 /* Press: the button gives under the finger and takes an accent wash, so the
    reaction is felt in size and seen in colour. */
 .action:active:not(:disabled) {
   transform: scale(0.96);
-  border-color: rgba(119, 114, 255, 0.5);
-  background: linear-gradient(180deg, rgba(119, 114, 255, 0.26), rgba(119, 114, 255, 0.1));
+  border-color: var(--border-strong);
+  background: var(--surface-3);
   color: var(--text);
-  box-shadow: inset 0 0 0 1px rgba(119, 114, 255, 0.24), 0 0 18px rgba(119, 114, 255, 0.22);
 }
 
 @media (hover: hover) {
@@ -579,10 +556,11 @@ button:disabled { cursor: not-allowed; }
 }
 
 .action:disabled {
+  /* Clearly something you cannot press, not just something paler. */
   background: transparent;
   border-color: var(--hairline);
-  box-shadow: none;
   color: var(--muted);
+  opacity: 0.5;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -594,4 +572,18 @@ button:disabled { cursor: not-allowed; }
 
 @media (min-width: 520px) {
   .shell { padding-top: var(--s2); padding-bottom: var(--s2); }
+}
+
+/* Wide screens get the same list, laid out so the column is not a phone stranded
+   in the middle of the page: two cards side by side under a full-width heading. */
+@media (min-width: 900px) {
+  .shell { max-width: 1040px; }
+
+  .screen {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-content: start;
+  }
+
+  .screen-head { grid-column: 1 / -1; }
 }
