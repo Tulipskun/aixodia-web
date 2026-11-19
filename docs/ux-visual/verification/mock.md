@@ -875,3 +875,20 @@ Checker: still 33 FAIL / 9 WARN, all of them the marketing page model, no
 `cut-text`, `focus-hidden`, `tap-size`, `overlap-text` or `contrast` among them.
 Audits at 320/390/1440: 0 low contrast, `pageScrollY 0`, no small targets, four
 type sizes. `tsc --noEmit` and `npm test` 19/19 clean.
+
+## Round 41 — one button, no X
+
+The panel had its own close button while the menu button above it sat uncovered and
+useless once open. The bar button is now the toggle: `onClick` flips the state,
+`aria-label` reads "Menu" / "Close menu", `aria-expanded` follows. The X button, its
+`.drawer-head` row, the `.drawer-close` rules and their reduced-motion entry are
+deleted; the drawer's `onClose` survives only for the scrim.
+
+The panel padding went from `16px 12px` to `12px` so the first item sits on the same
+rhythm as the screen behind it now that no header row sits above it.
+
+Verified over CDP: tap opens (`label "Close menu"`, `expanded true`, panel not
+`inert`), tap again closes (`"Menu"`, `false`, `inert`), a third tap opens, the scrim
+still closes, and the panel holds no close button (`0` matches). Audits at
+320/390/1440: 0 low contrast, `pageScrollY 0`, no small targets, no off-scale
+spacing.

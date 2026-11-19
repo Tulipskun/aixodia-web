@@ -151,7 +151,8 @@ button:disabled { cursor: not-allowed; }
   display: flex;
   flex-direction: column;
   gap: var(--s4);
-  padding: var(--s4) var(--s3);
+  /* The first item sits on the same 12px rhythm as the screen behind it. */
+  padding: var(--s3);
   border-right: 1px solid var(--hairline);
   background: var(--surface);
   transform: translateX(-100%);
@@ -159,28 +160,6 @@ button:disabled { cursor: not-allowed; }
 }
 
 .drawer.is-open { transform: none; }
-
-.drawer-head {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-}
-
-.drawer-close {
-  display: grid;
-  place-items: center;
-  width: 44px;
-  height: 44px;
-  padding: 0;
-  border-radius: var(--s2);
-  border: 1px solid var(--border);
-  background: transparent;
-  color: var(--muted);
-  transition: border-color 0.15s ease, color 0.15s ease, transform 0.12s ease;
-}
-
-.drawer-close:hover { border-color: var(--border-strong); color: var(--text); }
-.drawer-close:active { transform: scale(0.92); }
 
 .drawer-list {
   display: flex;
@@ -591,7 +570,7 @@ button:disabled { cursor: not-allowed; }
 
 @media (prefers-reduced-motion: reduce) {
   .action, .icon-button { transition: none; }
-  .drawer, .scrim, .drawer-item, .drawer-close { transition: none; }
+  .drawer, .scrim, .drawer-item { transition: none; }
   .action:active:not(:disabled),
   .icon-button:active { transform: none; }
 }

@@ -18,7 +18,6 @@ import {
   Smartphone,
   Sparkles,
   SquareTerminal,
-  X,
 } from 'lucide-react'
 
 interface Metric {
@@ -262,6 +261,8 @@ function Drawer({
   panelRef,
 }: {
   open: boolean
+  /* The panel carries no close button: the bar above it is never covered, so the
+     menu button is the close button. Only the scrim closes it from here. */
   onClose: () => void
   drag: Drag | null
   panelRef: React.RefObject<HTMLElement>
@@ -296,12 +297,6 @@ function Drawer({
         aria-hidden={!open}
         style={offset === null ? undefined : { transform: `translateX(${offset}px)`, transition: 'none' }}
       >
-        <div className="drawer-head">
-          <button type="button" className="drawer-close" onClick={onClose} aria-label="Close menu">
-            <X size={16} />
-          </button>
-        </div>
-
         <nav className="drawer-list">
           {DRAWER.map(({ id, label, icon: Icon, current }) => (
             <button
@@ -450,9 +445,9 @@ export function EnginesMock() {
         <button
           type="button"
           className="icon-button"
-          aria-label="Menu"
+          aria-label={menuOpen ? 'Close menu' : 'Menu'}
           aria-expanded={menuOpen}
-          onClick={() => setMenuOpen(true)}
+          onClick={() => setMenuOpen((wasOpen) => !wasOpen)}
         >
           <Menu size={18} />
         </button>
