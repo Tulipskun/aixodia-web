@@ -1105,3 +1105,25 @@ screen now has no heading at all:
 
 Audits at 320/390/1440 on the terminal screen: `pageScrollY 0`, 0 low contrast, no
 small targets, no wrapped controls, no clipped text.
+
+## Round 51 — a terminal, not a card with a transcript in it
+
+The screen still wore the card: a rounded panel, a border, and a header naming the
+machine. In the app a terminal is the window itself, so all of that went.
+
+- `Terminal` renders one `<section class="terminal">` and one `<pre>`: no `.card`,
+  no `.terminal-head`, no `engine` prop. The name it printed is in the transcript's
+  first line, and the state it showed is a lease line two rows down.
+- `.terminal` is the screen surface: transparent, no border, no radius, padding
+  `12px` with `56px` at the top so the floating menu button has its square and the
+  first line starts below it. It still fills the frame (`flex: 1 1 auto`, and
+  `minmax(0, 1fr)` as a grid row above 900px).
+- The entrance survives without the card: `.terminal` runs `card-in` and the
+  transcript follows at `+200ms` (`content-in`). Reduced motion stops both.
+
+Measured: `y12` at 320/390/1440 with heights `672 / 816 / 872` of `700 / 844 / 900`;
+transcript first line at `x224 y71` on the wide screen, i.e. under the button and
+inside the 12px rhythm. Entrance opacity `0.78 / 0.00` at 200ms → `0.93 / 0.71` at
+320ms → settled by 560ms. Back on Engines: heading, bar, brand, both cards, drawer
+at `y68` — unchanged. Audits at three sizes: 0 low contrast, `pageScrollY 0`, no
+small targets, no wrapped controls, no clipped text.

@@ -364,17 +364,9 @@ function Card({
   )
 }
 
-function Terminal({ engine }: { engine: Machine }) {
+function Terminal() {
   return (
-    <section className="card terminal" aria-label={`Terminal on ${engine.name}`}>
-      <header className="terminal-head">
-        <h2>{engine.name}</h2>
-        <p className={`state${engine.online ? ' is-online' : ''}`}>
-          <span className="state-dot" aria-hidden="true" />
-          <span className="state-text">{engine.meta}</span>
-        </p>
-      </header>
-
+    <section className="terminal" aria-label="Terminal">
       {/* A transcript, not a live log: the caret is where typing would go. */}
       <pre className="terminal-log">
         {TRANSCRIPT.map(({ kind, text }) => (
@@ -638,7 +630,7 @@ export function EnginesMock() {
             />
           ))
         ) : (
-          <Terminal key={screen.id} engine={MACHINES[0]} />
+          <Terminal key={screen.id} />
         )}
       </main>
 

@@ -323,14 +323,6 @@ button:disabled { cursor: not-allowed; }
 /* Over content rather than over a bar, so it needs its own surface. */
 .shell.is-full .icon-button { border-color: var(--border-strong); }
 
-/* The button is out of the flow, so the panel's own head leaves it a square to
-   sit in: the terminal still starts at the top of the screen. */
-.shell.is-full .terminal-head {
-  min-height: 44px;
-  align-items: center;
-  padding-left: 56px;
-}
-
 /* Nothing above the panel now, so the panel hangs from the top of the frame. */
 .shell.is-full .drawer,
 .shell.is-full .scrim { top: 0; }
@@ -412,14 +404,12 @@ button:disabled { cursor: not-allowed; }
 .card-head,
 .metrics,
 .actions,
-.terminal-head,
 .terminal-log {
   animation: content-in 360ms cubic-bezier(0.22, 0.61, 0.36, 1) both;
   animation-delay: calc(var(--enter, 0ms) + 200ms);
 }
 
 .metrics { animation-delay: calc(var(--enter, 0ms) + 280ms); }
-.terminal-log { animation-delay: calc(var(--enter, 0ms) + 280ms); }
 .actions { animation-delay: calc(var(--enter, 0ms) + 360ms); }
 
 @keyframes content-in {
@@ -683,33 +673,18 @@ button:disabled { cursor: not-allowed; }
   opacity: 0.5;
 }
 
-/* Internal font: a terminal is a place where the same width per character is the
-   point, so it is the one surface that is not the brand face. */
+/* A terminal is not a card: no panel, no border, no name across the top. It is
+   the screen itself, the way a shell window is, so the transcript starts at the
+   top left and the surface behind it is the app's own. */
 .terminal {
   display: flex;
   flex-direction: column;
-  gap: var(--s3);
   min-height: 0;
-  /* A terminal is a region, not a card sized to its text: it takes the room the
-     screen has left and keeps the transcript at the top. */
   flex: 1 1 auto;
-}
-
-.terminal-head {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: var(--s3);
-  padding-bottom: var(--s3);
-  border-bottom: 1px solid var(--hairline);
-}
-
-.terminal-head h2 {
-  margin: 0;
-  font-family: var(--brand);
-  font-size: var(--fs-title);
-  font-weight: 600;
-  letter-spacing: -0.01em;
+  padding: var(--s3);
+  /* The menu button floats here, so the first line starts below it. */
+  padding-top: 56px;
+  animation: card-in 520ms cubic-bezier(0.22, 0.61, 0.36, 1) both;
 }
 
 .terminal-log {
@@ -751,7 +726,7 @@ button:disabled { cursor: not-allowed; }
   .card-head,
   .metrics,
   .actions,
-  .terminal-head,
+  .terminal,
   .terminal-log,
   .screen-head h1,
   .screen-count { animation: none; }
