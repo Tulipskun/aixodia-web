@@ -583,3 +583,15 @@ smaller than the other two.
 
 Audits clean at 320, 360, 390, 430 and 1440: no spills, no wrapped controls,
 `pageScrollY 0`.
+
+## Round 29 — no frames, only space
+
+The three readings lost their frames: `.metric` no longer draws a border, a radius
+or its own padding, so nothing but the grid gap (`12px`) separates CPU, RAM and
+DISK. The sparkline still runs behind each reading, now edge to edge in its third.
+
+With the panels' padding gone the readings gained 16px each, so the value scale
+relaxed from `clamp(11px, 3.2vw, …)` to `clamp(11.5px, 3.6vw, …)` and the
+`max-width: 355px` padding fallback was deleted — it had nothing left to reclaim.
+
+Audits clean at 320, 360, 390, 430 and 1440: no spills, `pageScrollY 0`.
