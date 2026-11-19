@@ -465,6 +465,9 @@ tokens to match: `--face` (a face gradient), `--face-lit` (the same, brighter),
 
 - **Page**: the accent glow at the top is joined by a cool one at the bottom edge,
   so the screen has a floor and the cards sit in a space rather than on a void.
+  The first attempt anchored it at `50% 118%`, i.e. off the bottom of the viewport,
+  where it could not be seen at all; it is anchored at `50% 100%` now and measured
+  at the bottom edge: `rgb(10,19,24)` at centre against `rgb(7,14,18)` at the corner.
 - **Top bar**: casts `0 10px 24px`, which is what makes the content beneath it read
   as sliding under.
 - **Cards**: face gradient over `--surface` plus `--lift-2`, so they lift off the
