@@ -407,3 +407,20 @@ The two cards themselves were already identical and still are: `204.5px` each,
 `366px` wide (`equal` within 0.0px).
 
 Audits clean at 360, 390, 430 and 1440; `npm test` 19/19.
+
+## Round 27 — the press moves instead of glowing
+
+- `-webkit-tap-highlight-color: transparent` on everything: the blue-grey flash a
+  touch browser paints over a tapped control is gone
+  (`tapHighlight: rgba(0, 0, 0, 0)`).
+- Pressing is answered by motion instead: the four actions scale to **0.96** over
+  120ms and settle back, the top-bar buttons to **0.94**. Colour still changes on
+  press (surface-3, border-strong) but only as part of the same reaction, not as a
+  separate highlight.
+- `prefers-reduced-motion` removes both the transition and the scale.
+- Verified by holding a press with `Input.dispatchMouseEvent`: `transform:
+  matrix(0.96, 0, 0, 0.96, 0, 0)`, `:active` true, and the screenshot shows the
+  first action smaller and brighter with no overlay.
+
+Keyboard focus keeps its `:focus-visible` outline: it never appears on a tap, and
+removing it would take the only cue a keyboard user has.
