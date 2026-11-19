@@ -635,3 +635,17 @@ The geometry audit now reports a deliberate `spillPx: 6` on `.metrics` and each
 `.metric`: that is the requested overshoot. It is inside the card's 16px padding,
 so nothing is clipped and nothing leaves the card. `pageScrollY 0` and
 `pageOverflowX 0` at 320, 360, 390, 430 and 1440.
+
+## Round 33 — a hairline between the readings, and two entries in the drawer
+
+- `.metric + .metric::before` draws a `1px` `--hairline` down the middle of each
+  gap (`left: -6px`, i.e. `--s3 / -2`), `z-index: 1` so it sits over the chart.
+  It separates the three readings without boxing any of them.
+- The drawer is down to two entries, **Engines** (current) and **Droidime**;
+  Sessions, AI and Settings and their icon imports are gone.
+- The bottom of the drawer is the account, `Tulipskun`, above its own hairline,
+  and the top-bar avatar now shows the same initial (`T`) instead of a hardcoded
+  `P`. The name is a placeholder until auth is wired — one constant, `ACCOUNT`.
+
+The 6px chart bleed still shows as the one intended spill in the geometry audit;
+everything else is clean at 320, 360, 390, 430 and 1440.

@@ -11,11 +11,10 @@ import {
   Cpu,
   Ellipsis,
   HardDrive,
-  History,
   MemoryStick,
   Menu,
   MonitorSmartphone,
-  Settings,
+  Smartphone,
   Sparkles,
   SquareTerminal,
   X,
@@ -98,11 +97,11 @@ const MACHINES: Machine[] = [
   },
 ]
 
+const ACCOUNT = 'Tulipskun'
+
 const DRAWER: { id: string; label: string; icon: LucideIcon; current?: boolean }[] = [
   { id: 'engines', label: 'Engines', icon: Boxes, current: true },
-  { id: 'sessions', label: 'Sessions', icon: History },
-  { id: 'ai', label: 'AI', icon: Sparkles },
-  { id: 'settings', label: 'Settings', icon: Settings },
+  { id: 'droidime', label: 'Droidime', icon: Smartphone },
 ]
 
 const ACTIONS = [
@@ -277,7 +276,9 @@ function Drawer({ open, onClose }: { open: boolean; onClose: () => void }) {
           ))}
         </nav>
 
-        <p className="drawer-foot">P · owner</p>
+        <p className="drawer-foot">
+          <span className="drawer-account">{ACCOUNT}</span>
+        </p>
       </aside>
     </>
   )
@@ -301,8 +302,8 @@ export function EnginesMock() {
           <img className="brand-mark" src="/brand/aixodia-mark.svg" alt="" width={28} height={28} />
           <span className="brand-name">AIxodia</span>
         </div>
-        <button type="button" className="avatar" aria-label="Account">
-          P
+        <button type="button" className="avatar" aria-label={`Account: ${ACCOUNT}`}>
+          {ACCOUNT[0]}
         </button>
       </header>
 
