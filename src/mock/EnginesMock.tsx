@@ -158,13 +158,15 @@ type ListedScreen = Exclude<Screen, 'terminal'>
 
 type ScreenInfo =
   | { id: ListedScreen; title: string; count: string; machines: Machine[] }
-  | { id: 'terminal'; title: string; count: string; machines: null }
+  /* A terminal has no list to head and no count to state: the panel is the
+     screen, and the instance id is already written in its transcript. */
+  | { id: 'terminal'; machines: null }
 
 const SCREENS: ScreenInfo[] = [
   { id: 'engines', title: 'Engines', count: `${MACHINES.length} engines`, machines: MACHINES },
   { id: 'droidime', title: 'Droidime', count: `${DEVICES.length} devices`, machines: DEVICES },
   /* A terminal belongs to one engine, so the right of the heading names it. */
-  { id: 'terminal', title: 'Terminal', count: 'm-8a7d1192', machines: null },
+  { id: 'terminal', machines: null },
 ]
 
 const DRAWER: { id: Screen; label: string; icon: LucideIcon }[] = [
@@ -612,14 +614,18 @@ export function EnginesMock() {
       />
 
       <main className="screen" id="content" tabIndex={-1}>
-        <div className="screen-head">
-          {/* Keyed by screen, so the heading is a new element on a switch and its
-              entrance runs with the cards instead of the text swapping in place. */}
-          <h1 key={screen.id}>{screen.title}</h1>
-          <span key={`${screen.id}-count`} className="screen-count">
-            {screen.count}
-          </span>
-        </div>
+        {/* A list says what it is before it lists anything; a terminal already says
+            it in its own head, so it gets the whole screen instead. */}
+        {screen.machines && (
+          <div className="screen-head">
+            {/* Keyed by screen, so the heading is a new element on a switch and its
+                entrance runs with the cards instead of the text swapping in place. */}
+            <h1 key={screen.id}>{screen.title}</h1>
+            <span key={`${screen.id}-count`} className="screen-count">
+              {screen.count}
+            </span>
+          </div>
+        )}
 
         {screen.machines ? (
           screen.machines.map((machine, index) => (

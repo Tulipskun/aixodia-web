@@ -1083,3 +1083,25 @@ The gesture is untouched: a right drag on the empty terminal screen still opens 
 drawer (touch `40 → 200` at `y400`), and the button's label flips to "Close menu"
 while the panel is open. Audits at 320/390/1440 on this screen: `pageScrollY 0`,
 0 low contrast, no small targets, no wrapped controls.
+
+## Round 50 — full screen means full screen
+
+Round 49 hid the bar but kept a heading band, which is still a band. The terminal
+screen now has no heading at all:
+
+- `ScreenInfo`'s terminal arm carries no `title` and no `count` — there is nothing to
+  head and nothing to count — and the `<div className="screen-head">` is not
+  rendered for it. The instance id it used to show on the right is already the first
+  line of the transcript (`engine   m-8a7d1192 · v1.177`).
+- The panel starts at the top of the frame and ends at the bottom: at 390 it is
+  `y12 h816` of an `844` screen; at 320, `y12 h672` of `700`; at 1440, `y12 h872` of
+  `900` (a grid row told to be `minmax(0, 1fr)` instead of hugging its content).
+- The floating button sits in the panel's own header: `.terminal-head` takes
+  `min-height: 44px` and `56px` of left padding, so "Alpha" clears it and the button
+  occupies the panel's top-left corner rather than a bar above it. Shell padding is
+  dropped in this mode, so button and panel share the same `y12`.
+- Back on Engines the heading returns (`h1 Engines`), the bar is `relative` again,
+  the brand shows, the heading loses its padding and the drawer is back to `y68`.
+
+Audits at 320/390/1440 on the terminal screen: `pageScrollY 0`, 0 low contrast, no
+small targets, no wrapped controls, no clipped text.

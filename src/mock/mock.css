@@ -297,6 +297,15 @@ button:disabled { cursor: not-allowed; }
 
 /* Full screen: a terminal has nothing to say to a bar, so the bar goes and the
    one control it carried floats over the screen it belongs to. */
+/* Full screen: a terminal has nothing to say to a bar, so the bar goes and the
+   one control it carried floats over the screen it belongs to. */
+.shell.is-full {
+  /* The screen is the screen: no breathing room borrowed from the frame, so the
+     panel and the button above it start on the same line. */
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
 .shell.is-full .topbar {
   position: absolute;
   top: 0;
@@ -314,9 +323,9 @@ button:disabled { cursor: not-allowed; }
 /* Over content rather than over a bar, so it needs its own surface. */
 .shell.is-full .icon-button { border-color: var(--border-strong); }
 
-/* The button is out of the flow: the heading keeps a row tall enough to sit beside
-   it instead of the panel running under it. */
-.shell.is-full .screen-head {
+/* The button is out of the flow, so the panel's own head leaves it a square to
+   sit in: the terminal still starts at the top of the screen. */
+.shell.is-full .terminal-head {
   min-height: 44px;
   align-items: center;
   padding-left: 56px;
@@ -769,4 +778,11 @@ button:disabled { cursor: not-allowed; }
 
   /* One session has no second column to fill. */
   .terminal { grid-column: 1 / -1; }
+
+  /* A grid row is only as tall as its content unless it is told otherwise, and a
+     full screen is exactly the case where it should be told. */
+  .shell.is-full .screen {
+    grid-template-rows: minmax(0, 1fr);
+    align-content: stretch;
+  }
 }
