@@ -302,9 +302,6 @@ export function EnginesMock() {
           <img className="brand-mark" src="/brand/aixodia-mark.svg" alt="" width={28} height={28} />
           <span className="brand-name">AIxodia</span>
         </div>
-        <button type="button" className="avatar" aria-label={`Account: ${ACCOUNT}`}>
-          {ACCOUNT[0]}
-        </button>
       </header>
 
       <Drawer open={menuOpen} onClose={() => setMenuOpen(false)} />

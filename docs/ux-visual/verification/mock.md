@@ -649,3 +649,28 @@ so nothing is clipped and nothing leaves the card. `pageScrollY 0` and
 
 The 6px chart bleed still shows as the one intended spill in the geometry audit;
 everything else is clean at 320, 360, 390, 430 and 1440.
+
+## Round 34 — three bands, and a brand with depth
+
+**Horizontal rules.** The card is read as who / what it reports / what you can do,
+so each band is closed by a `1px --hairline`: `.card-head` gets
+`padding-bottom: 12px` plus `border-bottom`, `.actions` gets `margin-top: 12px`,
+`border-top` and `padding-top: 12px`. Measured at 390: header rule `y137`, metrics
+`149–188`, actions rule `y200`, so both gaps are `12` and the rules sit centred in
+their gaps. The first attempt had no margin above the actions rule and the vision
+pass called it out as hugging the values.
+
+**Top-right name removed.** The account circle is gone from the bar — the account
+already lives at the bottom of the drawer — together with its `.avatar` rules and
+every reference in the reduced-motion block. The bar is now one control and a
+centred brand (`brandCenter 195` on a 390 screen).
+
+**Depth on the centred brand.** The mark carries
+`drop-shadow(0 1px 0 rgba(0,0,0,.5))` and a lavender halo; the name carries a
+three-layer `text-shadow` (hard dark edge, soft shadow, accent halo). A gradient
+`background-clip: text` was written first and rejected: `color: transparent` makes
+the contrast audit read a ratio of 1, and the value is not actually the painted
+one. Solid `--text` with shadows keeps the check honest.
+
+Audits at 320, 360, 390, 430 and 1440: 0 low contrast, no wrapped controls, no
+uneven rows, `pageScrollY 0`; the only spill remains the intended 6px chart bleed.
