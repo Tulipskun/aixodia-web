@@ -135,12 +135,13 @@ function sampleSeries(seed: number, base: number, swing: number): number[] {
  *  window, one sample draws a level, none draws nothing. */
 function Spark({ values, ceiling, tone }: { values: number[]; ceiling: number; tone: string }) {
   if (!values.length) return null
-  /* The box is the whole cell, so the margins the chart keeps from the frame are
-     part of its geometry rather than CSS offsets: an absolutely positioned SVG
-     with a viewBox keeps its own aspect ratio and refuses to be inset. */
-  const TOP = 14
-  const FLOOR = 88
-  const SIDE = 8
+  /* The box is the whole cell, so the margins the chart keeps are part of its
+     geometry rather than CSS offsets: an absolutely positioned SVG with a viewBox
+     keeps its own aspect ratio and refuses to be inset. The line runs close to the
+     label and the reading, so it reads as theirs rather than as a band behind. */
+  const TOP = 9
+  const FLOOR = 91
+  const SIDE = 4
   const min = Math.min(...values)
   const max = Math.max(...values)
   const span = Math.max(max - min, ceiling * 0.04)

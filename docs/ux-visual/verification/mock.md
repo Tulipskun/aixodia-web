@@ -595,3 +595,14 @@ relaxed from `clamp(11px, 3.2vw, …)` to `clamp(11.5px, 3.6vw, …)` and the
 `max-width: 355px` padding fallback was deleted — it had nothing left to reclaim.
 
 Audits clean at 320, 360, 390, 430 and 1440: no spills, `pageScrollY 0`.
+
+## Round 30 — the line belongs to its reading
+
+The spark keeps its margins inside the SVG, not in CSS, so the room around it is
+geometry: `TOP 14 → 9`, `FLOOR 88 → 91`, `SIDE 8 → 4`. The line now starts just
+under the label and stops just above the reading, and it reaches the edges of its
+third instead of floating a few pixels in.
+
+A first pass at `TOP 5 / FLOOR 95` was rejected on the screenshot: the dips ran
+into the upper half of `100.2/128 GB`. `9/91` keeps every digit clear while still
+reading as a tight band. Audits clean at 320, 360, 390, 430 and 1440.
