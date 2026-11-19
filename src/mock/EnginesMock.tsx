@@ -175,9 +175,34 @@ const DRAWER: { id: Screen; label: string; icon: LucideIcon }[] = [
   { id: 'terminal', label: 'Terminal', icon: SquareTerminal },
 ]
 
+/* The keys a phone keyboard does not have: a remote shell needs Escape, Tab, the
+   arrows and the function keys, and a phone's own keyboard brings none of them.
+   The typing itself stays the phone's keyboard, which already knows every
+   language the phone does. */
+const EXTRA_KEYS = [
+  'Esc',
+  'Tab',
+  'Ctrl',
+  'Alt',
+  '←',
+  '↑',
+  '↓',
+  '→',
+  'Home',
+  'End',
+  'PgUp',
+  'PgDn',
+  ...Array.from({ length: 12 }, (_, index) => `F${index + 1}`),
+]
+
 /* What a shell on the engine has to say. The lines are literal: the lease and the
    instance id are what the engine actually reports. */
-const TRANSCRIPT: { kind: 'cmd' | 'out' | 'note'; text: string }[] = [
+interface Line {
+  kind: 'cmd' | 'out' | 'note' | 'sent'
+  text: string
+}
+
+const TRANSCRIPT: Line[] = [
   { kind: 'cmd', text: '$ aixodia status' },
   { kind: 'out', text: 'engine   m-8a7d1192 · v1.177' },
   { kind: 'out', text: 'lease    3s ago · ttl 60s' },
@@ -365,20 +390,88 @@ function Card({
 }
 
 function Terminal() {
+  /* Typing and keys only append to this screen's own transcript: nothing is sent
+     anywhere, and a reload starts it over. */
+  const [lines, setLines] = useState<Line[]>([])
+  const [draft, setDraft] = useState('')
+  const [ctrl, setCtrl] = useState(false)
+  const [alt, setAlt] = useState(false)
+  const logRef = useRef<HTMLPreElement>(null)
+
+  const chord = [ctrl && 'ctrl', alt && 'alt'].filter(Boolean).join(' ')
+
+  useEffect(() => {
+    /* A terminal keeps its newest line in view. */
+    const log = logRef.current
+    if (log) log.scrollTop = log.scrollHeight
+  }, [lines])
+
+  /* A modifier applies to one key, the way a physical chord works. */
+  const sendKey = (key: string) => {
+    setLines((sent) => [...sent, { kind: 'sent', text: `· ${chord ? `${chord}+` : ''}${key}` }])
+    setCtrl(false)
+    setAlt(false)
+  }
+
+  const submit = (event: React.FormEvent) => {
+    event.preventDefault()
+    const command = draft.trim()
+    if (!command) return
+    setLines((sent) => [...sent, { kind: 'cmd', text: `$ ${command}` }])
+    setDraft('')
+  }
+
   return (
     <section className="terminal" aria-label="Terminal">
-      {/* A transcript, not a live log: the caret is where typing would go. */}
-      <pre className="terminal-log">
-        {TRANSCRIPT.map(({ kind, text }) => (
-          <span key={text} className={`terminal-line is-${kind}`}>
+      <pre className="terminal-log" ref={logRef} data-no-drag>
+        {[...TRANSCRIPT, ...lines].map(({ kind, text }, index) => (
+          <span key={`${index}-${text}`} className={`terminal-line is-${kind}`}>
             {text}
           </span>
         ))}
-        <span className="terminal-line is-prompt">
-          {'$ '}
-          <span className="terminal-caret" aria-hidden="true" />
-        </span>
       </pre>
+
+      <div className="terminal-bar">
+        {/* An input, so tapping it raises the phone's own keyboard: every language
+            and every layout already lives there. */}
+        <form className="terminal-composer" onSubmit={submit} data-no-drag>
+          <span className="terminal-prompt" aria-hidden="true">
+            $
+          </span>
+          <input
+            className="terminal-input"
+            value={draft}
+            onChange={(event) => setDraft(event.target.value)}
+            placeholder={chord ? 'key for the chord…' : 'type, any language…'}
+            aria-label="Command"
+            enterKeyHint="send"
+            autoCapitalize="off"
+            autoCorrect="off"
+            spellCheck={false}
+          />
+        </form>
+
+        <div className="terminal-keys" data-no-drag>
+          {EXTRA_KEYS.map((key) => {
+            const held = (key === 'Ctrl' && ctrl) || (key === 'Alt' && alt)
+            return (
+              <button
+                key={key}
+                type="button"
+                className={`terminal-key${held ? ' is-held' : ''}`}
+                aria-pressed={key === 'Ctrl' || key === 'Alt' ? held : undefined}
+                onClick={() => {
+                  if (key === 'Ctrl') setCtrl((on) => !on)
+                  else if (key === 'Alt') setAlt((on) => !on)
+                  else sendKey(key)
+                }}
+              >
+                {key}
+              </button>
+            )
+          })}
+        </div>
+      </div>
     </section>
   )
 }
@@ -472,8 +565,11 @@ export function EnginesMock() {
     setDrag(next)
   }
 
-  const begin = (clientX: number, clientY: number) => {
+  const begin = (target: EventTarget | null, clientX: number, clientY: number) => {
     if (dragRef.current) return false
+    /* A sideways drag is the drawer's — except inside something that scrolls
+       sideways itself, or a field where a drag selects text. */
+    if (target instanceof Element && target.closest('[data-no-drag]')) return false
     const width = panelRef.current?.getBoundingClientRect().width
     if (!width) return false
     hold({
@@ -525,7 +621,7 @@ export function EnginesMock() {
   useEffect(() => {
     const onPointerDown = (event: PointerEvent) => {
       if (event.pointerType === 'touch' || event.button !== 0) return
-      begin(event.clientX, event.clientY)
+      begin(event.target, event.clientX, event.clientY)
     }
     const onPointerMove = (event: PointerEvent) => {
       if (event.pointerType === 'touch') return
@@ -540,7 +636,7 @@ export function EnginesMock() {
     const onTouchStart = (event: TouchEvent) => {
       const touch = event.touches[0]
       if (!touch) return
-      begin(touch.clientX, touch.clientY)
+      begin(event.target, touch.clientX, touch.clientY)
     }
     const onTouchMove = (event: TouchEvent) => {
       const touch = event.touches[0]

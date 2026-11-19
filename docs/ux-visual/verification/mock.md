@@ -1127,3 +1127,39 @@ inside the 12px rhythm. Entrance opacity `0.78 / 0.00` at 200ms → `0.93 / 0.71
 320ms → settled by 560ms. Back on Engines: heading, bar, brand, both cards, drawer
 at `y68` — unchanged. Audits at three sizes: 0 low contrast, `pageScrollY 0`, no
 small targets, no wrapped controls, no clipped text.
+
+## Round 52 — typing, and the keys a phone keyboard lacks
+
+The app's terminal pairs the phone's keyboard with the row of keys a phone does not
+have (`ui/screen/KeyboardBar.kt`: Esc, Tab, Ctrl, Alt, arrows, Home, End, PgUp, PgDn,
+F1–F12). The mock now has the same shape.
+
+**How the keyboard opens:** the composer is a real `<input>` (`enterKeyHint="send"`,
+autocapitalise and autocorrect off) at the bottom of the screen. Tapping it focuses
+it, and the phone raises its own keyboard — so every language the phone knows,
+Thai included, works with no extra code. Verified over CDP with a touch on the
+field: `document.activeElement.className` becomes `terminal-input`, and
+`Input.insertText` "aixodia status --ไทย" lands in the field. Enter (with
+`text: "\r"`, which is what a soft keyboard sends) appends `$ aixodia status --ไทย`
+to the transcript in accent, clears the field and keeps focus, so the keyboard stays
+up for the next command.
+
+**The keys:** 24 buttons at a measured `44×44` (tap-target safe), single label line
+14px tall, in a row that scrolls sideways (`scrollWidth 1196` in a `342` window).
+Ctrl and Alt are toggles with `aria-pressed`; holding one turns the composer's
+placeholder into "key for the chord…", the next key sends as `· ctrl+F5`, and then
+the modifier releases itself — the way a physical chord works. Other keys send alone
+(`· Esc`).
+
+**A gesture bug found while testing:** `touchstart` on the key row started a drawer
+drag, so swiping the keys would have thrown the panel open. Anything that scrolls
+sideways on its own, or where a drag selects text, is now marked `data-no-drag` and
+`begin()` ignores it. Measured: swiping the key row scrolls it `643px` and leaves
+the drawer closed. Consequence, and it is deliberate: on the terminal screen the
+drawer opens from the floating button, not from a drag over the transcript (where a
+drag means selecting text or scrolling a long line).
+
+Audits at 320/390/1440: `pageScrollY 0`, `pageOverflowX 0`, 0 low contrast, no small
+targets, no clipped text. The geometry audit's `wrappedControls` flags all 24 keys —
+a heuristic that reads a `44px` box with a single 14px line as wrapped text; measured
+per key, `textLines 1`, `textH 14`, `boxH 44`.
