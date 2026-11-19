@@ -440,3 +440,19 @@ removing it would take the only cue a keyboard user has.
 Checked with a held press in both places: menu `matrix(0.94…)` with the purple
 wash and glow; Terminal `matrix(0.96…)` with the wash while the other three stay
 neutral. Audits clean at 360/390/430/1440, `npm test` 19/19.
+
+## Round 29 — nothing left behind on release, and one gap before the unit
+
+- **The leftover highlight was sticky `:hover`, not the press.** After a tap a touch
+  browser keeps `:hover` on the element, so the neutral-to-surface-3 hover paint
+  stayed behind once the finger lifted. The two hover rules now live behind
+  `@media (hover: hover)`, so a touch screen never keeps a hover state and the
+  released control returns to its base border and fill (verified: `border`
+  unchanged at `rgba(145,142,255,.13)` after touchEnd).
+- **`GB` had two gaps.** The unit string was `' GB'` — a leading space — on top of
+  `.metric-unit`'s 4px margin, so the gap was ~8.5px. The strings are now `'GB'`
+  and the gap is measured at **4.02px** on both RAM and DISK.
+- The aria labels keep a real space (`"RAM, 100/128 GB"`), since that is speech,
+  not layout.
+
+Audits clean at 360/390/430/1440; `npm test` 19/19.

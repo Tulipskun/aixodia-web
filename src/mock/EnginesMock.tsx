@@ -60,7 +60,7 @@ const MACHINES: Machine[] = [
         label: 'RAM',
         icon: MemoryStick,
         tone: 'cool',
-        unit: ' GB',
+        unit: 'GB',
         digits: 0,
         total: '128',
         series: sampleSeries(19, 100.4, 1.6),
@@ -69,7 +69,7 @@ const MACHINES: Machine[] = [
         label: 'DISK',
         icon: HardDrive,
         tone: 'warm',
-        unit: ' GB',
+        unit: 'GB',
         digits: 0,
         total: '256',
         series: Array.from({ length: WINDOW_SAMPLES }, () => 164),
@@ -84,8 +84,8 @@ const MACHINES: Machine[] = [
     reason: 'Offline since 4h ago',
     metrics: [
       { label: 'CPU', icon: Cpu, tone: 'accent', unit: '%', digits: 0, series: [] },
-      { label: 'RAM', icon: MemoryStick, tone: 'cool', unit: ' GB', digits: 1, total: '128', series: [] },
-      { label: 'DISK', icon: HardDrive, tone: 'warm', unit: ' GB', digits: 0, total: '256', series: [] },
+      { label: 'RAM', icon: MemoryStick, tone: 'cool', unit: 'GB', digits: 1, total: '128', series: [] },
+      { label: 'DISK', icon: HardDrive, tone: 'warm', unit: 'GB', digits: 0, total: '256', series: [] },
     ],
   },
 ]
@@ -146,7 +146,7 @@ function Card({ machine }: { machine: Machine }) {
             key={metric.label}
             className="metric"
             role="img"
-            aria-label={`${metric.label}, ${reading(metric).value}${reading(metric).unit}`}
+            aria-label={`${metric.label}, ${reading(metric).value} ${reading(metric).unit}`.trim()}
           >
             <span className="metric-label">
               <metric.icon size={13} className={`is-${metric.tone}`} />
