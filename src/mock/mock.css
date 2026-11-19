@@ -295,6 +295,37 @@ button:disabled { cursor: not-allowed; }
     drop-shadow(0 3px 8px rgba(0, 0, 0, 0.55));
 }
 
+/* Full screen: a terminal has nothing to say to a bar, so the bar goes and the
+   one control it carried floats over the screen it belongs to. */
+.shell.is-full .topbar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 3;
+  height: auto;
+  padding: var(--s3);
+  border-bottom: 0;
+  background: none;
+  display: block;
+}
+
+.shell.is-full .brand { display: none; }
+
+/* Over content rather than over a bar, so it needs its own surface. */
+.shell.is-full .icon-button { border-color: var(--border-strong); }
+
+/* The button is out of the flow: the heading keeps a row tall enough to sit beside
+   it instead of the panel running under it. */
+.shell.is-full .screen-head {
+  min-height: 44px;
+  align-items: center;
+  padding-left: 56px;
+}
+
+/* Nothing above the panel now, so the panel hangs from the top of the frame. */
+.shell.is-full .drawer,
+.shell.is-full .scrim { top: 0; }
+
 /* --------------------------------------------------------------- screen */
 
 /* The screen says what it is before it lists anything, and how many there are. */

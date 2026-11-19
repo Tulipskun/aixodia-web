@@ -1060,3 +1060,26 @@ targets, no wrapped controls. Copy lint on the rendered terminal DOM: 0 FAIL, 0 
 
 One regression found and fixed on the way: the long `curl engine.aixodia.dpdns.org`
 line scrolled sideways at 320, so the transcript is now short enough to fit whole.
+
+## Round 49 — the terminal takes the whole screen
+
+The bar carried one control the terminal actually needs — the way back — so it goes
+and that control floats instead.
+
+- `.shell.is-full` (set when the screen has no card list) makes `.topbar`
+  `position: absolute` with no border and no background. The brand is `display:
+  none`; the menu button stays, on its own `--surface-2` tile with a
+  `--border-strong` edge so it reads over content rather than over a bar.
+- The heading row keeps `min-height: 44px` and `56px` of left padding, so the
+  floating button sits beside the title instead of over the panel: measured at 390,
+  button `x12 y12 w44`, heading row `x12 y12 h44`, panel `x12 y72 w366 h756` (to
+  `y828`, leaving the 12px rhythm at the bottom), `pageScrollY 0`.
+- With nothing above it, the drawer and the scrim start at `top: 0` instead of
+  under a `68px` bar. Measured open: drawer `y0`, scrim `y0` covering all `844px`.
+- Going back restores everything: `is-full false`, bar `position relative`, brand
+  `display flex`, heading `padding-left 0`, drawer back to `y68`, both cards present.
+
+The gesture is untouched: a right drag on the empty terminal screen still opens the
+drawer (touch `40 → 200` at `y400`), and the button's label flips to "Close menu"
+while the panel is open. Audits at 320/390/1440 on this screen: `pageScrollY 0`,
+0 low contrast, no small targets, no wrapped controls.

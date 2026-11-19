@@ -580,7 +580,7 @@ export function EnginesMock() {
   return (
     <div
       ref={shellRef}
-      className={`shell${drag ? ' is-dragging' : ''}`}
+      className={`shell${drag ? ' is-dragging' : ''}${screen.machines ? '' : ' is-full'}`}
     >
       <a className="skip-link" href="#content">
         Skip to content
