@@ -307,6 +307,41 @@ button:disabled { cursor: not-allowed; }
 
 /* Icon and name on one line, the reading under it: the number is the point, so it
    gets its own line instead of sharing one with a label. */
+/* The chart is the cell's background, so the reading sits on its own history. It
+   is decoration: never clickable, never in the accessibility tree. */
+.metric-spark {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  color: var(--accent);
+}
+
+.metric-spark.is-cool { color: var(--info); }
+.metric-spark.is-warm { color: var(--warn); }
+
+.spark-area {
+  fill: currentColor;
+  opacity: 0.1;
+}
+
+.spark-line {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.25;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+  opacity: 0.45;
+}
+
+/* Text over the chart needs its own layer to stay above it. */
+.metric-label,
+.metric-value {
+  position: relative;
+  z-index: 1;
+}
+
 .metric-label {
   display: inline-flex;
   align-items: center;

@@ -24,8 +24,10 @@ interface Metric {
   digits: number
   /** Capacity, as a plain number: the unit is in the label row. */
   total?: string
-  /** Oldest to newest, one sample every 30 s: 20 samples is ten minutes. The card
-   *  reads the last one; the series stays because the registry will send a window. */
+  /** Oldest to newest, one sample every 30 s: a full window is 20 points, ten
+   *  minutes. The
+   *  card draws what it is given — a partial window, a single sample or nothing —
+   *  and reads the last one. */
   series: number[]
 }
 
@@ -72,7 +74,8 @@ const MACHINES: Machine[] = [
         unit: 'GB',
         digits: 0,
         total: '256',
-        series: Array.from({ length: WINDOW_SAMPLES }, () => 164),
+        // Slow to move and slow to fill: a short window still draws.
+        series: sampleSeries(3, 164, 0.6).slice(0, 17),
       },
     ],
   },
@@ -108,6 +111,48 @@ function sampleSeries(seed: number, base: number, swing: number): number[] {
   })
 }
 
+
+/** The chart behind a reading: the whole window, oldest to newest.
+ *
+ *  It is a texture, not a measurement — the number above it is the measurement —
+ *  so it is scaled to its own window, with a floor on the span tied to the metric's
+ *  ceiling: two thirds of a temperature degree an inch tall would be a lie, and a
+ *  window that barely moved would otherwise look like a cliff.
+ *
+ *  Partial data is the normal case, not an error: a short window draws a short
+ *  window, one sample draws a level, none draws nothing. */
+function Spark({ values, ceiling, tone }: { values: number[]; ceiling: number; tone: string }) {
+  if (!values.length) return null
+  const TOP = 10
+  const min = Math.min(...values)
+  const max = Math.max(...values)
+  const span = Math.max(max - min, ceiling * 0.04)
+  const low = (min + max) / 2 - span / 2
+  const y = (value: number) => {
+    const ratio = Math.min(1, Math.max(0, (value - low) / span))
+    return 100 - ratio * (100 - TOP)
+  }
+  const x = (index: number) =>
+    values.length === 1 ? 0 : (index / (values.length - 1)) * 100
+
+  const last = y(values[values.length - 1])
+  const line =
+    values.length === 1
+      ? `M0 ${last.toFixed(2)} L100 ${last.toFixed(2)}`
+      : values.map((v, i) => `${i ? 'L' : 'M'}${x(i).toFixed(2)} ${y(v).toFixed(2)}`).join(' ')
+
+  return (
+    <svg
+      className={`metric-spark is-${tone}`}
+      viewBox="0 0 100 100"
+      preserveAspectRatio="none"
+      aria-hidden="true"
+    >
+      <path className="spark-area" d={`${line} L100 100 L0 100 Z`} />
+      <path className="spark-line" d={line} vectorEffect="non-scaling-stroke" />
+    </svg>
+  )
+}
 
 /** The last sample of a series, formatted. */
 function last(samples: number[] | undefined, metric: Metric): string {
@@ -148,6 +193,11 @@ function Card({ machine }: { machine: Machine }) {
             role="img"
             aria-label={`${metric.label}, ${reading(metric).value} ${reading(metric).unit}`.trim()}
           >
+            <Spark
+              values={metric.series}
+              ceiling={metric.total ? Number(metric.total) : 100}
+              tone={metric.tone}
+            />
             <span className="metric-label">
               <metric.icon size={13} className={`is-${metric.tone}`} />
               {metric.label}

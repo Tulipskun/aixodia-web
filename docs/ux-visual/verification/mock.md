@@ -493,3 +493,23 @@ instead: fill measures `rgb(4,2,38)` / `rgb(8,5,44)` against the online card's
 family rather than a lighter, bluer panel.
 
 Audits clean at 360/390/430/1440; `npm test` 19/19.
+
+## Round 32 — the chart is the cell's background
+
+Each metric cell now draws its own window behind the label and value, so the
+reading sits on its own history. It is decoration — `aria-hidden`, no pointer
+events — and the number above it stays the measurement.
+
+- **Window**: 20 samples at one every 30 s, i.e. ten minutes.
+- **Scale**: the window's own range, with a floor of 4% of the metric's ceiling. A
+  ceiling-based scale made every trace a flat line at its height (RAM moved 0.4% of
+  128 GB); a pure auto-range turns noise into drama. The floor keeps a quiet window
+  quiet without killing it.
+- **Partial data is the normal case**, not an error, and it was tested as one: no
+  samples draw nothing at all (the CPU cell with `series: []` stays blank behind its
+  dash), one sample draws a level line, two draw a short segment. Long windows,
+  short windows and the orderly case all use the same path.
+- Traces take their metric's colour at 45% stroke over a 10% fill, and the text
+  carries `z-index: 1` so it is never behind them.
+
+Audits clean at 360/390/430/1440; `npm test` 19/19.
