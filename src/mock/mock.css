@@ -26,6 +26,9 @@
   --fs-body: 13px;
   --fs-label: 11px;
 
+  /* The bar's height, so the drawer can start under it instead of over it. */
+  --topbar-h: 68px;
+
   /* Space: 4 / 8 / 12 / 16 / 24. */
   --s1: 4px;
   --s2: 8px;
@@ -120,7 +123,7 @@ button:disabled { cursor: not-allowed; }
    the whole thing is out of the flow so the layout never shifts when it opens. */
 .scrim {
   position: absolute;
-  inset: 0;
+  inset: var(--topbar-h) 0 0;
   z-index: 3;
   background: rgba(0, 0, 0, 0.6);
   opacity: 0;
@@ -136,9 +139,10 @@ button:disabled { cursor: not-allowed; }
 .drawer {
   /* Anchored to the app frame, not the window: on a wide screen the shell is a
      column in the middle, and a panel hanging off the window edge belongs to no
-     part of it. */
+     part of it. It starts under the bar, so the logo and the name above it are
+     never shown twice. */
   position: absolute;
-  top: 0;
+  top: var(--topbar-h);
   bottom: 0;
   left: 0;
   z-index: 4;
@@ -159,16 +163,7 @@ button:disabled { cursor: not-allowed; }
 .drawer-head {
   display: flex;
   align-items: center;
-  gap: var(--s2);
-  min-width: 0;
-}
-
-.drawer-brand {
-  flex: 1 1 auto;
-  font-family: var(--brand);
-  font-weight: 700;
-  font-size: var(--fs-body);
-  letter-spacing: 0.01em;
+  justify-content: flex-end;
 }
 
 .drawer-close {
@@ -242,11 +237,12 @@ button:disabled { cursor: not-allowed; }
   position: relative;
   z-index: 2;
   flex: 0 0 auto;
+  height: var(--topbar-h);
   display: grid;
-  grid-template-columns: 40px 1fr 40px;
+  grid-template-columns: 44px 1fr 44px;
   align-items: center;
   gap: var(--s3);
-  padding: var(--s3);
+  padding: 0 var(--s3);
   border-bottom: 1px solid var(--hairline);
   background: var(--surface);
 }
@@ -301,8 +297,10 @@ button:disabled { cursor: not-allowed; }
 
 /* The mark is an SVG asset, so one file serves both the bar and the tab icon. */
 .brand-mark {
-  width: 44px;
-  height: 44px;
+  /* Sized against the wordmark beside it: cap height of the 20px letters is about
+     14px, so a 22px mark reads as one lockup instead of two logos. */
+  width: 22px;
+  height: 22px;
   flex: 0 0 auto;
   display: block;
   filter: drop-shadow(0 1px 0 rgba(0, 0, 0, 0.5))

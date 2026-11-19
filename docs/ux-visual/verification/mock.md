@@ -847,3 +847,31 @@ on the shell, not the panel.
 Checker after the change: `cut-text` and `focus-hidden` went from FAIL to PASS
 (33 FAIL, 9 WARN, all of them the marketing page model listed in Round 38).
 Audits at 320/390/1440: 0 low contrast, `pageScrollY 0`, no small targets.
+
+## Round 40 — drag anywhere, one brand, a panel that starts under the bar
+
+Three things the screen got wrong, all of them caught by using it:
+
+- **The drag only worked in a 24px strip.** It now works over the whole page: the
+  listeners moved from the shell to `document`, so on a wide screen the margin
+  beside the column drags as well as the column itself. `EDGE` is gone, the
+  pointer-id field went with it, and the old React `onPointerDown`/`setPointerCapture`
+  pair is deleted — mouse, pen and touch share one gesture, one axis rule.
+  Verified: mouse opens from the page margin (`20 → 220`) and from inside the
+  column (`500 → 640`), a 40px drag does nothing, a left drag from anywhere closes;
+  touch opens anywhere on the phone; a vertical swipe still scrolls (`scrollTop
+  174`) and does not claim the gesture; tapping the menu still opens and tapping
+  the scrim still closes.
+- **The mark was more logo than the wordmark.** It was 44px beside 20px letters,
+  so the bar read as two logos. Now 22px: the circle is about 1.5x the letters'
+  cap height, one lockup, centred on the same line.
+- **The drawer covered the bar and repeated the brand.** The panel and its scrim
+  now start at `--topbar-h` (68px, the bar's own named height), so the logo and
+  name above it stay in one place, the close button is the panel's only header
+  row, and the duplicated mark/wordmark markup and `.drawer-brand` are deleted.
+  Measured open at 1440: panel `x 120` (the column's edge), `y 68`.
+
+Checker: still 33 FAIL / 9 WARN, all of them the marketing page model, no
+`cut-text`, `focus-hidden`, `tap-size`, `overlap-text` or `contrast` among them.
+Audits at 320/390/1440: 0 low contrast, `pageScrollY 0`, no small targets, four
+type sizes. `tsc --noEmit` and `npm test` 19/19 clean.
