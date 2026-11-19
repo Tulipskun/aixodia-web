@@ -1163,3 +1163,28 @@ Audits at 320/390/1440: `pageScrollY 0`, `pageOverflowX 0`, 0 low contrast, no s
 targets, no clipped text. The geometry audit's `wrappedControls` flags all 24 keys —
 a heuristic that reads a `44px` box with a single 14px line as wrapped text; measured
 per key, `textLines 1`, `textH 14`, `boxH 44`.
+
+## Round 53 — matched to the app, key for key
+
+Round 52 built the right idea in the wrong shape: one scrolling row of 24 keys, a
+`$` inside a bordered field, and no prompt of its own. The app's screen (screenshot
+`root ~ $` / two key rows / icon + outlined field) is the shape it had to match:
+
+| app | mock now |
+|---|---|
+| prompt `root ~ $` drawn in three colours | `.terminal-user` green, `.terminal-cwd` accent, `.terminal-mark` muted, then the command in text colour |
+| row 1: Esc, Tab, CMD, PgUp, ↑, PgDn, trash | same seven, trash = `Trash2` |
+| row 2: Ctrl, Shift, Alt, ←, ↓, →, reload | same seven, reload = `RotateCw` |
+| four modifiers, one chord each | CMD/Ctrl/Shift/Alt are toggles (`aria-pressed`), apply to the next key, then release: `· cmd+shift+PgUp` |
+| input with a terminal icon and an accent outline | `SquareTerminal` at 16px, then a `44px` field with a `--accent` border that goes `--text` on focus, placeholder "Type a command…" |
+| no title, no toolbar | no header of any kind; only the floating menu button |
+
+Trash clears the transcript (`0` lines), reload puts it back (`11`). Typing still
+uses the phone keyboard: CDP types `ls -la`, Enter appends `root ~ $ ls -la`, and the
+copied text is `root ~ $ ls -la` (real spaces, not margins — the first pass copied
+out as `root~$ls -la`).
+
+Measured: 14 keys, every one `44×44`, seven per row spread across the width at 390.
+Below `368px` the row scrolls and its right edge fades (`mask-image`) instead of
+ending in a cut key. Audits at 320/390/1440: `pageScrollY 0`, 0 low contrast, no
+small targets, no clipped text.

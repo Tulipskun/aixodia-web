@@ -708,8 +708,12 @@ button:disabled { cursor: not-allowed; }
 
 .terminal-line { white-space: pre; }
 
-/* What was typed is the one thing in accent: the output is the answer, not news. */
-.terminal-line.is-cmd { color: var(--accent); }
+/* A shell prompt is three facts: who, where, ready. They read as three colours,
+   the way the app draws them. */
+.terminal-user { color: var(--success); }
+.terminal-cwd { color: var(--accent); }
+/* What is typed after the prompt is plain text: the prompt is the marked part. */
+.terminal-line.is-cmd { color: var(--text); }
 .terminal-line.is-note { color: var(--muted); }
 /* A key that was sent, shown as the fact it is. */
 .terminal-line.is-sent { color: var(--accent); opacity: 0.75; }
@@ -731,20 +735,26 @@ button:disabled { cursor: not-allowed; }
   display: flex;
   align-items: center;
   gap: var(--s2);
+}
+
+.terminal-composer-mark { flex: 0 0 auto; color: var(--accent); }
+
+/* The field is the one control on this screen that is meant to be found: it
+   carries the accent, the way the app's does. */
+.terminal-field {
+  flex: 1 1 auto;
+  min-width: 0;
   height: 44px;
+  display: flex;
+  align-items: center;
   padding: 0 var(--s3);
   border-radius: var(--s2);
-  border: 1px solid var(--border);
+  border: 1px solid var(--accent);
   background: var(--surface-2);
+  transition: border-color 0.15s ease;
 }
 
-.terminal-composer:focus-within { border-color: var(--border-strong); }
-
-.terminal-prompt {
-  font-family: var(--mono);
-  font-size: var(--fs-body);
-  color: var(--accent);
-}
+.terminal-field:focus-within { border-color: var(--text); }
 
 .terminal-input {
   flex: 1 1 auto;
@@ -757,25 +767,36 @@ button:disabled { cursor: not-allowed; }
   font-family: var(--mono);
   font-size: var(--fs-body);
   outline: none;
+  caret-color: var(--accent);
 }
 
 .terminal-input::placeholder { color: var(--muted); }
 
+/* Two rows of keys, spread across the width as the app spreads them. */
 .terminal-keys {
-  display: flex;
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(44px, 1fr);
   gap: 6px;
-  /* The row is longer than a phone: it scrolls sideways, like the app's. */
   overflow-x: auto;
   scrollbar-width: none;
 }
 
 .terminal-keys::-webkit-scrollbar { display: none; }
 
+/* Below the width seven keys need, the row scrolls — and says so by fading the
+   edge rather than ending in a cut key. */
+@media (max-width: 368px) {
+  .terminal-keys {
+    mask-image: linear-gradient(to right, #000 calc(100% - 20px), transparent);
+  }
+}
+
 .terminal-key {
-  flex: 0 0 auto;
-  min-width: 44px;
+  display: grid;
+  place-items: center;
   height: 44px;
-  padding: 0 var(--s2);
+  padding: 0 var(--s1);
   border-radius: var(--s2);
   border: 1px solid var(--border);
   background: var(--surface-2);

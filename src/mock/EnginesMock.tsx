@@ -18,9 +18,11 @@ import {
   Menu,
   MonitorSmartphone,
   MousePointerClick,
+  RotateCw,
   Smartphone,
   Sparkles,
   SquareTerminal,
+  Trash2,
 } from 'lucide-react'
 
 interface Metric {
@@ -175,25 +177,15 @@ const DRAWER: { id: Screen; label: string; icon: LucideIcon }[] = [
   { id: 'terminal', label: 'Terminal', icon: SquareTerminal },
 ]
 
-/* The keys a phone keyboard does not have: a remote shell needs Escape, Tab, the
-   arrows and the function keys, and a phone's own keyboard brings none of them.
-   The typing itself stays the phone's keyboard, which already knows every
-   language the phone does. */
-const EXTRA_KEYS = [
-  'Esc',
-  'Tab',
-  'Ctrl',
-  'Alt',
-  '←',
-  '↑',
-  '↓',
-  '→',
-  'Home',
-  'End',
-  'PgUp',
-  'PgDn',
-  ...Array.from({ length: 12 }, (_, index) => `F${index + 1}`),
+/* The keys a phone keyboard does not have, in the app's two rows: what a shell
+   needs and a phone does not offer. The typing itself stays the phone's keyboard,
+   which already knows every language the phone does. */
+const KEY_ROWS: string[][] = [
+  ['Esc', 'Tab', 'CMD', 'PgUp', '↑', 'PgDn', 'trash'],
+  ['Ctrl', 'Shift', 'Alt', '←', '↓', '→', 'reload'],
 ]
+
+const MODIFIERS = ['CMD', 'Ctrl', 'Shift', 'Alt']
 
 /* What a shell on the engine has to say. The lines are literal: the lease and the
    instance id are what the engine actually reports. */
@@ -203,15 +195,15 @@ interface Line {
 }
 
 const TRANSCRIPT: Line[] = [
-  { kind: 'cmd', text: '$ aixodia status' },
+  { kind: 'cmd', text: 'aixodia status' },
   { kind: 'out', text: 'engine   m-8a7d1192 · v1.177' },
   { kind: 'out', text: 'lease    3s ago · ttl 60s' },
-  { kind: 'cmd', text: '$ aixodia lease' },
+  { kind: 'cmd', text: 'aixodia lease' },
   { kind: 'out', text: 'writer   engine · every 20s' },
   { kind: 'out', text: 'reader   gateway · every 10s' },
-  { kind: 'cmd', text: '$ curl -s engine/healthz' },
+  { kind: 'cmd', text: 'curl -s engine/healthz' },
   { kind: 'note', text: '{"ok":true,"ms":0.7}' },
-  { kind: 'cmd', text: '$ tail -n 2 aeo.ndjson' },
+  { kind: 'cmd', text: 'tail -n 2 aeo.ndjson' },
   { kind: 'note', text: '{"t":"run","ok":true,"ms":41}' },
   { kind: 'note', text: '{"t":"beat","ok":true}' },
 ]
@@ -390,87 +382,119 @@ function Card({
 }
 
 function Terminal() {
-  /* Typing and keys only append to this screen's own transcript: nothing is sent
+  /* Typing and keys only add to this screen's own transcript: nothing is sent
      anywhere, and a reload starts it over. */
   const [lines, setLines] = useState<Line[]>([])
+  const [wiped, setWiped] = useState(false)
   const [draft, setDraft] = useState('')
-  const [ctrl, setCtrl] = useState(false)
-  const [alt, setAlt] = useState(false)
+  /* A modifier applies to the next key only, the way a physical chord works. */
+  const [held, setHeld] = useState<string[]>([])
   const logRef = useRef<HTMLPreElement>(null)
 
-  const chord = [ctrl && 'ctrl', alt && 'alt'].filter(Boolean).join(' ')
+  const chord = held.map((key) => key.toLowerCase()).join('+')
+  const transcript = wiped ? [] : TRANSCRIPT
 
   useEffect(() => {
     /* A terminal keeps its newest line in view. */
     const log = logRef.current
     if (log) log.scrollTop = log.scrollHeight
-  }, [lines])
+  }, [lines, wiped])
 
-  /* A modifier applies to one key, the way a physical chord works. */
   const sendKey = (key: string) => {
     setLines((sent) => [...sent, { kind: 'sent', text: `· ${chord ? `${chord}+` : ''}${key}` }])
-    setCtrl(false)
-    setAlt(false)
+    setHeld([])
   }
+
+  const toggle = (key: string) =>
+    setHeld((on) => (on.includes(key) ? on.filter((name) => name !== key) : [...on, key]))
 
   const submit = (event: React.FormEvent) => {
     event.preventDefault()
     const command = draft.trim()
     if (!command) return
-    setLines((sent) => [...sent, { kind: 'cmd', text: `$ ${command}` }])
+    setLines((sent) => [...sent, { kind: 'cmd', text: command }])
     setDraft('')
+    /* A command goes to a shell and something comes back: the newest line is the
+       only one the mock answers, and it answers in the engine's own terms. */
+    setWiped(false)
   }
 
   return (
     <section className="terminal" aria-label="Terminal">
       <pre className="terminal-log" ref={logRef} data-no-drag>
-        {[...TRANSCRIPT, ...lines].map(({ kind, text }, index) => (
+        {[...transcript, ...lines].map(({ kind, text }, index) => (
           <span key={`${index}-${text}`} className={`terminal-line is-${kind}`}>
-            {text}
+            {kind === 'cmd' ? (
+              <>
+                {/* Real spaces, not margins: what is copied out of the log is a
+                    prompt and a command, not three words run together. */}
+                <span className="terminal-user">root</span>{' '}
+                <span className="terminal-cwd">~</span>{' '}
+                <span className="terminal-mark">$</span> <span>{text}</span>
+              </>
+            ) : (
+              text
+            )}
           </span>
         ))}
       </pre>
 
       <div className="terminal-bar">
         {/* An input, so tapping it raises the phone's own keyboard: every language
-            and every layout already lives there. */}
-        <form className="terminal-composer" onSubmit={submit} data-no-drag>
-          <span className="terminal-prompt" aria-hidden="true">
-            $
-          </span>
-          <input
-            className="terminal-input"
-            value={draft}
-            onChange={(event) => setDraft(event.target.value)}
-            placeholder={chord ? 'key for the chord…' : 'type, any language…'}
-            aria-label="Command"
-            enterKeyHint="send"
-            autoCapitalize="off"
-            autoCorrect="off"
-            spellCheck={false}
-          />
-        </form>
-
-        <div className="terminal-keys" data-no-drag>
-          {EXTRA_KEYS.map((key) => {
-            const held = (key === 'Ctrl' && ctrl) || (key === 'Alt' && alt)
-            return (
-              <button
-                key={key}
-                type="button"
-                className={`terminal-key${held ? ' is-held' : ''}`}
-                aria-pressed={key === 'Ctrl' || key === 'Alt' ? held : undefined}
-                onClick={() => {
-                  if (key === 'Ctrl') setCtrl((on) => !on)
-                  else if (key === 'Alt') setAlt((on) => !on)
-                  else sendKey(key)
-                }}
-              >
-                {key}
-              </button>
-            )
-          })}
+            and every layout already lives there. The prompt sits outside the field,
+            the way the app draws it. */}
+        <div className="terminal-composer" data-no-drag>
+          <SquareTerminal className="terminal-composer-mark" size={16} aria-hidden="true" />
+          <form className="terminal-field" onSubmit={submit}>
+            <input
+              className="terminal-input"
+              value={draft}
+              onChange={(event) => setDraft(event.target.value)}
+              placeholder={held.length ? 'key for the chord…' : 'Type a command…'}
+              aria-label="Command"
+              enterKeyHint="send"
+              autoCapitalize="off"
+              autoCorrect="off"
+              spellCheck={false}
+            />
+          </form>
         </div>
+
+        {KEY_ROWS.map((row) => (
+          <div className="terminal-keys" key={row.join()} data-no-drag>
+            {row.map((key) => {
+              const isModifier = MODIFIERS.includes(key)
+              const on = held.includes(key)
+              return (
+                <button
+                  key={key}
+                  type="button"
+                  className={`terminal-key${on ? ' is-held' : ''}`}
+                  aria-pressed={isModifier ? on : undefined}
+                  aria-label={key === 'trash' ? 'Clear' : key === 'reload' ? 'Reset' : key}
+                  onClick={() => {
+                    if (isModifier) toggle(key)
+                    else if (key === 'trash') {
+                      setLines([])
+                      setWiped(true)
+                    } else if (key === 'reload') {
+                      setLines([])
+                      setWiped(false)
+                    } else sendKey(key)
+                  }}
+                >
+                  {key === 'trash' ? (
+                    <Trash2 size={14} aria-hidden="true" />
+                  ) : key === 'reload' ? (
+                    <RotateCw size={14} aria-hidden="true" />
+                  ) : (
+                    key
+                  )}
+                </button>
+              )
+            })}
+          </div>
+        ))}
       </div>
     </section>
   )
