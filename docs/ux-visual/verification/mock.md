@@ -606,3 +606,16 @@ third instead of floating a few pixels in.
 A first pass at `TOP 5 / FLOOR 95` was rejected on the screenshot: the dips ran
 into the upper half of `100.2/128 GB`. `9/91` keeps every digit clear while still
 reading as a tight band. Audits clean at 320, 360, 390, 430 and 1440.
+
+## Round 31 — the line runs past the letters
+
+The spark now bleeds out of its cell: `--spark-bleed: 10px` on `.metrics`,
+`inset: -10px 0` and `height: calc(100% + 20px)` on `.metric-spark`, with `.metric`
+no longer clipping. The chart's own band is `TOP 8 / FLOOR 92`, so at 390 (cell
+38.5, chart box 58.5 starting at y126) the line's peak is `y130.7` — 5.3px above
+the label top (136) — and its floor is `y179.8` — 5.3px below the value bottom
+(174.5).
+
+The height has to be explicit: a `viewBox`-sized SVG with only insets falls back to
+its 1:1 intrinsic ratio and renders 102px tall in a 38px cell. Audits clean at 320,
+360, 390, 430 and 1440; the 10px bleed stays inside the 12px gap above the actions.

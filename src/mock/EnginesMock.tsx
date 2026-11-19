@@ -139,8 +139,8 @@ function Spark({ values, ceiling, tone }: { values: number[]; ceiling: number; t
      geometry rather than CSS offsets: an absolutely positioned SVG with a viewBox
      keeps its own aspect ratio and refuses to be inset. The line runs close to the
      label and the reading, so it reads as theirs rather than as a band behind. */
-  const TOP = 9
-  const FLOOR = 91
+  const TOP = 8
+  const FLOOR = 92
   const SIDE = 4
   const min = Math.min(...values)
   const max = Math.max(...values)

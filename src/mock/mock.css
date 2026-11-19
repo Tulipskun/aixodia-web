@@ -386,6 +386,7 @@ button:disabled { cursor: not-allowed; }
 /* --------------------------------------------------------------- metrics */
 
 .metrics {
+  --spark-bleed: 10px;
   display: grid;
   /* Equal thirds: a reading that is wider than its panel is worse than one a
      little smaller, so the value below scales with the viewport instead. */
@@ -395,14 +396,14 @@ button:disabled { cursor: not-allowed; }
 }
 
 /* No frame: the columns are held apart by the gap alone, so the reading and its
-   history keep the whole third of the card. */
+   history keep the whole third of the card. The chart is allowed out of the cell,
+   so nothing here clips. */
 .metric {
   position: relative;
   display: flex;
   flex-direction: column;
   gap: var(--s1);
   min-width: 0;
-  overflow: hidden;
 }
 
 /* Icon and name on one line, the reading under it: the number is the point, so it
@@ -411,9 +412,12 @@ button:disabled { cursor: not-allowed; }
    is decoration: never clickable, never in the accessibility tree. */
 .metric-spark {
   position: absolute;
-  inset: 0;
+  /* Bleeds past the label above and the reading below: the line is the shape of
+     the history, not a box drawn around the letters. The height is explicit
+     because a viewBox'd SVG otherwise takes its intrinsic square ratio. */
+  inset: calc(var(--spark-bleed) * -1) 0;
   width: 100%;
-  height: 100%;
+  height: calc(100% + var(--spark-bleed) * 2);
   pointer-events: none;
   color: var(--accent);
 }
