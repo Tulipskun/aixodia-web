@@ -151,21 +151,47 @@ const DEVICES: Machine[] = [
   },
 ]
 
-type Screen = 'engines' | 'droidime'
+type Screen = 'engines' | 'droidime' | 'terminal'
 
-const SCREENS: { id: Screen; title: string; noun: string; machines: Machine[] }[] = [
-  { id: 'engines', title: 'Engines', noun: 'engine', machines: MACHINES },
-  { id: 'droidime', title: 'Droidime', noun: 'device', machines: DEVICES },
+/** The screens that are a list of cards. A terminal is one session, not a list. */
+type ListedScreen = Exclude<Screen, 'terminal'>
+
+type ScreenInfo =
+  | { id: ListedScreen; title: string; count: string; machines: Machine[] }
+  | { id: 'terminal'; title: string; count: string; machines: null }
+
+const SCREENS: ScreenInfo[] = [
+  { id: 'engines', title: 'Engines', count: `${MACHINES.length} engines`, machines: MACHINES },
+  { id: 'droidime', title: 'Droidime', count: `${DEVICES.length} devices`, machines: DEVICES },
+  /* A terminal belongs to one engine, so the right of the heading names it. */
+  { id: 'terminal', title: 'Terminal', count: 'm-8a7d1192', machines: null },
 ]
 
 const DRAWER: { id: Screen; label: string; icon: LucideIcon }[] = [
   { id: 'engines', label: 'Engines', icon: Boxes },
   { id: 'droidime', label: 'Droidime', icon: Smartphone },
+  { id: 'terminal', label: 'Terminal', icon: SquareTerminal },
+]
+
+/* What a shell on the engine has to say. The lines are literal: the lease and the
+   instance id are what the engine actually reports. */
+const TRANSCRIPT: { kind: 'cmd' | 'out' | 'note'; text: string }[] = [
+  { kind: 'cmd', text: '$ aixodia status' },
+  { kind: 'out', text: 'engine   m-8a7d1192 · v1.177' },
+  { kind: 'out', text: 'lease    3s ago · ttl 60s' },
+  { kind: 'cmd', text: '$ aixodia lease' },
+  { kind: 'out', text: 'writer   engine · every 20s' },
+  { kind: 'out', text: 'reader   gateway · every 10s' },
+  { kind: 'cmd', text: '$ curl -s engine/healthz' },
+  { kind: 'note', text: '{"ok":true,"ms":0.7}' },
+  { kind: 'cmd', text: '$ tail -n 2 aeo.ndjson' },
+  { kind: 'note', text: '{"t":"run","ok":true,"ms":41}' },
+  { kind: 'note', text: '{"t":"beat","ok":true}' },
 ]
 
 /* Each screen offers what that thing can actually do: a server is opened, a phone
    is driven. */
-const ACTIONS: Record<Screen, { id: string; label: string; icon: LucideIcon }[]> = {
+const ACTIONS: Record<ListedScreen, { id: string; label: string; icon: LucideIcon }[]> = {
   engines: [
     { id: 'terminal', label: 'Terminal', icon: SquareTerminal },
     { id: 'ai', label: 'AI', icon: Sparkles },
@@ -262,12 +288,14 @@ function Card({
   machine,
   screen,
   index,
+  onTerminal,
 }: {
   machine: Machine
-  screen: Screen
+  screen: ListedScreen
   /* Cards arrive in order when the screen changes, so the switch is felt as a
      change of screen rather than as text being swapped in place. */
   index: number
+  onTerminal: () => void
 }) {
   const offline = !machine.online
   return (
@@ -322,6 +350,8 @@ function Card({
             type="button"
             className="action"
             disabled={offline}
+            /* The one action that has a screen behind it goes there. */
+            onClick={id === 'terminal' ? onTerminal : undefined}
           >
             <Icon size={15} />
             <span>{label}</span>
@@ -329,6 +359,33 @@ function Card({
         ))}
       </div>
     </article>
+  )
+}
+
+function Terminal({ engine }: { engine: Machine }) {
+  return (
+    <section className="card terminal" aria-label={`Terminal on ${engine.name}`}>
+      <header className="terminal-head">
+        <h2>{engine.name}</h2>
+        <p className={`state${engine.online ? ' is-online' : ''}`}>
+          <span className="state-dot" aria-hidden="true" />
+          <span className="state-text">{engine.meta}</span>
+        </p>
+      </header>
+
+      {/* A transcript, not a live log: the caret is where typing would go. */}
+      <pre className="terminal-log">
+        {TRANSCRIPT.map(({ kind, text }) => (
+          <span key={text} className={`terminal-line is-${kind}`}>
+            {text}
+          </span>
+        ))}
+        <span className="terminal-line is-prompt">
+          {'$ '}
+          <span className="terminal-caret" aria-hidden="true" />
+        </span>
+      </pre>
+    </section>
   )
 }
 
@@ -560,14 +617,23 @@ export function EnginesMock() {
               entrance runs with the cards instead of the text swapping in place. */}
           <h1 key={screen.id}>{screen.title}</h1>
           <span key={`${screen.id}-count`} className="screen-count">
-            {screen.machines.length} {screen.noun}
-            {screen.machines.length === 1 ? '' : 's'}
+            {screen.count}
           </span>
         </div>
 
-        {screen.machines.map((machine, index) => (
-          <Card key={machine.id} machine={machine} screen={screen.id} index={index} />
-        ))}
+        {screen.machines ? (
+          screen.machines.map((machine, index) => (
+            <Card
+              key={machine.id}
+              machine={machine}
+              screen={screen.id}
+              index={index}
+              onTerminal={() => setScreenId('terminal')}
+            />
+          ))
+        ) : (
+          <Terminal key={screen.id} engine={MACHINES[0]} />
+        )}
       </main>
 
     </div>

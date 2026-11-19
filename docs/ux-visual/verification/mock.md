@@ -1029,3 +1029,34 @@ A frame at 420ms shows the intended look: name and status legible, readings fain
 actions barely there. Checker: `reduced-motion`, `hidden-content`, `scroll-reveal`,
 `overlap-text`, `collide` PASS; the one `hover` WARN at 390 is the phone profile
 `(hover: none)` case already documented. Audits clean at 320/390/1440.
+
+## Round 48 — a terminal
+
+The third screen. It is not a list, so `SCREENS` became a discriminated union: the
+two card screens carry `machines`, the terminal carries `null` and renders one
+panel. TypeScript narrows on that, so `Card` can no longer be asked for a terminal
+action set — `ACTIONS` is keyed by `ListedScreen`.
+
+- Drawer: **Terminal** (third item, `SquareTerminal`).
+- The heading's right side stops counting engines and names the instance instead:
+  `m-8a7d1192`.
+- The panel is the same `card` material with the same entrance, then its own two
+  parts at `+200 / +280ms`: `.terminal-head` (engine name, state dot) and
+  `.terminal-log`.
+- The transcript is monospaced (`--mono` at `--fs-body`), commands in `--accent`,
+  output in `--text`, machine lines in `--muted`, closing with a `$` prompt and a
+  caret that blinks in `steps(1)`. Reduced motion stops the blink and the entrances.
+- On a phone the panel takes the height the screen has left (`flex: 1 1 auto`), so
+  it reads as a region rather than a card sized to its text; on a wide screen it
+  spans both columns.
+- The **Terminal** action on a card now goes here. It is the only action with a
+  screen behind it; the rest stay inert, as a mock should.
+
+Measured: entrance opacity (panel/head/log) `0.74/0/0` at 200ms → `0.92/0.64/0.15`
+at 320ms → settled by 760ms. Drawer marks Terminal as current and Engines again
+after going back; reduced motion reports `animationName none` for caret and head.
+Audits at 320/390/1440 (terminal screen): `pageScrollY 0`, 0 low contrast, no small
+targets, no wrapped controls. Copy lint on the rendered terminal DOM: 0 FAIL, 0 WARN.
+
+One regression found and fixed on the way: the long `curl engine.aixodia.dpdns.org`
+line scrolled sideways at 320, so the transcript is now short enough to fit whole.
