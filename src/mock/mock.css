@@ -386,7 +386,7 @@ button:disabled { cursor: not-allowed; }
 /* --------------------------------------------------------------- metrics */
 
 .metrics {
-  --spark-bleed: 10px;
+  --spark-bleed: 6px;
   display: grid;
   /* Equal thirds: a reading that is wider than its panel is worse than one a
      little smaller, so the value below scales with the viewport instead. */
@@ -412,12 +412,12 @@ button:disabled { cursor: not-allowed; }
    is decoration: never clickable, never in the accessibility tree. */
 .metric-spark {
   position: absolute;
-  /* Bleeds past the label above and the reading below: the line is the shape of
-     the history, not a box drawn around the letters. The height is explicit
-     because a viewBox'd SVG otherwise takes its intrinsic square ratio. */
-  inset: calc(var(--spark-bleed) * -1) 0;
-  width: 100%;
-  height: calc(100% + var(--spark-bleed) * 2);
+  /* Bleeds out sideways past the letters: the line is the shape of the history,
+     not a box drawn around the column. Both dimensions are explicit because a
+     viewBox'd SVG otherwise takes its intrinsic square ratio. */
+  inset: 0 calc(var(--spark-bleed) * -1);
+  width: calc(100% + var(--spark-bleed) * 2);
+  height: 100%;
   pointer-events: none;
   color: var(--accent);
 }

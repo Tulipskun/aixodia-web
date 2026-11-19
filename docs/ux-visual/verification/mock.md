@@ -619,3 +619,19 @@ the label top (136) — and its floor is `y179.8` — 5.3px below the value bott
 The height has to be explicit: a `viewBox`-sized SVG with only insets falls back to
 its 1:1 intrinsic ratio and renders 102px tall in a 38px cell. Audits clean at 320,
 360, 390, 430 and 1440; the 10px bleed stays inside the 12px gap above the actions.
+
+## Round 32 — sideways, not up and down
+
+The bleed is horizontal: `--spark-bleed: 6px`, `.metric-spark { inset: 0 -6px;
+width: calc(100% + 12px); height: 100% }`. The vertical bleed from round 31 is
+reverted; the chart keeps the cell's full height and the line stays inside the
+text block top to bottom.
+
+Measured at 390: cell `29–132`, chart `23–138` — 6px past the letters on each
+side, and the three chart boxes meet exactly at the 12px column gap (ink still
+shows ~9px of air because the line keeps its own 4% side inset).
+
+The geometry audit now reports a deliberate `spillPx: 6` on `.metrics` and each
+`.metric`: that is the requested overshoot. It is inside the card's 16px padding,
+so nothing is clipped and nothing leaves the card. `pageScrollY 0` and
+`pageOverflowX 0` at 320, 360, 390, 430 and 1440.
