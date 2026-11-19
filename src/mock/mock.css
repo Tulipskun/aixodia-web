@@ -366,6 +366,30 @@ button:disabled { cursor: not-allowed; }
   animation: card-in 520ms cubic-bezier(0.22, 0.61, 0.36, 1) both;
 }
 
+/* Inside a card the same gesture repeats in miniature: the name, then the
+   readings, then what you can do, each a beat after the last. `--enter` is the
+   card's own start time, set from its index. */
+.card-head,
+.metrics,
+.actions {
+  animation: content-in 360ms cubic-bezier(0.22, 0.61, 0.36, 1) both;
+  animation-delay: calc(var(--enter, 0ms) + 200ms);
+}
+
+.metrics { animation-delay: calc(var(--enter, 0ms) + 280ms); }
+.actions { animation-delay: calc(var(--enter, 0ms) + 360ms); }
+
+@keyframes content-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
 @keyframes card-in {
   from {
     opacity: 0;
@@ -622,6 +646,9 @@ button:disabled { cursor: not-allowed; }
   .action:active:not(:disabled),
   .icon-button:active { transform: none; }
   .card,
+  .card-head,
+  .metrics,
+  .actions,
   .screen-head h1,
   .screen-count { animation: none; }
 }

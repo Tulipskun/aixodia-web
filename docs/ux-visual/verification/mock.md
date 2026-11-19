@@ -1003,3 +1003,29 @@ Measured (computed opacity):
 | 700ms | 1.00 | 1.00 | 1.00 | 1.00 |
 
 Audits at 320/390/1440 clean, no layout shift from the 10px rise (transform only).
+
+## Round 47 — the card fills itself in
+
+The card arrived as one block, so the whole list landed at one beat. Its parts now
+follow it: `.card-head`, `.metrics` and `.actions` run `content-in` (`360ms`, `6px`,
+`both`) at `+200 / +280 / +360ms` from the card's own `--enter` variable (the same
+number that drives the card, written once from the card's index).
+
+The gesture now reads: screen name → count → card 1 (border, then name, then
+readings, then actions) → card 2, same inside. Everything is `transform` + `opacity`
+on already-laid-out boxes, so nothing reflows.
+
+Measured (computed opacity, card 1 / card 2):
+
+| t | card | head | metrics | actions |
+|---|---|---|---|---|
+| 200ms | 0.49 / 0.11 | 0.00 / 0.00 | 0.00 / 0.00 | 0.00 / 0.00 |
+| 320ms | 0.81 / 0.62 | 0.13 / 0.00 | 0.00 / 0.00 | 0.00 / 0.00 |
+| 440ms | 0.94 / 0.86 | 0.76 / 0.39 | 0.39 / 0.00 | 0.00 / 0.00 |
+| 560ms | 0.99 / 0.97 | 0.96 / 0.85 | 0.85 / 0.59 | 0.59 / 0.08 |
+| 900ms | 1.00 | 1.00 | 1.00 | 1.00 |
+
+A frame at 420ms shows the intended look: name and status legible, readings faint,
+actions barely there. Checker: `reduced-motion`, `hidden-content`, `scroll-reveal`,
+`overlap-text`, `collide` PASS; the one `hover` WARN at 390 is the phone profile
+`(hover: none)` case already documented. Audits clean at 320/390/1440.

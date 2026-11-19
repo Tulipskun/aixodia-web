@@ -5,7 +5,7 @@
 //! It exists so the shape of the screen can be argued about before any of it is
 //! wired to the registry. Everything below is a literal.
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import type { LucideIcon } from 'lucide-react'
 import {
   BatteryMedium,
@@ -273,7 +273,14 @@ function Card({
   return (
     <article
       className={`card${offline ? ' is-offline' : ''}`}
-      style={{ animationDelay: `${ENTER_DELAY + index * ENTER_STEP}ms` }}
+      /* The card's start time is also its parts' reference point: the name, the
+         readings and the actions follow it in that order. */
+      style={
+        {
+          animationDelay: `${ENTER_DELAY + index * ENTER_STEP}ms`,
+          '--enter': `${ENTER_DELAY + index * ENTER_STEP}ms`,
+        } as CSSProperties
+      }
       aria-label={machine.name}
     >
       <header className="card-head">
