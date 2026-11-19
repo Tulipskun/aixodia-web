@@ -345,7 +345,10 @@ export function EnginesMock() {
 
   const begin = (clientX: number, clientY: number, insideDrawer: boolean) => {
     if (dragRef.current) return false
-    if (menuOpen ? !insideDrawer : clientX > EDGE) return false
+    /* The edge is the app's own left edge, not the window's: on a wide screen the
+       shell is a column in the middle and the window edge is nowhere near it. */
+    const left = shellRef.current?.getBoundingClientRect().left ?? 0
+    if (menuOpen ? !insideDrawer : clientX - left > EDGE) return false
     const width = panelRef.current?.getBoundingClientRect().width
     if (!width) return false
     hold({

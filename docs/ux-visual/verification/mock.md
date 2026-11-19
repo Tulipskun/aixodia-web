@@ -815,3 +815,35 @@ Waived with reason (the checker's page model, not this screen):
 Everything else PASSes: contrast, text-contrast, body-size, nesting, button-styles,
 button-shape, one-family cards, dark-ground, motion layer, a11y names, heading
 order, focus ring/visible, menu-toggle, lang, tap-size, spill, collide, 320 sweep.
+
+## Round 39 — the swipe only worked on a phone
+
+The user asked how the swipe-to-open behaves now, so it was measured again over
+CDP instead of assumed: touch (Android) and mouse (PC), four cases each.
+
+- **Touch passed**: edge drag `6 → 190` opens (`is-open`, panel `x 0`, scrim `1`),
+  a 34px drag stays shut, a vertical drag from the edge scrolls instead of
+  claiming, and dragging left from the panel closes it.
+- **Mouse failed** at 1280 and up: `begin()` compared the pointer against
+  `clientX > EDGE` — a *window* coordinate — while on a wide screen the shell is a
+  centered column. The edge band sat in the page margin where no listener is, so
+  no mouse drag could ever start. The check is now against the shell's own left
+  edge (`clientX - shell.left > EDGE`), which is identical on a phone
+  (`left 0`) and correct in a column.
+- The drawer was `position: fixed`, so on a wide screen it slid out of the
+  *window* edge and hung in the page margin, outside the app frame its scrim
+  covered. It and the scrim are now `absolute` inside `.shell` (which gained
+  `position: relative`), so the panel opens from the app's own edge: measured
+  `x 200` at 1440 (shell left), `x 0` at 390.
+- `.shell` gained `overflow: hidden` for the same reason: with the panel anchored
+  to the column, `translateX(-100%)` leaves 200px of it still on screen unless
+  the frame clips it. Screenshot at 1440 confirms nothing shows outside the column.
+
+All eight cases pass after the fix (touch open/close/short/vertical; mouse
+open/close/short + the edge measured at runtime). `inert` still holds: the closed
+panel is `inert`, opening clears it, and the drag keeps working because it listens
+on the shell, not the panel.
+
+Checker after the change: `cut-text` and `focus-hidden` went from FAIL to PASS
+(33 FAIL, 9 WARN, all of them the marketing page model listed in Round 38).
+Audits at 320/390/1440: 0 low contrast, `pageScrollY 0`, no small targets.
