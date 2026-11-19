@@ -763,3 +763,8 @@ Verified: `impeccable detect` returns **no findings** at 390x844 and 1440x900.
 Audits at 320/360/390/430/1440: 0 low contrast, no wrapped controls, no uneven
 rows, `pageScrollY 0`. Known and left alone: with two engines the area below the
 list is empty on a desktop screen; filling it would mean inventing content.
+
+The brand asset was still drawn in the old palette (`#69c8ff` / `#7772ff` /
+`#08083a`), so the emblem was the last neon thing on the page even though every
+CSS token had changed. `public/brand/aixodia-mark.svg` now uses the page tokens
+(`#141417`, `#7fa6d3`, `#5c7fae`, `#f2f2f3`), one hue for the whole mark.

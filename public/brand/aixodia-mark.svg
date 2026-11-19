@@ -1,24 +1,24 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="AIxodia">
-  <!-- Colours are the mock's tokens: surface2 #08083a, accent #7772ff,
-       info #69c8ff, text #f4f3ff. -->
+  <!-- Colours are the page tokens: surface2 #141417, accent #7fa6d3,
+       text #f2f2f3. One accent, no second hue. -->
   <defs>
     <linearGradient id="core" x1="50%" y1="0%" x2="50%" y2="100%">
-      <stop offset="0%" stop-color="#69c8ff" />
-      <stop offset="100%" stop-color="#7772ff" />
+      <stop offset="0%" stop-color="#7fa6d3" />
+      <stop offset="100%" stop-color="#5c7fae" />
     </linearGradient>
   </defs>
 
-  <circle cx="256" cy="256" r="210" fill="#08083a" stroke="#7772ff" stroke-opacity="0.55" stroke-width="14" />
-  <circle cx="256" cy="256" r="104" fill="none" stroke="#69c8ff" stroke-opacity="0.5" stroke-width="16" />
+  <circle cx="256" cy="256" r="210" fill="#141417" stroke="#7fa6d3" stroke-opacity="0.55" stroke-width="14" />
+  <circle cx="256" cy="256" r="104" fill="none" stroke="#7fa6d3" stroke-opacity="0.5" stroke-width="16" />
 
   <path
     fill="url(#core)"
     d="M 247.47 215.38 Q 256.00 198.00 264.53 215.38 L 273.44 233.53 Q 275.09 236.91 278.47 238.56 L 296.62 247.47 Q 314.00 256.00 296.62 264.53 L 278.47 273.44 Q 275.09 275.09 273.44 278.47 L 264.53 296.62 Q 256.00 314.00 247.47 296.62 L 238.56 278.47 Q 236.91 275.09 233.53 273.44 L 215.38 264.53 Q 198.00 256.00 215.38 247.47 L 233.53 238.56 Q 236.91 236.91 238.56 233.53 Z"
   />
 
-  <g fill="#69c8ff" fill-opacity="0.9">
+  <g fill="#7fa6d3" fill-opacity="0.9">
     <path
-      fill="#f4f3ff"
+      fill="#f2f2f3"
       d="M 251.40 76.68 Q 256.00 68.00 260.60 76.68 L 277.50 108.60 Q 283.00 119.00 271.90 115.10 L 257.06 109.87 Q 256.00 109.50 254.94 109.87 L 240.10 115.10 Q 229.00 119.00 234.50 108.60 Z"
     />
     <path d="M 425.12 196.22 Q 434.80 197.90 427.96 204.96 L 402.82 230.90 Q 394.64 239.34 394.92 227.58 L 395.30 211.85 Q 395.33 210.73 394.65 209.83 L 385.09 197.33 Q 377.95 187.99 389.54 190.01 Z" />
