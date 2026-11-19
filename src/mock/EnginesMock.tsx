@@ -10,15 +10,14 @@ import type { LucideIcon } from 'lucide-react'
 import {
   BatteryMedium,
   Boxes,
-  Camera,
   Cpu,
+  Eye,
   Ellipsis,
   HardDrive,
-  Keyboard,
   MemoryStick,
   Menu,
   MonitorSmartphone,
-  Plug,
+  MousePointerClick,
   Smartphone,
   Sparkles,
   SquareTerminal,
@@ -169,11 +168,10 @@ const ACTIONS: Record<Screen, { id: string; label: string; icon: LucideIcon }[]>
     { id: 'screen', label: 'Screen', icon: MonitorSmartphone },
     { id: 'more', label: 'More', icon: Ellipsis },
   ],
+  /* A phone is watched or driven, nothing else: two ways to see its screen. */
   droidime: [
-    { id: 'screenshot', label: 'Screen', icon: Camera },
-    { id: 'input', label: 'Input', icon: Keyboard },
-    { id: 'mcp', label: 'MCP', icon: Plug },
-    { id: 'more', label: 'More', icon: Ellipsis },
+    { id: 'view', label: 'View screen', icon: Eye },
+    { id: 'control', label: 'Control screen', icon: MousePointerClick },
   ],
 }
 
@@ -292,7 +290,7 @@ function Card({ machine, screen }: { machine: Machine; screen: Screen }) {
         ))}
       </div>
 
-      <div className="actions">
+      <div className={`actions${ACTIONS[screen].length === 2 ? ' is-pair' : ''}`}>
         {ACTIONS[screen].map(({ id, label, icon: Icon }) => (
           <button
             key={id}

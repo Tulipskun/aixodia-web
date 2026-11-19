@@ -916,3 +916,15 @@ Verified over CDP: title/count/cards/current all follow the switch and back;
 audits at 320/390/1440: 0 low contrast, `pageScrollY 0`, no small targets, no
 wrapped controls; checker 34 FAIL / 9 WARN, none of them `cut-text`, `focus-hidden`,
 `tap-size`, `overlap-text`, `heading-scale` or `nesting`.
+
+## Round 43 — two ways to look at a phone
+
+Droidime offered four actions (Screen, Input, MCP, More) that belonged to a server.
+It now offers the only two things a phone can do here: **View screen** (eye, no
+input) and **Control screen** (pointer). The keyboard/plug icons and the `is-pair`
+case went in with them: `.actions.is-pair` spreads two buttons over the row instead
+of leaving two empty grid columns, so the pair reads as the whole row rather than as
+half of a four.
+
+Measured: both labels on one line at 320, 390 and 1440 (no wrapped controls), cards
+still equal height, `pageScrollY 0`, 0 low contrast, no small targets.

@@ -525,6 +525,9 @@ button:disabled { cursor: not-allowed; }
   border-top: 1px solid var(--hairline);
 }
 
+/* Two actions share the row rather than sitting in half an empty grid. */
+.actions.is-pair { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+
 /* Four peers: none of them is this screen's purpose, so none of them is filled. */
 .action {
   display: flex;
