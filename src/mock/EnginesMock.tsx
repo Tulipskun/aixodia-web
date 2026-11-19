@@ -100,6 +100,10 @@ const ACCOUNT = 'Tulipskun'
 /* A sideways drag anywhere on the page opens the drawer, and one headed left
    anywhere closes it again. Both commit on distance or on speed, so a short flick
    counts. */
+/* The panel takes 220ms to leave, so the list starts after it is mostly gone. */
+const ENTER_DELAY = 100
+const ENTER_STEP = 80
+
 const COMMIT = 72
 const FLICK = 0.35
 const SLOP = 4
@@ -269,7 +273,7 @@ function Card({
   return (
     <article
       className={`card${offline ? ' is-offline' : ''}`}
-      style={{ animationDelay: `${index * 40}ms` }}
+      style={{ animationDelay: `${ENTER_DELAY + index * ENTER_STEP}ms` }}
       aria-label={machine.name}
     >
       <header className="card-head">

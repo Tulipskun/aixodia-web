@@ -953,3 +953,28 @@ kept a tapped drawer row looking current). At 1440 the button answers the pointe
 
 Audits at 320/390/1440: 0 low contrast, `pageScrollY 0`, no small targets, no
 wrapped controls.
+
+## Round 45 — long enough to see
+
+The first pass was over before the eye arrived: `240ms` on a curve that reaches ~90%
+in its first quarter, so what the screen did was effectively a swap with a flicker.
+
+- `380ms` → **`420ms`** → **`520ms`**, curve `cubic-bezier(0.16, 1, 0.3, 1)`
+  (front-loaded) → **`cubic-bezier(0.22, 0.61, 0.36, 1)`** (even), rise `8px` →
+  `16px` → **`28px`** with `scale(0.97)`.
+- The list waits **100ms** for the drawer's 220ms exit to be mostly done, then the
+  next card starts **80ms** after the one above it.
+
+Measured with a probe that reads computed opacity and transform at fixed times
+instead of judging a screenshot (a single dark frame is a poor judge):
+
+| t | card 1 opacity / offset | card 2 opacity / offset |
+|---|---|---|
+| 80ms | 0.00 / 28px | 0.00 / 28px |
+| 180ms | 0.34 / 18.5px | 0.00 / 28px |
+| 280ms | 0.70 / 8.4px | 0.43 / 15.9px |
+| 380ms | 0.88 / 3.3px | 0.75 / 7.0px |
+| 600ms | 1.00 / 0px | 0.98 / 0.5px |
+
+`prefers-reduced-motion` still reports `animationName none`, audits at
+320/390/1440 stay clean (`pageScrollY 0`, 0 low contrast, no wrapped controls).
