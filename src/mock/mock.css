@@ -292,9 +292,10 @@ button:disabled { cursor: not-allowed; }
   gap: var(--s1);
   min-width: 0;
   padding: var(--s2) var(--s1);
-  border: 1px solid var(--hairline);
+  /* An outline only: with no fill behind it the frame has to carry the panel on
+     its own, so it uses the stronger border rather than the hairline. */
+  border: 1px solid var(--border);
   border-radius: var(--s3);
-  background: rgba(0, 0, 0, 0.22);
   overflow: hidden;
 }
 
@@ -328,11 +329,13 @@ button:disabled { cursor: not-allowed; }
   opacity: 0.45;
 }
 
-/* Text over the chart needs its own layer to stay above it. */
+/* Text over the chart needs its own layer to stay above it, and its own shade so a
+   line passing under a digit never eats into it. */
 .metric-label,
 .metric-value {
   position: relative;
   z-index: 1;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9), 0 0 10px rgba(0, 0, 0, 0.7);
 }
 
 .metric-label {

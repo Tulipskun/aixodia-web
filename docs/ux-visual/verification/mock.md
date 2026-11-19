@@ -528,3 +528,14 @@ now a panel: `1px --hairline` frame, `--s3` radius, `rgba(0,0,0,.22)` well, and
   (measured `sparkBottomGap -44`).
 
 Audits clean at 360/390/430/1440; `npm test` 19/19.
+
+## Round 34 — outline only, and shade under the text
+
+- The panel well (`rgba(0,0,0,.22)`) is gone: the frame is an outline on the card's
+  own surface. With no fill carrying the panel, the frame moves from `--hairline`
+  (10%) to `--border` (13%) so it still reads as a frame on its own.
+- The reading gets its own shade, `text-shadow: 0 1px 3px rgba(0,0,0,.9), 0 0 10px
+  rgba(0,0,0,.7)`, so a trace passing under a digit cannot eat into it. Vision:
+  crisp, not blurry.
+
+Audits clean at 360/390/430/1440; `npm test` 19/19.
