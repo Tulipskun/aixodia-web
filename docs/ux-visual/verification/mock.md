@@ -424,3 +424,19 @@ Audits clean at 360, 390, 430 and 1440; `npm test` 19/19.
 
 Keyboard focus keeps its `:focus-visible` outline: it never appears on a tap, and
 removing it would take the only cue a keyboard user has.
+
+## Round 28 — the bar controls are raised, and the press adds colour
+
+- The menu button and avatar now sit above the bar instead of in it: a
+  vertical white-to-black gradient over `--surface-3`, a 1px lit top edge, a
+  darkened lower half and two drop shadows (`0 2px 4px` tight, `0 10px 20px`
+  broad). They read as raised on the dark bar without breaking the flat palette
+  of the cards.
+- Pressing is a colour highlight as well as a move: the surface takes an accent
+  wash (`rgba(119,114,255,.4)` under a white-to-black gradient), the border goes
+  accent at 50%, and an inset ring plus a 16–18px accent glow appears, on top of
+  the 0.94 / 0.96 scale.
+
+Checked with a held press in both places: menu `matrix(0.94…)` with the purple
+wash and glow; Terminal `matrix(0.96…)` with the wash while the other three stay
+neutral. Audits clean at 360/390/430/1440, `npm test` 19/19.
