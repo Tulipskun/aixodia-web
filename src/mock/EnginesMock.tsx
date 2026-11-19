@@ -272,6 +272,14 @@ function Drawer({
   /* While a pointer is down the panel follows it instead of the class, so the
      gesture reads as dragging the panel rather than waiting for it to appear. */
   const offset = drag ? (drag.fromOpen ? Math.min(0, drag.dx) : Math.min(0, drag.dx - drag.width)) : null
+
+  useEffect(() => {
+    /* Sliding the panel off screen leaves its buttons reachable by Tab, which puts
+       the pointer nowhere near where the keyboard thinks it is. While closed the
+       panel is inert, so it is skipped. */
+    panelRef.current?.toggleAttribute('inert', !open)
+  }, [open, panelRef])
+
   return (
     <>
       <div
@@ -440,6 +448,10 @@ export function EnginesMock() {
       }}
       onPointerCancel={() => hold(null)}
     >
+      <a className="skip-link" href="#engines">
+        Skip to engines
+      </a>
+
       <header className="topbar">
         <button
           type="button"
@@ -458,7 +470,7 @@ export function EnginesMock() {
 
       <Drawer open={menuOpen} onClose={() => setMenuOpen(false)} drag={drag} panelRef={panelRef} />
 
-      <main className="screen">
+      <main className="screen" id="engines" tabIndex={-1}>
         <div className="screen-head">
           <h1>Engines</h1>
           <span className="screen-count">

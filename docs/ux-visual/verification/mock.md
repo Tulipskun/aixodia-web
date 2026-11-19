@@ -768,3 +768,50 @@ The brand asset was still drawn in the old palette (`#69c8ff` / `#7772ff` /
 `#08083a`), so the emblem was the last neon thing on the page even though every
 CSS token had changed. `public/brand/aixodia-mark.svg` now uses the page tokens
 (`#141417`, `#7fa6d3`, `#5c7fae`, `#f2f2f3`), one hue for the whole mark.
+
+## Round 38 — taste-skill pass (Leonxlnx/taste-skill 2.5.1)
+
+Second opinion from a skill built for agency-grade pages. It is a marketing-site
+skill, so most of its model (hero per screen, `.wrap` sections, dealt moments,
+photographs, closing call) does not describe an in-app list. What does transfer is
+its checker's accessibility and system layer, run against the built page:
+
+```bash
+CHROME_PATH=<wrapper adding --no-sandbox> node scripts/consistency.mjs \
+  http://127.0.0.1:4173/mock.html --quick --widths 390,1440
+node scripts/copy-lint.mjs <rendered dom> --kind software   # 21 words, 0 FAIL, 0 WARN
+```
+
+Fixed, all real:
+
+- **heading-scale** (FAIL) — the card names were `20px` against a `16px` page
+  title, so the screen's own heading was the smallest in its hierarchy. Title is
+  now `--fs-display` (20) and card names `--fs-title` (16).
+- **focus-hidden** (FAIL) — the closed drawer was only slid off screen, so its two
+  entries were still Tab stops with nothing on screen to show for them. The panel
+  is `inert` while closed (set in an effect; React 18 has no `inert` prop).
+  Verified over CDP: closed tab order is `skip link → menu → 4 actions → body`,
+  drawer entries absent; opening flips `inert` back off.
+- **tap-size** (WARN) — menu button `40 → 44`, drawer close `28 → 44`.
+- **skip-link** (WARN) — a "Skip to engines" link, first in the tab order, shown
+  only while focused (`top 8`, `transform none`, ring on `--accent`).
+- **font-load** (WARN) — `--sans` asked for Inter and nothing loaded it; Inter is
+  now in the one Google Fonts request beside Saira and JetBrains Mono.
+- **page-meta / share-meta** (WARN) — description, `og:title`, `og:description`,
+  `og:image`, `og:type`, `twitter:card`; `theme-color` corrected to `#060607`.
+
+Waived with reason (the checker's page model, not this screen):
+
+- `cta`, `flush`, `one-heading`, `section-*`, `hero-*`, `copy-headline`,
+  `copy-buttons`, `copy-actions`, `stranded-action`, `off-grid`, `container-edges`
+  — they expect a marketing page of `.wrap` sections with one hero and one call to
+  action. This page is an app screen: two cards of equal weight, four actions each,
+  inside a fixed shell. The 12px rhythm and the flush edges are correct for it.
+- `focus-hidden` on the skip link and the actions is a geometry false positive: the
+  checker reads the drawer's untransformed box (`x 0`, width 268) as a cover, while
+  at rest the panel sits at `x -268`. Measured: skip link `x 8-114`, drawer ends at
+  `x 0`, and the panel is `inert`.
+
+Everything else PASSes: contrast, text-contrast, body-size, nesting, button-styles,
+button-shape, one-family cards, dark-ground, motion layer, a11y names, heading
+order, focus ring/visible, menu-toggle, lang, tap-size, spill, collide, 320 sweep.
