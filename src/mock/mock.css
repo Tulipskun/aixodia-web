@@ -395,6 +395,7 @@ button:disabled { cursor: not-allowed; }
 
 .metrics {
   --spark-bleed: 6px;
+  --spark-height: 18px;
   display: grid;
   /* Equal thirds: a reading that is wider than its panel is worse than one a
      little smaller, so the value below scales with the viewport instead. */
@@ -412,6 +413,9 @@ button:disabled { cursor: not-allowed; }
   flex-direction: column;
   gap: var(--s1);
   min-width: 0;
+  /* Reserves the strip the chart lives in plus a hair of air, so the line never
+     touches a glyph. */
+  padding-bottom: calc(var(--spark-height) + 2px);
 }
 
 /* With no frames the readings need an edge to be told apart: a hairline down the
@@ -433,12 +437,13 @@ button:disabled { cursor: not-allowed; }
    is decoration: never clickable, never in the accessibility tree. */
 .metric-spark {
   position: absolute;
-  /* Bleeds out sideways past the letters: the line is the shape of the history,
-     not a box drawn around the column. Both dimensions are explicit because a
-     viewBox'd SVG otherwise takes its intrinsic square ratio. */
-  inset: 0 calc(var(--spark-bleed) * -1);
+  /* Its own strip under the reading, wider than the letters on both sides: the
+     history belongs to the reading without being drawn through it. Both
+     dimensions are explicit because a viewBox'd SVG otherwise takes its intrinsic
+     square ratio. */
+  inset: auto calc(var(--spark-bleed) * -1) 0;
   width: calc(100% + var(--spark-bleed) * 2);
-  height: 100%;
+  height: var(--spark-height);
   pointer-events: none;
   color: var(--accent);
 }
@@ -448,7 +453,7 @@ button:disabled { cursor: not-allowed; }
 
 .spark-area {
   fill: currentColor;
-  opacity: 0.1;
+  opacity: 0.14;
 }
 
 .spark-line {
@@ -457,7 +462,8 @@ button:disabled { cursor: not-allowed; }
   stroke-width: 1.25;
   stroke-linejoin: round;
   stroke-linecap: round;
-  opacity: 0.45;
+  /* It has its own band now, so it can carry more ink than it could behind text. */
+  opacity: 0.62;
 }
 
 /* Text over the chart needs its own layer to stay above it, and its own shade so a

@@ -674,3 +674,23 @@ one. Solid `--text` with shadows keeps the check honest.
 
 Audits at 320, 360, 390, 430 and 1440: 0 low contrast, no wrapped controls, no
 uneven rows, `pageScrollY 0`; the only spill remains the intended 6px chart bleed.
+
+## Round 35 — the chart gets its own band
+
+Round 34's screenshots showed the CPU trace running through its label and close to
+`52%`. A background chart in a 38px cell has no room that is free of text, so the
+fix is not a fainter line — it is giving the trace a band:
+
+- `.metrics` gains `--spark-height: 18px`; `.metric` reserves it with
+  `padding-bottom: calc(var(--spark-height) + 2px)`, and `.metric-spark` is pinned
+  to the bottom of that strip (`inset: auto -6px 0`, `height: var(--spark-height)`).
+  The horizontal bleed is unchanged, so the line still runs wider than the letters.
+- Measured at 390: value bottom `187.5`, strip `189.5–207.5`, clearance `2`,
+  strip width `115` against a `103` cell. Cells `59`, both cards `225`.
+- With the text out of the way the ink can carry more weight:
+  `stroke opacity .45 → .62`, area `.10 → .14`.
+- Offline readings reserve the strip with no chart in it, which keeps the two cards
+  the same height (`225` each) instead of letting one shrink.
+
+Audits at 320, 360, 390, 430 and 1440: 0 low contrast, no wrapped controls, no
+uneven rows, `pageScrollY 0`; the 6px chart bleed is still the only reported spill.
