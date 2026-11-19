@@ -181,7 +181,12 @@ button:disabled { cursor: not-allowed; }
   transition: background 0.15s ease, color 0.15s ease, transform 0.12s ease;
 }
 
-.drawer-item:hover { background: var(--surface-2); color: var(--text); }
+/* Hover only where a pointer can hover: on a phone the last tapped row keeps a
+   highlight it never asked for, which reads as "this is where you are". */
+@media (hover: hover) {
+  .drawer-item:hover { background: var(--surface-2); color: var(--text); }
+}
+
 .drawer-item:active { transform: scale(0.98); }
 
 .drawer-item.is-current {
@@ -292,6 +297,8 @@ button:disabled { cursor: not-allowed; }
 .screen-head {
   display: flex;
   align-items: baseline;
+  /* The title holds the left edge; the count belongs on the right edge. */
+  justify-content: space-between;
   gap: var(--s2);
   /* Flush with the card edges: the heading and the thing it titles share a edge. */
   padding: 0;

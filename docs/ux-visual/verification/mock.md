@@ -892,3 +892,27 @@ Verified over CDP: tap opens (`label "Close menu"`, `expanded true`, panel not
 still closes, and the panel holds no close button (`0` matches). Audits at
 320/390/1440: 0 low contrast, `pageScrollY 0`, no small targets, no off-scale
 spacing.
+
+## Round 42 — the count on the right, and a second screen
+
+- The count moved to the right edge: `.screen-head` is `justify-content: space-between`,
+  so the title holds the left edge (`x 12`) and the count ends on the right one
+  (`right 378`, the same line the cards end on).
+- **The drawer now switches screens.** `Screen` state (`engines | droidime`) picks
+  the title, the noun and the list from one `SCREENS` table, so nothing is
+  duplicated: Engines shows `Alpha`/`Beta` with `2 engines`, Droidime shows
+  `Pixel 8`/`Pixel 4a` with `2 devices`. Selecting an entry also closes the panel.
+  Each screen offers the actions that thing can actually do — a server is opened
+  (Terminal, AI, Screen, More), a phone is driven (Screen, Input, MCP, More) — and
+  the dead `reason` field went with the old card.
+- **The stuck highlight** had two causes. `is-current` was hardcoded on Engines, so
+  it stayed lit after switching; it is now `id === screen`. And `.drawer-item:hover`
+  sat outside a hover media query, so on a phone the last tapped row kept a grey
+  fill; hover is now `@media (hover: hover)` only. Verified with touch emulation:
+  after tapping Droidime and reopening, `Engine`'s row is `rgba(0,0,0,0)` and only
+  Droidime carries `--surface-3`.
+
+Verified over CDP: title/count/cards/current all follow the switch and back;
+audits at 320/390/1440: 0 low contrast, `pageScrollY 0`, no small targets, no
+wrapped controls; checker 34 FAIL / 9 WARN, none of them `cut-text`, `focus-hidden`,
+`tap-size`, `overlap-text`, `heading-scale` or `nesting`.

@@ -8,13 +8,17 @@
 import { useEffect, useRef, useState } from 'react'
 import type { LucideIcon } from 'lucide-react'
 import {
+  BatteryMedium,
   Boxes,
+  Camera,
   Cpu,
   Ellipsis,
   HardDrive,
+  Keyboard,
   MemoryStick,
   Menu,
   MonitorSmartphone,
+  Plug,
   Smartphone,
   Sparkles,
   SquareTerminal,
@@ -110,17 +114,68 @@ interface Drag {
   dx: number
 }
 
-const DRAWER: { id: string; label: string; icon: LucideIcon; current?: boolean }[] = [
-  { id: 'engines', label: 'Engines', icon: Boxes, current: true },
+/* The phones DroidIME runs on: the same card, read as a device rather than a
+   server. */
+const DEVICES: Machine[] = [
+  {
+    id: 'pixel-8',
+    name: 'Pixel 8',
+    online: true,
+    meta: 'tunnel live 2m ago',
+    metrics: [
+      { label: 'CPU', icon: Cpu, unit: '%', digits: 0, series: sampleSeries(31, 24, 12) },
+      {
+        label: 'RAM',
+        icon: MemoryStick,
+        unit: 'GB',
+        digits: 1,
+        total: '8',
+        series: sampleSeries(53, 5.2, 0.3),
+      },
+      { label: 'BATTERY', icon: BatteryMedium, unit: '%', digits: 0, series: sampleSeries(88, 86, 2) },
+    ],
+  },
+  {
+    id: 'pixel-4a',
+    name: 'Pixel 4a',
+    online: false,
+    meta: 'last seen 2d ago',
+    metrics: [
+      { label: 'CPU', icon: Cpu, unit: '%', digits: 0, series: [] },
+      { label: 'RAM', icon: MemoryStick, unit: 'GB', digits: 1, total: '6', series: [] },
+      { label: 'BATTERY', icon: BatteryMedium, unit: '%', digits: 0, series: [] },
+    ],
+  },
+]
+
+type Screen = 'engines' | 'droidime'
+
+const SCREENS: { id: Screen; title: string; noun: string; machines: Machine[] }[] = [
+  { id: 'engines', title: 'Engines', noun: 'engine', machines: MACHINES },
+  { id: 'droidime', title: 'Droidime', noun: 'device', machines: DEVICES },
+]
+
+const DRAWER: { id: Screen; label: string; icon: LucideIcon }[] = [
+  { id: 'engines', label: 'Engines', icon: Boxes },
   { id: 'droidime', label: 'Droidime', icon: Smartphone },
 ]
 
-const ACTIONS = [
-  { id: 'terminal', label: 'Terminal', icon: SquareTerminal },
-  { id: 'ai', label: 'AI', icon: Sparkles },
-  { id: 'screen', label: 'Screen', icon: MonitorSmartphone },
-  { id: 'more', label: 'More', icon: Ellipsis },
-] as const
+/* Each screen offers what that thing can actually do: a server is opened, a phone
+   is driven. */
+const ACTIONS: Record<Screen, { id: string; label: string; icon: LucideIcon }[]> = {
+  engines: [
+    { id: 'terminal', label: 'Terminal', icon: SquareTerminal },
+    { id: 'ai', label: 'AI', icon: Sparkles },
+    { id: 'screen', label: 'Screen', icon: MonitorSmartphone },
+    { id: 'more', label: 'More', icon: Ellipsis },
+  ],
+  droidime: [
+    { id: 'screenshot', label: 'Screen', icon: Camera },
+    { id: 'input', label: 'Input', icon: Keyboard },
+    { id: 'mcp', label: 'MCP', icon: Plug },
+    { id: 'more', label: 'More', icon: Ellipsis },
+  ],
+}
 
 /** A deterministic walk, so the mock looks the same on every load. */
 function sampleSeries(seed: number, base: number, swing: number): number[] {
@@ -201,7 +256,7 @@ function reading(metric: Metric): { value: string; unit: string } {
     : { value: `${used}%`, unit: '' }
 }
 
-function Card({ machine }: { machine: Machine }) {
+function Card({ machine, screen }: { machine: Machine; screen: Screen }) {
   const offline = !machine.online
   return (
     <article className={`card${offline ? ' is-offline' : ''}`} aria-label={machine.name}>
@@ -238,7 +293,7 @@ function Card({ machine }: { machine: Machine }) {
       </div>
 
       <div className="actions">
-        {ACTIONS.map(({ id, label, icon: Icon }) => (
+        {ACTIONS[screen].map(({ id, label, icon: Icon }) => (
           <button
             key={id}
             type="button"
@@ -257,6 +312,8 @@ function Card({ machine }: { machine: Machine }) {
 function Drawer({
   open,
   onClose,
+  screen,
+  onScreen,
   drag,
   panelRef,
 }: {
@@ -264,6 +321,8 @@ function Drawer({
   /* The panel carries no close button: the bar above it is never covered, so the
      menu button is the close button. Only the scrim closes it from here. */
   onClose: () => void
+  screen: Screen
+  onScreen: (next: Screen) => void
   drag: Drag | null
   panelRef: React.RefObject<HTMLElement>
 }) {
@@ -298,12 +357,16 @@ function Drawer({
         style={offset === null ? undefined : { transform: `translateX(${offset}px)`, transition: 'none' }}
       >
         <nav className="drawer-list">
-          {DRAWER.map(({ id, label, icon: Icon, current }) => (
+          {DRAWER.map(({ id, label, icon: Icon }) => (
             <button
               key={id}
               type="button"
-              className={`drawer-item${current ? ' is-current' : ''}`}
-              aria-current={current ? 'page' : undefined}
+              className={`drawer-item${id === screen ? ' is-current' : ''}`}
+              aria-current={id === screen ? 'page' : undefined}
+              onClick={() => {
+                onScreen(id)
+                onClose()
+              }}
             >
               <Icon size={16} />
               <span>{label}</span>
@@ -321,6 +384,8 @@ function Drawer({
 
 export function EnginesMock() {
   const [menuOpen, setMenuOpen] = useState(false)
+  const [screenId, setScreenId] = useState<Screen>('engines')
+  const screen = SCREENS.find((entry) => entry.id === screenId) ?? SCREENS[0]
   const [drag, setDrag] = useState<Drag | null>(null)
   const panelRef = useRef<HTMLElement>(null)
   const shellRef = useRef<HTMLDivElement>(null)
@@ -437,8 +502,8 @@ export function EnginesMock() {
       ref={shellRef}
       className={`shell${drag ? ' is-dragging' : ''}`}
     >
-      <a className="skip-link" href="#engines">
-        Skip to engines
+      <a className="skip-link" href="#content">
+        Skip to content
       </a>
 
       <header className="topbar">
@@ -457,18 +522,26 @@ export function EnginesMock() {
         </div>
       </header>
 
-      <Drawer open={menuOpen} onClose={() => setMenuOpen(false)} drag={drag} panelRef={panelRef} />
+      <Drawer
+        open={menuOpen}
+        onClose={() => setMenuOpen(false)}
+        screen={screenId}
+        onScreen={setScreenId}
+        drag={drag}
+        panelRef={panelRef}
+      />
 
-      <main className="screen" id="engines" tabIndex={-1}>
+      <main className="screen" id="content" tabIndex={-1}>
         <div className="screen-head">
-          <h1>Engines</h1>
+          <h1>{screen.title}</h1>
           <span className="screen-count">
-            {MACHINES.length} {MACHINES.length === 1 ? 'engine' : 'engines'}
+            {screen.machines.length} {screen.noun}
+            {screen.machines.length === 1 ? '' : 's'}
           </span>
         </div>
 
-        {MACHINES.map((machine) => (
-          <Card key={machine.id} machine={machine} />
+        {screen.machines.map((machine) => (
+          <Card key={machine.id} machine={machine} screen={screen.id} />
         ))}
       </main>
 
