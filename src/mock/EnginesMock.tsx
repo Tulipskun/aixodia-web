@@ -549,8 +549,10 @@ export function EnginesMock() {
 
       <main className="screen" id="content" tabIndex={-1}>
         <div className="screen-head">
-          <h1>{screen.title}</h1>
-          <span className="screen-count">
+          {/* Keyed by screen, so the heading is a new element on a switch and its
+              entrance runs with the cards instead of the text swapping in place. */}
+          <h1 key={screen.id}>{screen.title}</h1>
+          <span key={`${screen.id}-count`} className="screen-count">
             {screen.machines.length} {screen.noun}
             {screen.machines.length === 1 ? '' : 's'}
           </span>

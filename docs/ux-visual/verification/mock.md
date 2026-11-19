@@ -978,3 +978,28 @@ instead of judging a screenshot (a single dark frame is a poor judge):
 
 `prefers-reduced-motion` still reports `animationName none`, audits at
 320/390/1440 stay clean (`pageScrollY 0`, 0 low contrast, no wrapped controls).
+
+## Round 46 — the words come in too
+
+The heading was still swapped instantly while the cards rose, so the eye got two
+different answers from one gesture. Now the text enters on the same kind of move:
+
+- `<h1>` and the count are keyed by screen, so a switch mounts new elements and the
+  entrance runs again — no state, no timers.
+- `head-in` (`420ms`, `cubic-bezier(0.22, 0.61, 0.36, 1)`, `10px` rise, `both`) on
+  both; the count carries `60ms` of extra delay so the name lands first.
+- The cards keep their `100ms` start, so the gesture reads in one order: name →
+  count → first card → second card.
+- Reduced motion turns all three off.
+
+Measured (computed opacity):
+
+| t | h1 | count | card 1 | card 2 |
+|---|---|---|---|---|
+| 60ms | 0.32 | 0.00 | 0.00 | 0.00 |
+| 140ms | 0.70 | 0.45 | 0.18 | 0.00 |
+| 240ms | 0.91 | 0.80 | 0.60 | 0.28 |
+| 340ms | 0.98 | 0.95 | 0.84 | 0.67 |
+| 700ms | 1.00 | 1.00 | 1.00 | 1.00 |
+
+Audits at 320/390/1440 clean, no layout shift from the 10px rise (transform only).

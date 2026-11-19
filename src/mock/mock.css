@@ -309,6 +309,24 @@ button:disabled { cursor: not-allowed; }
   margin-bottom: var(--s1);
 }
 
+.screen-head h1,
+.screen-count {
+  animation: head-in 420ms cubic-bezier(0.22, 0.61, 0.36, 1) both;
+}
+
+.screen-count { animation-delay: 60ms; }
+
+@keyframes head-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
 .screen-head h1 {
   margin: 0;
   font-family: var(--brand);
@@ -603,7 +621,9 @@ button:disabled { cursor: not-allowed; }
   .drawer, .scrim, .drawer-item { transition: none; }
   .action:active:not(:disabled),
   .icon-button:active { transform: none; }
-  .card { animation: none; }
+  .card,
+  .screen-head h1,
+  .screen-count { animation: none; }
 }
 
 @media (min-width: 520px) {
