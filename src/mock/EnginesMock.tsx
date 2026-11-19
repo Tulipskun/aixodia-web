@@ -254,10 +254,24 @@ function reading(metric: Metric): { value: string; unit: string } {
     : { value: `${used}%`, unit: '' }
 }
 
-function Card({ machine, screen }: { machine: Machine; screen: Screen }) {
+function Card({
+  machine,
+  screen,
+  index,
+}: {
+  machine: Machine
+  screen: Screen
+  /* Cards arrive in order when the screen changes, so the switch is felt as a
+     change of screen rather than as text being swapped in place. */
+  index: number
+}) {
   const offline = !machine.online
   return (
-    <article className={`card${offline ? ' is-offline' : ''}`} aria-label={machine.name}>
+    <article
+      className={`card${offline ? ' is-offline' : ''}`}
+      style={{ animationDelay: `${index * 40}ms` }}
+      aria-label={machine.name}
+    >
       <header className="card-head">
         <h2>{machine.name}</h2>
         <p className={`state${machine.online ? ' is-online' : ''}`}>
@@ -538,8 +552,8 @@ export function EnginesMock() {
           </span>
         </div>
 
-        {screen.machines.map((machine) => (
-          <Card key={machine.id} machine={machine} screen={screen.id} />
+        {screen.machines.map((machine, index) => (
+          <Card key={machine.id} machine={machine} screen={screen.id} index={index} />
         ))}
       </main>
 

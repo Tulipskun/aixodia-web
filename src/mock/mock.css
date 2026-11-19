@@ -248,7 +248,11 @@ button:disabled { cursor: not-allowed; }
 /* Hover only where there is a real pointer: on touch, :hover sticks after a tap
    and leaves the control looking pressed. */
 @media (hover: hover) {
-  .icon-button:hover { border-color: var(--border-strong); color: var(--text); }
+  .icon-button:hover {
+    border-color: var(--border-strong);
+    background: var(--surface-3);
+    color: var(--text);
+  }
 }
 
 .icon-button:active {
@@ -337,6 +341,20 @@ button:disabled { cursor: not-allowed; }
   border: 1px solid var(--border);
   background: var(--surface-2);
   padding: var(--s4);
+  /* A screen change lands the list rather than snapping it: rising 8px into place,
+     a card at a time. The delay comes from the card's index. */
+  animation: card-in 0.24s cubic-bezier(0.2, 0.7, 0.3, 1) both;
+}
+
+@keyframes card-in {
+  from {
+    opacity: 0;
+    transform: translateY(var(--s2));
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }
 
 .card.is-offline {
@@ -583,6 +601,7 @@ button:disabled { cursor: not-allowed; }
   .drawer, .scrim, .drawer-item { transition: none; }
   .action:active:not(:disabled),
   .icon-button:active { transform: none; }
+  .card { animation: none; }
 }
 
 @media (min-width: 520px) {

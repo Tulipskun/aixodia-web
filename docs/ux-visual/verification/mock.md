@@ -928,3 +928,28 @@ half of a four.
 
 Measured: both labels on one line at 320, 390 and 1440 (no wrapped controls), cards
 still equal height, `pageScrollY 0`, 0 low contrast, no small targets.
+
+## Round 44 — the switch is felt
+
+Choosing a screen in the drawer used to swap the list in place: the title changed
+and the cards were simply other cards. Now the list lands:
+
+- `.card` runs `card-in` (`240ms`, `cubic-bezier(.2,.7,.3,1)`, `<both>`): it rises
+  from `8px` and fades in. Each card starts `40ms` after the one above it, set from
+  its index, so a two-card screen reads as a small sequence rather than a block.
+- Switching screens remounts the cards (different keys), so the animation replays
+  on every change and on the first load.
+- `prefers-reduced-motion: reduce` turns it off (`animation: none`).
+
+Verified over CDP: on switch both cards report `playState running` at 83ms, `delay
+0s` and `0.04s`, and `finished` at 240/280ms; with reduced motion emulated the
+computed `animationName` is `none` and no animation objects exist. A frame captured
+90ms into the switch shows the rise mid-flight, and the settled frame is clean.
+
+Checker: `reduced-motion`, `hidden-content` and `scroll-reveal` all PASS. One WARN
+remains — `hover` on the menu button **at 390 only**: on a phone profile
+`(hover: none)` applies, so hover feedback is deliberately absent there (it is what
+kept a tapped drawer row looking current). At 1440 the button answers the pointer.
+
+Audits at 320/390/1440: 0 low contrast, `pageScrollY 0`, no small targets, no
+wrapped controls.
