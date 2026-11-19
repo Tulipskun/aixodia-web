@@ -278,9 +278,9 @@ button:disabled { cursor: not-allowed; }
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: var(--s2);
+  /* Panels carry their own frames, so a rule above them only adds a third line to
+     a card that already has two. */
   margin-top: var(--s3);
-  padding-top: var(--s3);
-  border-top: 1px solid var(--hairline);
 }
 
 /* Each reading is its own framed panel, so the chart inside it has an edge and a
@@ -291,7 +291,7 @@ button:disabled { cursor: not-allowed; }
   flex-direction: column;
   gap: var(--s1);
   min-width: 0;
-  padding: var(--s2) var(--s1);
+  padding: var(--s2);
   /* An outline only: with no fill behind it the frame has to carry the panel on
      its own, so it uses the stronger border rather than the hairline. */
   border: 1px solid var(--border);
@@ -376,7 +376,9 @@ button:disabled { cursor: not-allowed; }
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: var(--s2);
-  padding-top: var(--s3);
+  /* Separation between blocks is a margin everywhere in the card; padding is only
+     ever an inset, so the two never stack. */
+  margin-top: var(--s3);
 }
 
 /* Four peers: none of them is this screen's purpose, so none of them is filled. */

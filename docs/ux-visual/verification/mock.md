@@ -539,3 +539,24 @@ Audits clean at 360/390/430/1440; `npm test` 19/19.
   crisp, not blurry.
 
 Audits clean at 360/390/430/1440; `npm test` 19/19.
+
+## Round 35 — one rhythm, and nothing nested
+
+The card had three stacked ways of making the same gap: a 16px card padding, a
+12+12 metrics band (top padding plus top margin) and an 8px panel inset, with a
+rule above the panels on top of the panels' own frames.
+
+Now there are exactly two rules: **separation is a margin (`--s3`, 12) and insets
+are padding (`--s4` card, `--s2` panel)**. The metrics band lost its `padding-top`
+and its `border-top` — the panels are framed, so the rule was a third line in a
+card that already had two.
+
+Measured at 390 and 360, identically: card top inset 17 (16 + border), head to
+metrics 12, metrics to actions 12, card bottom 17; panel padding 8 with the widest
+reading (`100/128 GB`, 71px) leaving 9px left and 15.7px right at 360 and 25.7px
+at 390. Card height drops 204.5 → 197.
+
+Vision read the crop as 25/18/12 instead of 16/12/8 — the crop was resized 1.5×,
+and every figure it gave is exactly 1.5× the measured one. The numbers stand.
+
+Audits clean at 360/390/430/1440; `npm test` 19/19.
