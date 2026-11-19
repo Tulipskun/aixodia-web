@@ -456,3 +456,24 @@ neutral. Audits clean at 360/390/430/1440, `npm test` 19/19.
   not layout.
 
 Audits clean at 360/390/430/1440; `npm test` 19/19.
+
+## Round 30 — one depth language for the whole screen
+
+Depth used to live only on the two bar controls. It is now a system, with the
+tokens to match: `--face` (a face gradient), `--face-lit` (the same, brighter),
+`--lift-1` (tight + broad shadow) and `--lift-2` (the card's higher drop).
+
+- **Page**: the accent glow at the top is joined by a cool one at the bottom edge,
+  so the screen has a floor and the cards sit in a space rather than on a void.
+- **Top bar**: casts `0 10px 24px`, which is what makes the content beneath it read
+  as sliding under.
+- **Cards**: face gradient over `--surface` plus `--lift-2`, so they lift off the
+  black page.
+- **Offline card**: keeps the build but drops the height — solid `--surface-2`,
+  a 4% inset top edge and a shallow `0 2px 6px`, instead of having no shadow at all.
+- **Actions**: raised at rest too (`--face` + `--lift-1`), so a press reads as a
+  change from lifted to lit rather than flat to lit; the disabled state drops its
+  shadow along with its fill.
+
+Audits clean at 360/390/430/1440 (`offScale []`, 0 low contrast, no overflow,
+`pageScrollY 0`); `npm test` 19/19. Vision: restrained, no banding, not glossy.
