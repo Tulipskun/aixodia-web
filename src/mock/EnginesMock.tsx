@@ -123,22 +123,27 @@ function sampleSeries(seed: number, base: number, swing: number): number[] {
  *  window, one sample draws a level, none draws nothing. */
 function Spark({ values, ceiling, tone }: { values: number[]; ceiling: number; tone: string }) {
   if (!values.length) return null
-  const TOP = 10
+  /* The box is the whole cell, so the margins the chart keeps from the frame are
+     part of its geometry rather than CSS offsets: an absolutely positioned SVG
+     with a viewBox keeps its own aspect ratio and refuses to be inset. */
+  const TOP = 14
+  const FLOOR = 88
+  const SIDE = 8
   const min = Math.min(...values)
   const max = Math.max(...values)
   const span = Math.max(max - min, ceiling * 0.04)
   const low = (min + max) / 2 - span / 2
   const y = (value: number) => {
     const ratio = Math.min(1, Math.max(0, (value - low) / span))
-    return 100 - ratio * (100 - TOP)
+    return FLOOR - ratio * (FLOOR - TOP)
   }
   const x = (index: number) =>
-    values.length === 1 ? 0 : (index / (values.length - 1)) * 100
+    values.length === 1 ? SIDE : SIDE + (index / (values.length - 1)) * (100 - SIDE * 2)
 
-  const last = y(values[values.length - 1])
+  const first = y(values[0])
   const line =
     values.length === 1
-      ? `M0 ${last.toFixed(2)} L100 ${last.toFixed(2)}`
+      ? `M${SIDE} ${first.toFixed(2)} L${100 - SIDE} ${first.toFixed(2)}`
       : values.map((v, i) => `${i ? 'L' : 'M'}${x(i).toFixed(2)} ${y(v).toFixed(2)}`).join(' ')
 
   return (
@@ -148,7 +153,7 @@ function Spark({ values, ceiling, tone }: { values: number[]; ceiling: number; t
       preserveAspectRatio="none"
       aria-hidden="true"
     >
-      <path className="spark-area" d={`${line} L100 100 L0 100 Z`} />
+      <path className="spark-area" d={`${line} L${100 - SIDE} ${FLOOR} L${SIDE} ${FLOOR} Z`} />
       <path className="spark-line" d={line} vectorEffect="non-scaling-stroke" />
     </svg>
   )

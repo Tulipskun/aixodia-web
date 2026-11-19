@@ -513,3 +513,18 @@ events — and the number above it stays the measurement.
   carries `z-index: 1` so it is never behind them.
 
 Audits clean at 360/390/430/1440; `npm test` 19/19.
+
+## Round 33 — each reading is its own framed panel
+
+The chart used to run cell to cell with a divider between columns. Each metric is
+now a panel: `1px --hairline` frame, `--s3` radius, `rgba(0,0,0,.22)` well, and
+`8px 4px` padding, laid out with an `--s2` gap instead of a divider.
+
+- Sides stay at 4 rather than 8: the widest reading (`100/128 GB`, 71px of ink)
+  leaves 26px of slack at 390 and 16px at 360 with 4, and only 2px at 390 with 8.
+- The chart's margin from the frame is in its own geometry (`SIDE 8`, `TOP 14`,
+  `FLOOR 88` in the viewBox), not in CSS offsets: an absolutely positioned SVG with
+  a viewBox keeps its aspect ratio, so `inset` alone made it overflow the frame
+  (measured `sparkBottomGap -44`).
+
+Audits clean at 360/390/430/1440; `npm test` 19/19.
