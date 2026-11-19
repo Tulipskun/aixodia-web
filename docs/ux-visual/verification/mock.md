@@ -694,3 +694,27 @@ fix is not a fainter line — it is giving the trace a band:
 
 Audits at 320, 360, 390, 430 and 1440: 0 low contrast, no wrapped controls, no
 uneven rows, `pageScrollY 0`; the 6px chart bleed is still the only reported spill.
+
+## Round 36 — open the drawer by dragging
+
+PC (mouse) and Android (touch) can open the menu by swiping, no library:
+
+- A drag that starts within `24px` of the left edge opens the drawer; a drag that
+  starts on the open drawer and moves left closes it. Both commit on distance
+  (`>72px`) or speed (`>0.35 px/ms`), so a flick counts and a drop-it short drag
+  does not (`SLOP` 4px). While a pointer is down the panel follows the finger via
+  an inline `translateX` and the scrim fades with it; on release the class and its
+  transition snap it the rest of the way.
+- **Mouse/pen** use pointer events with `setPointerCapture`.
+- **Touch** can't: Chrome cancels the pointer the moment its own gesture detection
+  engages, so the touch stream is handled directly (`touchmove` via a non-passive
+  listener so a claimed drag gets `preventDefault`). A gesture that turns out to
+  be vertical lets go before claiming anything, so swiping up/down inside the
+  edge zone still scrolls.
+- `touch-action: pan-y` on `.shell` keeps vertical panning with the page.
+- Verified over CDP on the built page: tap menu opens, tap scrim closes, short drag
+  stays closed, edge drag opens (`mid x=-56, scrim 0.79`), left drag closes;
+  touch open/close and vertical scroll all pass.
+
+Audits at 320, 360, 390, 430 and 1440 stay clean (0 low contrast, `pageScrollY 0`);
+`npm test` 19/19.

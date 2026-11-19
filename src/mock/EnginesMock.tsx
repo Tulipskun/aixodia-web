@@ -1,10 +1,12 @@
 //! A static mock of the machines screen: no fetching, no calls. The only state is
-//! whether the drawer is open.
+//! whether the drawer is open and, while a pointer is down, how far it has been
+//! dragged.
 //!
 //! It exists so the shape of the screen can be argued about before any of it is
 //! wired to the registry. Everything below is a literal.
 
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import type { PointerEvent as ReactPointerEvent } from 'react'
 import type { LucideIcon } from 'lucide-react'
 import {
   Boxes,
@@ -98,6 +100,24 @@ const MACHINES: Machine[] = [
 ]
 
 const ACCOUNT = 'Tulipskun'
+
+/* A drag that starts within EDGE of the left side opens the drawer; a drag that
+   starts on the open drawer and heads left closes it again. Both commit on
+   distance or on speed, so a short flick counts. */
+const EDGE = 24
+const COMMIT = 72
+const FLICK = 0.35
+const SLOP = 4
+
+interface Drag {
+  pointerId: number
+  startX: number
+  startY: number
+  startedAt: number
+  fromOpen: boolean
+  width: number
+  dx: number
+}
 
 const DRAWER: { id: string; label: string; icon: LucideIcon; current?: boolean }[] = [
   { id: 'engines', label: 'Engines', icon: Boxes, current: true },
@@ -245,15 +265,39 @@ function Card({ machine }: { machine: Machine }) {
   )
 }
 
-function Drawer({ open, onClose }: { open: boolean; onClose: () => void }) {
+function Drawer({
+  open,
+  onClose,
+  drag,
+  panelRef,
+}: {
+  open: boolean
+  onClose: () => void
+  drag: Drag | null
+  panelRef: React.RefObject<HTMLElement>
+}) {
+  /* While a pointer is down the panel follows it instead of the class, so the
+     gesture reads as dragging the panel rather than waiting for it to appear. */
+  const offset = drag ? (drag.fromOpen ? Math.min(0, drag.dx) : Math.min(0, drag.dx - drag.width)) : null
   return (
     <>
       <div
         className={`scrim${open ? ' is-open' : ''}`}
         onClick={onClose}
         aria-hidden="true"
+        style={
+          offset === null
+            ? undefined
+            : { opacity: 1 + offset / (drag?.width ?? 1), transition: 'none' }
+        }
       />
-      <aside className={`drawer${open ? ' is-open' : ''}`} aria-label="Menu" aria-hidden={!open}>
+      <aside
+        ref={panelRef}
+        className={`drawer${open ? ' is-open' : ''}`}
+        aria-label="Menu"
+        aria-hidden={!open}
+        style={offset === null ? undefined : { transform: `translateX(${offset}px)`, transition: 'none' }}
+      >
         <div className="drawer-head">
           <img className="brand-mark" src="/brand/aixodia-mark.svg" alt="" width={24} height={24} />
           <span className="drawer-brand">AIxodia</span>
@@ -286,8 +330,123 @@ function Drawer({ open, onClose }: { open: boolean; onClose: () => void }) {
 
 export function EnginesMock() {
   const [menuOpen, setMenuOpen] = useState(false)
+  const [drag, setDrag] = useState<Drag | null>(null)
+  const panelRef = useRef<HTMLElement>(null)
+  const shellRef = useRef<HTMLDivElement>(null)
+  /* The native touch listeners outlive a render, so the gesture reads from a ref
+     and only the render values come from state. */
+  const dragRef = useRef<Drag | null>(null)
+
+  const hold = (next: Drag | null) => {
+    dragRef.current = next
+    setDrag(next)
+  }
+
+  const begin = (clientX: number, clientY: number, insideDrawer: boolean) => {
+    if (dragRef.current) return false
+    if (menuOpen ? !insideDrawer : clientX > EDGE) return false
+    const width = panelRef.current?.getBoundingClientRect().width
+    if (!width) return false
+    hold({
+      pointerId: 0,
+      startX: clientX,
+      startY: clientY,
+      startedAt: performance.now(),
+      fromOpen: menuOpen,
+      width,
+      dx: 0,
+    })
+    return true
+  }
+
+  const follow = (clientX: number) => {
+    const current = dragRef.current
+    if (!current) return
+    const dx = clientX - current.startX
+    if (Math.abs(dx) < SLOP) return
+    hold({ ...current, dx })
+  }
+
+  const settle = () => {
+    const current = dragRef.current
+    if (!current) return
+    /* Distance travelled towards the commit, and how fast it went there. */
+    const travelled = current.fromOpen ? -current.dx : current.dx
+    const speed = travelled / Math.max(16, performance.now() - current.startedAt)
+    const move = travelled > COMMIT || speed > FLICK
+    setMenuOpen(current.fromOpen ? !move : move)
+    hold(null)
+  }
+
+  /* Mouse and pen: pointer events, so a captured pointer keeps reporting outside
+     the window. */
+  const onPointerDown = (event: ReactPointerEvent<HTMLDivElement>) => {
+    if (event.pointerType === 'touch') return
+    const insideDrawer = Boolean((event.target as HTMLElement).closest('.drawer'))
+    if (begin(event.clientX, event.clientY, insideDrawer)) {
+      event.currentTarget.setPointerCapture(event.pointerId)
+    }
+  }
+
+  /* Touch: pointer events get cancelled by the browser's own gesture detection,
+     so the touch stream is handled directly and the moves it claims are
+     prevented. This is the one path that has to be non-passive. */
+  useEffect(() => {
+    const shell = shellRef.current
+    if (!shell) return
+
+    const onTouchStart = (event: TouchEvent) => {
+      const touch = event.touches[0]
+      if (!touch) return
+      begin(
+        touch.clientX,
+        touch.clientY,
+        Boolean((event.target as HTMLElement).closest('.drawer')),
+      )
+    }
+
+    const onTouchMove = (event: TouchEvent) => {
+      const touch = event.touches[0]
+      const current = dragRef.current
+      if (!touch || !current) return
+      /* A gesture that turns out to be vertical belongs to the page: let it go
+         before the drag claims any of it. */
+      const dy = touch.clientY - current.startY
+      if (current.dx === 0 && Math.abs(dy) > 8 && Math.abs(dy) > Math.abs(touch.clientX - current.startX)) {
+        hold(null)
+        return
+      }
+      event.preventDefault()
+      follow(touch.clientX)
+    }
+
+    const onTouchEnd = () => settle()
+
+    shell.addEventListener('touchstart', onTouchStart, { passive: true })
+    shell.addEventListener('touchmove', onTouchMove, { passive: false })
+    shell.addEventListener('touchend', onTouchEnd)
+    shell.addEventListener('touchcancel', onTouchEnd)
+    return () => {
+      shell.removeEventListener('touchstart', onTouchStart)
+      shell.removeEventListener('touchmove', onTouchMove)
+      shell.removeEventListener('touchend', onTouchEnd)
+      shell.removeEventListener('touchcancel', onTouchEnd)
+    }
+  }, [menuOpen])
+
   return (
-    <div className="shell">
+    <div
+      ref={shellRef}
+      className={`shell${drag ? ' is-dragging' : ''}`}
+      onPointerDown={onPointerDown}
+      onPointerMove={(event) => {
+        if (event.pointerType !== 'touch') follow(event.clientX)
+      }}
+      onPointerUp={(event) => {
+        if (event.pointerType !== 'touch') settle()
+      }}
+      onPointerCancel={() => hold(null)}
+    >
       <header className="topbar">
         <button
           type="button"
@@ -304,7 +463,7 @@ export function EnginesMock() {
         </div>
       </header>
 
-      <Drawer open={menuOpen} onClose={() => setMenuOpen(false)} />
+      <Drawer open={menuOpen} onClose={() => setMenuOpen(false)} drag={drag} panelRef={panelRef} />
 
       <main className="screen">
         {MACHINES.map((machine) => (

@@ -91,6 +91,19 @@ button:disabled { cursor: not-allowed; }
   padding: 0;
   display: flex;
   flex-direction: column;
+  /* Vertical panning belongs to the page; a sideways drag belongs to the drawer. */
+  touch-action: pan-y;
+}
+
+/* While a pointer is down, nothing on the page should select or highlight. */
+.shell.is-dragging {
+  user-select: none;
+  cursor: grabbing;
+}
+
+.shell.is-dragging .drawer-item,
+.shell.is-dragging .action {
+  transition: none;
 }
 
 /* ----------------------------------------------------------------- drawer */
