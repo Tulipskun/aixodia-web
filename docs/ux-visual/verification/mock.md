@@ -480,3 +480,16 @@ tokens to match: `--face` (a face gradient), `--face-lit` (the same, brighter),
 
 Audits clean at 360/390/430/1440 (`offScale []`, 0 low contrast, no overflow,
 `pageScrollY 0`); `npm test` 19/19. Vision: restrained, no banding, not glossy.
+
+## Round 31 — the offline card was the lighter of the two
+
+Round 30 gave the offline card `--surface-2` as its base while the online card
+stays on `--surface`, so the "absent" card was the brighter one — measured
+`rgb(8,8,58)` against `rgb(8,8,45)`. Off is not on.
+
+It now uses the same base as an online card and gives up the face gradient
+instead: fill measures `rgb(4,2,38)` / `rgb(8,5,44)` against the online card's
+`rgb(8,8,45)` / `rgb(10,10,48)`, so it is darker and flatter in the same colour
+family rather than a lighter, bluer panel.
+
+Audits clean at 360/390/430/1440; `npm test` 19/19.
