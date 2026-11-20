@@ -665,7 +665,7 @@ function Drawer({
   sessions,
   current,
   onSession,
-  onCloseSession,
+  onAsk,
   onOpen,
   drag,
   panelRef,
@@ -679,15 +679,11 @@ function Drawer({
   sessions: Session[]
   current: string
   onSession: (id: string) => void
-  onCloseSession: (id: string) => void
+  onAsk: (session: Session) => void
   onOpen: (engine: string) => void
   drag: Drag | null
   panelRef: React.RefObject<HTMLElement>
 }) {
-  /* Closing a shell ends something that was running, so the x asks first: the row
-     turns its own end into a question rather than opening a dialog over the list. */
-  const [confirming, setConfirming] = useState<string | null>(null)
-
   /* While a pointer is down the panel follows it instead of the class, so the
      gesture reads as dragging the panel rather than waiting for it to appear. */
   const offset = drag ? (drag.fromOpen ? Math.min(0, drag.dx) : Math.min(0, drag.dx - drag.width)) : null
@@ -707,9 +703,6 @@ function Drawer({
        the pointer nowhere near where the keyboard thinks it is. While closed the
        panel is inert, so it is skipped. */
     panelRef.current?.toggleAttribute('inert', !open)
-    /* A question left open over a closed panel would be asked again on the next
-       visit, out of context. */
-    if (!open) setConfirming(null)
   }, [open, panelRef])
 
   return (
@@ -785,38 +778,14 @@ function Drawer({
                     <SquareTerminal size={16} />
                     <span className="drawer-session-title">{session.title}</span>
                   </button>
-                  {confirming === session.id ? (
-                    /* The question lives where the x was, so the answer is under the
-                       thumb that asked it and nothing is covered. */
-                    <span className="drawer-confirm">
-                      <button
-                        type="button"
-                        className="drawer-confirm-cancel"
-                        onClick={() => setConfirming(null)}
-                      >
-                        Keep
-                      </button>
-                      <button
-                        type="button"
-                        className="drawer-confirm-yes"
-                        onClick={() => {
-                          setConfirming(null)
-                          onCloseSession(session.id)
-                        }}
-                      >
-                        Close
-                      </button>
-                    </span>
-                  ) : (
-                    <button
-                      type="button"
-                      className="drawer-session-close"
-                      aria-label={`Close ${session.title}`}
-                      onClick={() => setConfirming(session.id)}
-                    >
-                      <X size={14} aria-hidden="true" />
-                    </button>
-                  )}
+                  <button
+                    type="button"
+                    className="drawer-session-close"
+                    aria-label={`Close ${session.title}`}
+                    onClick={() => onAsk(session)}
+                  >
+                    <X size={14} aria-hidden="true" />
+                  </button>
                 </div>
               ))}
 
@@ -837,6 +806,84 @@ function Drawer({
   )
 }
 
+/* A question about one shell, over the list it came from. The dialog is its own
+   layer so neither the panel nor the bar underneath has to move: the menu stays where
+   it is, one press from the answer. */
+function Confirm({
+  session,
+  engine,
+  onKeep,
+  onClose,
+}: {
+  session: Session
+  engine: string
+  onKeep: () => void
+  onClose: () => void
+}) {
+  const keepRef = useRef<HTMLButtonElement>(null)
+  const panelRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    /* The safe answer takes the focus: a question about closing something should not
+       put the finger on closing it. */
+    keepRef.current?.focus()
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.preventDefault()
+        onKeep()
+      }
+    }
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  }, [onKeep])
+
+  /* Two buttons are the whole dialog, so Tab stays inside it. */
+  const onKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    if (event.key !== 'Tab') return
+    const buttons = panelRef.current?.querySelectorAll('button')
+    if (!buttons?.length) return
+    const first = buttons[0]
+    const last = buttons[buttons.length - 1]
+    if (event.shiftKey && document.activeElement === first) {
+      event.preventDefault()
+      ;(last as HTMLButtonElement).focus()
+    } else if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault()
+      ;(first as HTMLButtonElement).focus()
+    }
+  }
+
+  return (
+    <div className="dialog-scrim" onMouseDown={onKeep}>
+      <div
+        ref={panelRef}
+        className="dialog"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="confirm-title"
+        aria-describedby="confirm-body"
+        onMouseDown={(event) => event.stopPropagation()}
+        onKeyDown={onKeyDown}
+      >
+        <h2 className="dialog-title" id="confirm-title">
+          {`Close ${session.title}?`}
+        </h2>
+        <p className="dialog-body" id="confirm-body">
+          {`The shell on ${engine} stops. Anything still running in it ends with it.`}
+        </p>
+        <div className="dialog-actions">
+          <button ref={keepRef} type="button" className="dialog-keep" onClick={onKeep}>
+            Keep
+          </button>
+          <button type="button" className="dialog-close" onClick={onClose}>
+            {`Close ${session.title}`}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export function EnginesMock() {
   const [menuOpen, setMenuOpen] = useState(false)
   const [screenId, setScreenId] = useState<Screen>('engines')
@@ -849,6 +896,9 @@ export function EnginesMock() {
     Object.fromEntries(SESSIONS.map((session) => [session.id, freshShell()])),
   )
   const shell = shells[current] ?? freshShell()
+  /* Closing a shell ends something that was running, so it is asked about first, in
+     a dialog over the list rather than inside a row. */
+  const [asking, setAsking] = useState<Session | null>(null)
   /* A shell whose engine is down cannot be opened, so it is offered nowhere: not in
      the menu, and not as the tab the screen falls back to. */
   const open = sessions.filter((session) =>
@@ -865,6 +915,22 @@ export function EnginesMock() {
      which is the one moment the bar has something to say. While the finger is still
      down, the bar follows it, so the two arrive together instead of one after the
      other. */
+  const closeSession = (id: string) => {
+    const left = open.filter((session) => session.id !== id)
+    setSessions(left)
+    setShells((map) => {
+      const { [id]: _closed, ...rest } = map
+      return rest
+    })
+    if (id !== current) return
+    /* The tab you were in is gone, so the screen goes to whatever is left of the
+       same engine, and to the engines when nothing is left at all. */
+    const engine = sessions.find((session) => session.id === id)?.engine
+    const next = left.find((session) => session.engine === engine) ?? left[0]
+    if (next) setCurrent(next.id)
+    else setScreenId('engines')
+  }
+
   const full = screenId === 'terminal'
   const revealed = drag ? 1 + (drag.fromOpen ? Math.min(0, drag.dx) : Math.min(0, drag.dx - drag.width)) / drag.width : null
 
@@ -1037,21 +1103,7 @@ export function EnginesMock() {
           setCurrent(id)
           setScreenId('terminal')
         }}
-        onCloseSession={(id) => {
-          const left = open.filter((session) => session.id !== id)
-          setSessions(left)
-          setShells((map) => {
-            const { [id]: _closed, ...rest } = map
-            return rest
-          })
-          if (id !== current) return
-          /* The tab you were in is gone, so the screen goes to whatever is left of
-             the same engine, and to the engines when nothing is left at all. */
-          const engine = sessions.find((session) => session.id === id)?.engine
-          const next = left.find((session) => session.engine === engine) ?? left[0]
-          if (next) setCurrent(next.id)
-          else setScreenId('engines')
-        }}
+        onAsk={setAsking}
         onOpen={(engine) => {
           const session: Session = {
             id: `s${Date.now()}`,
@@ -1066,6 +1118,18 @@ export function EnginesMock() {
         drag={drag}
         panelRef={panelRef}
       />
+
+      {asking && (
+        <Confirm
+          session={asking}
+          engine={MACHINES.find((machine) => machine.id === asking.engine)?.name ?? asking.engine}
+          onKeep={() => setAsking(null)}
+          onClose={() => {
+            closeSession(asking.id)
+            setAsking(null)
+          }}
+        />
+      )}
 
       <main className="screen" id="content" tabIndex={-1}>
         {/* A list says what it is before it lists anything; a terminal already says

@@ -331,42 +331,91 @@ button:disabled { cursor: not-allowed; }
 
 .drawer-session-close:active { transform: scale(0.92); color: var(--text); }
 
-/* The question takes the x's place: two answers, each a 44px target, in the same
-   row, so nothing moves and nothing else is covered. */
-.drawer-confirm {
-  flex: 0 0 auto;
-  display: flex;
-  align-items: stretch;
-  gap: 2px;
-}
+/* ---------------------------------------------------------------- dialog */
 
-.drawer-confirm-cancel,
-.drawer-confirm-yes {
-  min-width: 44px;
-  min-height: 44px;
+/* A question about one thing sits over the list it came from, its own layer, so
+   neither the panel nor the bar has to move for it. */
+.dialog-scrim {
+  position: absolute;
+  inset: 0;
+  z-index: 6;
   display: grid;
   place-items: center;
-  padding: 0 var(--s2);
-  border: 0;
-  border-radius: var(--s2);
-  background: transparent;
-  font-size: var(--fs-label);
-  transition: color 0.15s ease, background 0.15s ease, transform 0.12s ease;
+  padding: var(--s3);
+  background: rgba(0, 0, 0, 0.55);
+  animation: fade-in 160ms ease both;
 }
 
-.drawer-confirm-cancel { color: var(--muted); }
+/* No shadow: depth here is the scrim behind it and a hairline of its own. */
+.dialog {
+  width: min(320px, 100%);
+  padding: var(--s4);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--s3);
+  background: var(--surface);
+  animation: dialog-in 220ms cubic-bezier(0.22, 0.61, 0.36, 1) both;
+}
 
-/* The destructive one is the one with weight: the accent, on the side the thumb
-   already is. */
-.drawer-confirm-yes { color: var(--accent); }
+.dialog-title {
+  margin: 0 0 var(--s1);
+  font-size: var(--fs-title);
+  font-weight: 600;
+  color: var(--text);
+}
+
+.dialog-body {
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--fs-body);
+  line-height: 1.45;
+}
+
+.dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--s2);
+  margin-top: var(--s4);
+}
+
+/* The safe answer is the filled one, the destructive one only carries the accent:
+   the weight sits on the choice that keeps something running. */
+.dialog-keep,
+.dialog-close {
+  min-height: 44px;
+  padding: 0 var(--s4);
+  border-radius: var(--s2);
+  font-size: var(--fs-body);
+  transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease,
+    transform 0.12s ease;
+}
+
+.dialog-keep {
+  border: 1px solid var(--border-strong);
+  background: var(--surface-3);
+  color: var(--text);
+}
+
+.dialog-close {
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--accent);
+}
+
+.dialog-keep:active,
+.dialog-close:active { transform: scale(0.97); }
 
 @media (hover: hover) {
-  .drawer-confirm-cancel:hover { color: var(--text); background: var(--surface-2); }
-  .drawer-confirm-yes:hover { background: var(--surface-2); }
+  .dialog-keep:hover { background: var(--surface-2); border-color: var(--text); }
+  .dialog-close:hover { background: var(--surface-2); }
 }
 
-.drawer-confirm-cancel:active,
-.drawer-confirm-yes:active { transform: scale(0.94); }
+@keyframes fade-in {
+  from { opacity: 0; }
+}
+
+@keyframes dialog-in {
+  from { opacity: 0; transform: translateY(8px) scale(0.98); }
+}
 
 /* Opening one more belongs to the engine above it, so it reads as that engine's
    last row rather than as another screen. */

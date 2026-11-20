@@ -1506,3 +1506,24 @@ Measured (390×844): tapping `×` on `shell 2` → that row `asking: true`, `Kee
 `Close` → the row is gone; `×` then closing the panel and reopening → no question
 standing. Audits 390/1440 clean, 19 tests pass. Vision check: one row, two readable
 choices, the destructive one brighter without shouting.
+
+## Round 66 — the question is a dialog
+
+Round 65 asked it inside the row. That kept the list moving, but it made a destructive
+decision look like row furniture. It is now a dialog over the list, in the system's own
+terms: no shadow, its own hairline, and the scrim behind it doing the depth.
+
+- `role="dialog" aria-modal="true"`, `aria-labelledby` the title, `aria-describedby` the
+  body: "Close shell 2?" / "The shell on Alpha stops. Anything still running in it ends
+  with it.";
+- **Keep** is the filled button and takes the focus — a question about closing something
+  should not put the finger on closing it; **Close shell 2** carries only the accent;
+- Escape and a click on the scrim both keep it; Tab cycles the two buttons and stays
+  inside;
+- the menu underneath does not move, so the answer is one press from where the question
+  was asked.
+
+Measured: 390 → dialog `x35 y346 w320 h160`; 320 → `x12 y270 w296 h160`, fits; 1440 →
+`x560 y370 w320 h160`. Tab order `dialog-keep → dialog-close → dialog-keep →
+dialog-close` at both widths. Escape → dialog gone, rows unchanged; confirming → rows
+2 → 1. Audits 390/1440 clean, 19 tests pass.
