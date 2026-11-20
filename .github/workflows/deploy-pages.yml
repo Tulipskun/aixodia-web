@@ -89,10 +89,26 @@ jobs:
       - name: Verify Pages deployment before custom-domain cutover
         run: |
           set -euo pipefail
-          curl --fail --silent --show-error --location --retry 12 --retry-delay 3 --retry-all-errors https://aixodia-dashboard.pages.dev/ -o /tmp/pages-index.html
-          asset=$(grep -oE 'src="[^"]+\.js"' /tmp/pages-index.html | head -1 | sed -E 's/^src="([^"]+)"$/\1/' | sed 's#^\./##')
-          test -n "$asset"
-          curl --fail --silent --show-error --location --retry 12 --retry-delay 3 --retry-all-errors "https://aixodia-dashboard.pages.dev/$asset" -o /tmp/pages-app.js
+          # Walk the whole entry graph: the app is several chunks and a marker may
+          # live in any of them, so checking one script file proves nothing.
+          SITE=https://aixodia-dashboard.pages.dev
+          base_fetch() { curl --fail --silent --show-error --location --retry 12 --retry-delay 3 --retry-all-errors "$SITE/$1"; }
+          base_fetch index.html > /tmp/pages-index.html
+          : > /tmp/pages-app.js
+          : > /tmp/pages-seen.txt
+          grep -oE '(src|href)="[^"]+\.(js|css)"' /tmp/pages-index.html | sed -E 's/.*="//; s/"$//; s#^\./##' > /tmp/pages-queue.txt
+          test -s /tmp/pages-queue.txt
+          while [ -s /tmp/pages-queue.txt ]; do
+            asset=$(head -1 /tmp/pages-queue.txt)
+            sed -i '1d' /tmp/pages-queue.txt
+            grep -qxF "$asset" /tmp/pages-seen.txt && continue
+            echo "$asset" >> /tmp/pages-seen.txt
+            base_fetch "$asset" > /tmp/pages-chunk
+            cat /tmp/pages-chunk >> /tmp/pages-app.js
+            printf '\n' >> /tmp/pages-app.js
+            grep -oE '(assets/[A-Za-z0-9._-]+\.(js|css))' /tmp/pages-chunk >> /tmp/pages-queue.txt || true
+          done
+          echo "Fetched $(wc -l < /tmp/pages-seen.txt) chunks: $(tr '\n' ' ' < /tmp/pages-seen.txt)"
           # Sign-in is Cloudflare Access now: the bundle must talk to Access and
           # must not carry an OAuth flow or a pasted credential of its own.
           for marker in 'cdn-cgi/access/' 'auth/identity'; do grep -Fq "$marker" /tmp/pages-app.js || { echo "Missing Access marker: $marker"; exit 1; }; done
