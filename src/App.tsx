@@ -5,16 +5,18 @@ import * as api from './api'
 import type { Device, Session } from './types'
 import { DeviceControl, EngineChat } from './dashboard'
 import { EnginesScreen } from './engines'
+import { TerminalView } from './TerminalView'
 import { Boot, LoginPage } from './components'
 
 type Phase = 'boot' | 'login' | 'home'
-type View = 'home' | 'chat' | 'device'
+type View = 'home' | 'chat' | 'device' | 'terminal'
 
 export default function App() {
   const [phase, setPhase] = useState<Phase>('boot')
   const [session, setSession] = useState<Session | null>(null)
   const [view, setView] = useState<View>('home')
   const [selectedDevice, setSelectedDevice] = useState<Device | null>(null)
+  const [terminalEngine, setTerminalEngine] = useState<{ id: string; name: string } | null>(null)
   const [loginBusy, setLoginBusy] = useState(false)
   const [loginError, setLoginError] = useState<string | null>(null)
   const [accountMenuOpen, setAccountMenuOpen] = useState(false)
@@ -183,9 +185,24 @@ export default function App() {
               api.setActiveEngineId(engineId)
               setView('chat')
             }}
+            onOpenTerminal={engineId => {
+              api.setActiveEngineId(engineId)
+              setTerminalEngine({ id: engineId, name: api.getActiveEngine().name })
+              setView('terminal')
+            }}
           />
         )}
         {view === 'chat' && <EngineChat onBack={() => setView('home')} />}
+        {view === 'terminal' && terminalEngine && (
+          /* The key is the engine: switching engines must give a new shell, not a
+             component that silently re-points at another pty. */
+          <TerminalView
+            key={terminalEngine.id}
+            engineId={terminalEngine.id}
+            engineName={terminalEngine.name}
+            onBack={() => setView('home')}
+          />
+        )}
         {view === 'device' && selectedDevice && (
           <DeviceControl device={selectedDevice} onBack={() => setView('home')} />
         )}

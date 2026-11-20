@@ -644,3 +644,26 @@ export async function callDeviceTool(
   )
   return normalizeDeviceAction(data, id, tool)
 }
+
+// ---------------------------------------------------------------- terminals
+/* A terminal socket cannot carry a header, so the bearer is spent on a
+   single-use ticket first and the dial carries the ticket in its query. */
+export interface TerminalTicket {
+  ticket: string
+  expiresAt: number
+}
+
+export async function createTerminalTicket(engineId?: string): Promise<TerminalTicket> {
+  const data = await post<{ ticket?: string; expires_at?: number }>('/api/terminals/ticket', {}, engineId)
+  if (!data?.ticket) throw new ApiError(502, { error: 'The engine did not issue a terminal ticket.', code: 'NO_TICKET' })
+  return { ticket: data.ticket, expiresAt: Number(data.expires_at) || 0 }
+}
+
+/* The socket URL for an engine: same origin as its HTTP API, but the scheme has to
+   follow the page — a wss:// URL on an http:// page is refused by the browser. */
+export function terminalSocketUrl(engineId: string, ticket: string): string {
+  const engine = resolveTargetEngine(engineId)
+  const base = new URL(engine.url, window.location.href)
+  const scheme = base.protocol === 'https:' ? 'wss:' : 'ws:'
+  return `${scheme}//${base.host}${base.pathname.replace(/\/+$/, '')}/terminal?ticket=${encodeURIComponent(ticket)}`
+}

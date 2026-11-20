@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { Cpu, MemoryStick, MessageSquare, RefreshCw, Server, WifiOff } from 'lucide-react'
+import { Cpu, MemoryStick, MessageSquare, RefreshCw, Server, SquareTerminal, WifiOff } from 'lucide-react'
 import { useEngines } from './EngineSwitcher'
 import type { EngineNode, EngineStatus } from './types'
 
@@ -41,7 +41,10 @@ function describe(engine: EngineNode, status: EngineStatus | undefined): string 
   return since ? `${base} · ${since}` : base
 }
 
-export function EnginesScreen({ onOpenChat }: { onOpenChat: (engineId: string) => void }) {
+export function EnginesScreen({ onOpenChat, onOpenTerminal }: {
+  onOpenChat: (engineId: string) => void
+  onOpenTerminal: (engineId: string) => void
+}) {
   const { engines, statuses, refreshing, refreshStatuses } = useEngines()
 
   /* A card per engine, in the order the registry answered. Offline engines keep
@@ -122,6 +125,15 @@ export function EnginesScreen({ onOpenChat }: { onOpenChat: (engineId: string) =
               >
                 <MessageSquare size={15} aria-hidden="true" />
                 <span>Chat</span>
+              </button>
+              <button
+                type="button"
+                className="engines-action"
+                disabled={!online}
+                onClick={() => onOpenTerminal(engine.id)}
+              >
+                <SquareTerminal size={15} aria-hidden="true" />
+                <span>Terminal</span>
               </button>
             </div>
           </article>
