@@ -230,38 +230,11 @@ a { color: var(--info); }
   /* On a phone the account is a chevron: the address is in the menu it opens, and
      the topbar has three controls to fit in one row. */
 }
-/* Fixed viewport: prevent page scrolling, overscroll and touch zoom. */
-html,
-body,
-#root {
-  width: 100%;
-  height: 100%;
-  min-height: 0;
-  max-height: 100%;
-  overflow: hidden;
-  overscroll-behavior: none;
-  -webkit-text-size-adjust: 100%;
-}
-body {
-  position: fixed;
-  inset: 0;
-  touch-action: none;
-}
-#root {
-  position: relative;
-  contain: layout paint;
-}
-/* Remove the browser's pressed/tap highlight from every element. */
-*,
-*::before,
-*::after {
-  -webkit-tap-highlight-color: transparent !important;
-}
-/* Keep touch gestures predictable on interactive controls. */
-button,
-[role="button"] {
-  touch-action: manipulation;
-}
+/* The page is the console's own frame, and nothing else: no scrim, no overscroll of
+   our own, no touch behaviour of our own. The sheet that the console is drawn with
+   says what a finger may do (console.css), and the browser keeps what it owns —
+   including its own pull-to-refresh, which is the whole reason there is no fetch
+   gesture written here. */
 /* Logout confirmation dialog */
 .logout-confirm-backdrop {
   position: fixed;

@@ -47,7 +47,9 @@ export function normalizeEngineNode(raw, opts = {}) {
   const rawUrl = str(item.url).trim()
   const url = rawUrl ? resolveEngineUrl(rawUrl) : engineProxyBaseUrl(id, proxyRoot)
   const host = str(item.host).trim() || undefined
-  const name = str(item.name).trim() || host || (id === DEFAULT_ENGINE_ID ? 'Primary Engine' : id)
+  /* The name is the registry's. When it has none, the machine's own address is a
+     truer label than anything invented here. */
+  const name = str(item.name).trim() || host || id
   const authMode = item.authMode === 'bearer' ? 'bearer' : 'access'
 
   return {
@@ -79,7 +81,7 @@ export function mergeEngineCatalog(groups, defaultBaseUrl = DEFAULT_ENGINE_URL) 
   if (byId.size === 0) {
     return [
       normalizeEngineNode(
-        { id: DEFAULT_ENGINE_ID, name: 'Primary Engine', url: resolveEngineUrl(defaultBaseUrl) },
+        { id: DEFAULT_ENGINE_ID, name: new URL(resolveEngineUrl(defaultBaseUrl), 'https://engine.invalid').host, url: resolveEngineUrl(defaultBaseUrl) },
         { index: 0, source: 'proxy', proxyRoot: defaultBaseUrl },
       ),
     ]

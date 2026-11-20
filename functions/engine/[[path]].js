@@ -17,7 +17,6 @@
 const DEFAULT_AUTH = 'https://aixodia-auth.aixodia.workers.dev'
 const DEFAULT_ENGINE_ENTRY = {
   id: 'default',
-  name: 'Primary Engine',
   url: 'https://engine.aixodia.dpdns.org',
 }
 
@@ -67,7 +66,9 @@ async function loadEngineRegistry(env = {}) {
   }
 
   const singleUrl = String(env.ENGINE_URL || DEFAULT_ENGINE_ENTRY.url).trim().replace(/\/+$/, '')
-  return [{ ...DEFAULT_ENGINE_ENTRY, url: singleUrl }]
+  /* No name of its own: the address is the name, which is what the registry would have
+     said as well. */
+  return [{ ...DEFAULT_ENGINE_ENTRY, name: new URL(singleUrl).host, url: singleUrl }]
 }
 
 export async function onRequest({ request, env = {} }) {
