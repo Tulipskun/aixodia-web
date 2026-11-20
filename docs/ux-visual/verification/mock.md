@@ -1383,3 +1383,41 @@ Measured (390×844): keys `y672`, line/hint row `y772`, field x76 w290 (box mode
 hint x76 w290 h34 (direct), toggle 44×44 at x24, focus `terminal-tap` after the switch
 and `terminal-input` after switching back. Typed `aixodia status` + Enter → the log
 gains `root ~ $ aixodia status`. Audits 390/1440 clean, 19 tests pass.
+
+## Round 61 — sessions in the menu, and Enter as the app has it
+
+Two changes, one of them designed rather than copied.
+
+**The composer's Enter** now matches `ui/terminal/TerminalPanel.kt`: the field is a
+`<textarea>` again, Enter at the end of the text hands the line to the shell, Enter
+anywhere else is a line break, so a loop or a here-doc can be written first. The box
+grows with the text (measured: three lines → field `h75`, `scrollH 57`) and stops at
+96px, then scrolls.
+
+Measured: caret at 0, Enter → `value` becomes `"\naixodia status --alpha"` and the log
+does not grow; caret at the end, Enter → the log gains `root ~ $ aixodia status --alpha`
+and the box empties.
+
+**The menu** had no idea what a session was: three nav rows, one of them "Terminal".
+It is now, per `decisions/sessions.md` (option B, with the status dot grafted from A):
+
+- `TERMINALS · 3` label, then one group per engine that has a shell open — a 28px
+  non-tappable head with a status dot (`--success` when the engine is up), the name,
+  and that engine's shell count;
+- session rows, 44px: terminal glyph, the shell's name, and the engine's id for it in
+  mono at the end (`m-8a7d1192`); the current one carries `is-current` and
+  `aria-current="true"`, the same pair the nav rows use;
+- `+ New terminal` under each group, so a second shell is one tap from the menu;
+- the list scrolls inside the panel (`.drawer-scroll`), the account line stays put.
+
+State moved up with it: `Session[]`, `current`, and a `Shell` per session id
+(`lines, wiped, draft, typed, direct, held`), so a tab keeps its transcript and its
+half-typed line. Measured end to end: type `aixodia status --alpha` in `shell 1`,
+switch to `logs` on Beta (empty box), switch back → the draft is still
+`aixodia status --alpha`. `+ New terminal` on Beta → 4 sessions, heads `Alpha 2` and
+`Beta 2`.
+
+Widths: at 320 the drawer is 262 wide, rows end at 249 and the mono ids at 236 — nothing
+clipped, `scrollWidth` 320. Audits 390/1440: `scrollY 0`, no low contrast, no small
+targets; the twelve `wrappedControls` notes are the known `.terminal-key` false positive
+(44px box, one 14px line).

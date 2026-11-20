@@ -199,6 +199,113 @@ button:disabled { cursor: not-allowed; }
 
 .drawer-item svg { flex: 0 0 auto; opacity: 0.9; }
 
+/* ------------------------------------------------------------- sessions */
+
+/* The terminal list takes whatever height is left and scrolls inside it, so the
+   account line stays put no matter how many tabs are open. */
+.drawer-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+  scrollbar-width: thin;
+}
+
+.drawer-label {
+  margin: 0;
+  padding: 0 var(--s3);
+  color: var(--muted);
+  font-size: var(--fs-label);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.drawer-group {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+/* A heading, not a control: 28px, no surface of its own, no border. The dot and the
+   count are the whole of it, so nothing here competes with the rows you can tap. */
+.drawer-head {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  height: 28px;
+  margin: 0;
+  padding: 0 var(--s3);
+  color: var(--muted);
+  font-size: var(--fs-label);
+  letter-spacing: 0.04em;
+}
+
+.drawer-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--muted);
+  opacity: 0.6;
+}
+
+/* The one colour on this panel is the one fact that matters: is it up. */
+.drawer-dot.is-live {
+  background: var(--success);
+  opacity: 1;
+}
+
+.drawer-count {
+  margin-left: auto;
+  font-variant-numeric: tabular-nums;
+}
+
+/* A session row: the shell's own name, and the id the engine knows it by. */
+.drawer-session {
+  min-height: 44px;
+}
+
+.drawer-session-title {
+  flex: 0 1 auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.drawer-ref {
+  margin-left: auto;
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: var(--fs-label);
+  font-variant-numeric: tabular-nums;
+}
+
+.drawer-item.is-current .drawer-ref { color: var(--muted); }
+
+/* Opening one more belongs to the engine above it, so it reads as that engine's
+   last row rather than as another screen. */
+.drawer-new {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  min-height: 44px;
+  padding: var(--s2) var(--s3);
+  border: 1px solid transparent;
+  border-radius: var(--s2);
+  background: transparent;
+  color: var(--muted);
+  font-size: var(--fs-body);
+  text-align: left;
+  transition: background 0.15s ease, color 0.15s ease, transform 0.12s ease;
+}
+
+@media (hover: hover) {
+  .drawer-new:hover { background: var(--surface-2); color: var(--text); }
+}
+
+.drawer-new:active { transform: scale(0.98); }
+
 .drawer-foot {
   display: flex;
   align-items: center;
@@ -757,10 +864,10 @@ button:disabled { cursor: not-allowed; }
 .terminal-field {
   flex: 1 1 auto;
   min-width: 0;
-  height: 44px;
+  min-height: 44px;
   display: flex;
   align-items: center;
-  padding: 0 var(--s3);
+  padding: 8px var(--s3);
   border-radius: var(--s2);
   border: 1px solid var(--accent);
   background: var(--surface-2);
@@ -769,11 +876,17 @@ button:disabled { cursor: not-allowed; }
 
 .terminal-field:focus-within { border-color: var(--text); }
 
+/* A textarea, because Enter in the middle of a command is a line break: a loop or a
+   here-doc is written first and sent at the end. It grows to three lines and then
+   scrolls. */
 .terminal-input {
   flex: 1 1 auto;
   min-width: 0;
-  height: 100%;
+  height: 28px;
   padding: 0;
+  resize: none;
+  overflow-y: auto;
+  line-height: 1.45;
   border: 0;
   background: none;
   color: var(--text);

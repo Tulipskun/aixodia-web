@@ -19,6 +19,7 @@ import {
   Menu,
   MonitorSmartphone,
   MousePointerClick,
+  Plus,
   RotateCw,
   Smartphone,
   Sparkles,
@@ -180,10 +181,11 @@ const SCREENS: ScreenInfo[] = [
   { id: 'terminal', machines: null },
 ]
 
-const DRAWER: { id: Screen; label: string; icon: LucideIcon }[] = [
+/* The menu's own navigation. A terminal is not on it: a terminal is a session, and
+   sessions are the list below. */
+const DRAWER: { id: ListedScreen; label: string; icon: LucideIcon }[] = [
   { id: 'engines', label: 'Engines', icon: Boxes },
   { id: 'droidime', label: 'Droidime', icon: Smartphone },
-  { id: 'terminal', label: 'Terminal', icon: SquareTerminal },
 ]
 
 /* The keys a phone keyboard does not have, in the app's two rows: what a shell
@@ -219,6 +221,44 @@ const TRANSCRIPT: Line[] = [
   { kind: 'note', text: '{"t":"run","ok":true,"ms":41}' },
   { kind: 'note', text: '{"t":"beat","ok":true}' },
 ]
+
+/* A tab. Terminals belong to an engine, and a person keeps more than one open, on
+   more than one engine, at the same time — so the menu lists sessions, not screens. */
+interface Session {
+  id: string
+  engine: string
+  title: string
+  /* The id the engine knows this shell by, short enough to sit at the row's end. */
+  ref: string
+}
+
+const SESSIONS: Session[] = [
+  { id: 's1', engine: 'alpha', title: 'shell 1', ref: 'm-8a7d1192' },
+  { id: 's2', engine: 'alpha', title: 'shell 2', ref: 'm-8a7d1192' },
+  { id: 's3', engine: 'beta', title: 'logs', ref: 'm-2c41f5d8' },
+]
+
+/* One tab's whole state: what it printed, what is being typed into it, and which
+   of the two input surfaces it is on. Held per session, so switching tabs is
+   switching back to exactly where that tab was. */
+interface Shell {
+  lines: Line[]
+  wiped: boolean
+  draft: string
+  typed: string
+  direct: boolean
+  /* A modifier applies to the next key only, the way a physical chord works. */
+  held: string[]
+}
+
+const freshShell = (): Shell => ({
+  lines: [],
+  wiped: false,
+  draft: '',
+  typed: '',
+  direct: false,
+  held: [],
+})
 
 /* Each screen offers what that thing can actually do: a server is opened, a phone
    is driven. */
@@ -393,22 +433,20 @@ function Card({
   )
 }
 
-function Terminal() {
-  /* Typing and keys only add to this screen's own transcript: nothing is sent
-     anywhere, and a reload starts it over. */
-  const [lines, setLines] = useState<Line[]>([])
-  const [wiped, setWiped] = useState(false)
-  const [draft, setDraft] = useState('')
-  /* A modifier applies to the next key only, the way a physical chord works. */
-  const [held, setHeld] = useState<string[]>([])
-  /* Direct typing: the box goes away and the grid itself takes the keys, the way
-     the app hands the terminal to the keyboard. What is typed lives on the last
-     line of the transcript until Enter sends it. */
-  const [direct, setDirect] = useState(false)
-  const [typed, setTyped] = useState('')
+/* One tab on screen. Everything it remembers lives in the parent, keyed by
+   session, so the drawer can switch between tabs without any of them forgetting a
+   half-typed line. */
+function Terminal({
+  shell,
+  onChange,
+}: {
+  shell: Shell
+  onChange: (patch: Partial<Shell>) => void
+}) {
+  const { lines, wiped, draft, typed, direct, held } = shell
   const logRef = useRef<HTMLPreElement>(null)
   const tapRef = useRef<HTMLInputElement>(null)
-  const boxRef = useRef<HTMLInputElement>(null)
+  const boxRef = useRef<HTMLTextAreaElement>(null)
 
   const chord = held.map((key) => key.toLowerCase()).join('+')
   const transcript = wiped ? [] : TRANSCRIPT
@@ -417,57 +455,66 @@ function Terminal() {
     /* A terminal keeps its newest line in view. */
     const log = logRef.current
     if (log) log.scrollTop = log.scrollHeight
-  }, [lines, wiped])
+  }, [lines, wiped, direct])
+
+  /* The box grows with a multi-line command instead of scrolling inside 44px. */
+  useEffect(() => {
+    const box = boxRef.current
+    if (!box) return
+    box.style.height = 'auto'
+    box.style.height = `${Math.min(box.scrollHeight, 96)}px`
+  }, [draft, direct])
 
   const sendKey = (key: string) => {
-    setLines((sent) => [...sent, { kind: 'sent', text: `· ${chord ? `${chord}+` : ''}${key}` }])
-    setHeld([])
+    onChange({
+      lines: [...lines, { kind: 'sent', text: `· ${chord ? `${chord}+` : ''}${key}` }],
+      held: [],
+    })
   }
 
   const toggle = (key: string) =>
-    setHeld((on) => (on.includes(key) ? on.filter((name) => name !== key) : [...on, key]))
+    onChange({ held: held.includes(key) ? held.filter((name) => name !== key) : [...held, key] })
 
-  const submit = (event: React.FormEvent) => {
-    event.preventDefault()
+  const submit = () => {
     const command = draft.trim()
     if (!command) return
-    setLines((sent) => [...sent, { kind: 'cmd', text: command }])
-    setDraft('')
-    setWiped(false)
+    onChange({ lines: [...lines, { kind: 'cmd', text: command }], draft: '', wiped: false })
+  }
+
+  /* Enter is the ordinary return key, as in the app: at the end of the text it hands
+     the line to the shell, anywhere else it is a line break, so a loop or a here-doc
+     can be written over several lines before it goes. */
+  const onBoxKey = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (event.key !== 'Enter') return
+    const box = event.currentTarget
+    const atEnd = box.selectionStart === box.value.length && box.selectionEnd === box.value.length
+    if (!atEnd) return
+    event.preventDefault()
+    submit()
   }
 
   /* Trash empties the screen: everything printed, base transcript included. */
-  const clearAll = () => {
-    setLines([])
-    setWiped(true)
-    setHeld([])
-  }
-
-  /* The switch offers the surface a tap would take you to, and taking it raises
-     the keyboard at once so the change is felt. */
-  const toggleDirect = () => {
-    const to = !direct
-    setDirect(to)
-    setTyped('')
-    requestAnimationFrame(() => (to ? tapRef.current : boxRef.current)?.focus())
-  }
-
-  /* In direct mode the line is the terminal's, so Enter is the byte the shell
-     gets: the line is printed and the prompt starts again. */
-  const runDirect = () => {
-    const command = typed.trim()
-    setTyped('')
-    if (!command) return
-    setLines((sent) => [...sent, { kind: 'cmd', text: command }])
-    setWiped(false)
-  }
+  const clearAll = () => onChange({ lines: [], wiped: true, held: [] })
 
   /* Reset replaces the shell, so the screen starts again from a prompt — the same
      thing `exec $SHELL` does to a live session. */
-  const restart = () => {
-    setLines([{ kind: 'cmd', text: 'exec $SHELL' }])
-    setWiped(true)
-    setHeld([])
+  const restart = () => onChange({ lines: [{ kind: 'cmd', text: 'exec $SHELL' }], wiped: true, held: [] })
+
+  /* The switch offers the surface a tap would take you to, and taking it raises the
+     keyboard at once so the change is felt. */
+  const toggleDirect = () => {
+    const to = !direct
+    onChange({ direct: to, typed: '' })
+    requestAnimationFrame(() => (to ? tapRef.current : boxRef.current)?.focus())
+  }
+
+  /* In direct mode the line is the terminal's, so Enter is the byte the shell gets:
+     the line is printed and the prompt starts again. */
+  const runDirect = () => {
+    const command = typed.trim()
+    onChange({ typed: '' })
+    if (!command) return
+    onChange({ lines: [...lines, { kind: 'cmd', text: command }], typed: '', wiped: false })
   }
 
   const composer = (
@@ -486,15 +533,22 @@ function Terminal() {
       {direct ? (
         <p className="terminal-hint">Tap the terminal to type — keys go straight to the shell</p>
       ) : (
-        <form className="terminal-field" onSubmit={submit}>
-          <input
+        <form
+          className="terminal-field"
+          onSubmit={(event) => {
+            event.preventDefault()
+            submit()
+          }}
+        >
+          <textarea
             ref={boxRef}
+            rows={1}
             className="terminal-input"
             value={draft}
-            onChange={(event) => setDraft(event.target.value)}
+            onChange={(event) => onChange({ draft: event.target.value })}
+            onKeyDown={onBoxKey}
             placeholder={held.length ? 'key for the chord…' : 'Type a command…'}
             aria-label="Command"
-            enterKeyHint="send"
             autoCapitalize="off"
             autoCorrect="off"
             spellCheck={false}
@@ -582,7 +636,7 @@ function Terminal() {
         ref={tapRef}
         className="terminal-tap"
         value={typed}
-        onChange={(event) => setTyped(event.target.value)}
+        onChange={(event) => onChange({ typed: event.target.value })}
         onKeyDown={(event) => {
           if (event.key !== 'Enter') return
           event.preventDefault()
@@ -609,6 +663,10 @@ function Drawer({
   onClose,
   screen,
   onScreen,
+  sessions,
+  current,
+  onSession,
+  onOpen,
   drag,
   panelRef,
 }: {
@@ -617,13 +675,25 @@ function Drawer({
      menu button is the close button. Only the scrim closes it from here. */
   onClose: () => void
   screen: Screen
-  onScreen: (next: Screen) => void
+  onScreen: (next: ListedScreen) => void
+  sessions: Session[]
+  current: string
+  onSession: (id: string) => void
+  onOpen: (engine: string) => void
   drag: Drag | null
   panelRef: React.RefObject<HTMLElement>
 }) {
   /* While a pointer is down the panel follows it instead of the class, so the
      gesture reads as dragging the panel rather than waiting for it to appear. */
   const offset = drag ? (drag.fromOpen ? Math.min(0, drag.dx) : Math.min(0, drag.dx - drag.width)) : null
+
+  /* Sessions are grouped by the engine they run on, in the engines' own order, and
+     an engine with nothing open on it earns no heading: the menu is the list of what
+     is running, not a directory of what could be. */
+  const groups = MACHINES.map((machine) => ({
+    machine,
+    shells: sessions.filter((session) => session.engine === machine.id),
+  })).filter((group) => group.shells.length)
 
   useEffect(() => {
     /* Sliding the panel off screen leaves its buttons reachable by Tab, which puts
@@ -669,6 +739,44 @@ function Drawer({
           ))}
         </nav>
 
+        <div className="drawer-scroll">
+          <p className="drawer-label">{`Terminals · ${sessions.length}`}</p>
+
+          {groups.map(({ machine, shells }) => (
+            <section className="drawer-group" key={machine.id}>
+              {/* The head answers "is that engine even up?" without a second level:
+                  a dot, the name, and how many shells of it are open. */}
+              <p className="drawer-head">
+                <span className={`drawer-dot${machine.online ? ' is-live' : ''}`} aria-hidden="true" />
+                {machine.name}
+                <span className="drawer-count">{shells.length}</span>
+              </p>
+
+              {shells.map((session) => (
+                <button
+                  key={session.id}
+                  type="button"
+                  className={`drawer-item drawer-session${session.id === current ? ' is-current' : ''}`}
+                  aria-current={session.id === current ? 'true' : undefined}
+                  onClick={() => {
+                    onSession(session.id)
+                    onClose()
+                  }}
+                >
+                  <SquareTerminal size={16} />
+                  <span className="drawer-session-title">{session.title}</span>
+                  <span className="drawer-ref">{session.ref}</span>
+                </button>
+              ))}
+
+              <button type="button" className="drawer-new" onClick={() => onOpen(machine.id)}>
+                <Plus size={14} aria-hidden="true" />
+                <span>New terminal</span>
+              </button>
+            </section>
+          ))}
+        </div>
+
         <p className="drawer-foot">
           <span className="drawer-account">{ACCOUNT}</span>
         </p>
@@ -681,6 +789,14 @@ export function EnginesMock() {
   const [menuOpen, setMenuOpen] = useState(false)
   const [screenId, setScreenId] = useState<Screen>('engines')
   const screen = SCREENS.find((entry) => entry.id === screenId) ?? SCREENS[0]
+  /* The tabs, and one shell of state each. Both live here so the drawer can switch
+     between them: a tab is not a screen that is rebuilt, it is a session kept. */
+  const [sessions, setSessions] = useState<Session[]>(SESSIONS)
+  const [current, setCurrent] = useState(SESSIONS[0].id)
+  const [shells, setShells] = useState<Record<string, Shell>>(() =>
+    Object.fromEntries(SESSIONS.map((session) => [session.id, freshShell()])),
+  )
+  const shell = shells[current] ?? freshShell()
   const [drag, setDrag] = useState<Drag | null>(null)
   const panelRef = useRef<HTMLElement>(null)
   const shellRef = useRef<HTMLDivElement>(null)
@@ -832,6 +948,24 @@ export function EnginesMock() {
         onClose={() => setMenuOpen(false)}
         screen={screenId}
         onScreen={setScreenId}
+        sessions={sessions}
+        current={current}
+        onSession={(id) => {
+          setCurrent(id)
+          setScreenId('terminal')
+        }}
+        onOpen={(engine) => {
+          const session: Session = {
+            id: `s${Date.now()}`,
+            engine,
+            title: `shell ${sessions.filter((s) => s.engine === engine).length + 1}`,
+            ref: MACHINES.find((machine) => machine.id === engine)?.id === 'alpha' ? 'm-8a7d1192' : 'm-2c41f5d8',
+          }
+          setSessions((list) => [...list, session])
+          setShells((map) => ({ ...map, [session.id]: freshShell() }))
+          setCurrent(session.id)
+          setScreenId('terminal')
+        }}
         drag={drag}
         panelRef={panelRef}
       />
@@ -861,7 +995,11 @@ export function EnginesMock() {
             />
           ))
         ) : (
-          <Terminal key={screen.id} />
+          <Terminal
+            key={current}
+            shell={shell}
+            onChange={(patch) => setShells((map) => ({ ...map, [current]: { ...shell, ...patch } }))}
+          />
         )}
       </main>
 
