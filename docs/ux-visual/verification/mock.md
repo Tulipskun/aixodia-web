@@ -1269,3 +1269,28 @@ Measured (touch, `x40 y400`, 70ms between moves):
 Mouse behaves the same way (`mouseOpens`, `mouseCloses`, and a mouse drag that goes
 down first leaves it closed), and a slightly diagonal swipe still closes an open
 panel. The two lines are constants: `ACTIVATE_X = 10`, `FAIL_Y = 5`.
+
+## Round 57 — twenty degrees, one line
+
+The two offsets became a single angle again, at the user's ask: within twenty
+degrees of horizontal the gesture is the drawer's, steeper is the page's. Nothing
+is decided until the finger has moved `SLOP = 4px`, and the second reason the
+offsets were dropped stays: a gesture that is still undecided moves nothing on
+screen and `settle()` ignores it, so a tap or a scroll never nudges the panel.
+
+Measured (touch, `x40 y400`, four moves over 150px, 70ms apart):
+
+| angle | drawer | touchmoves claimed |
+|---|---|---|
+| 0° | opens | 4 of 4 |
+| 10° | opens | 4 of 4 |
+| 19° | opens | 4 of 4 |
+| 21° | closed | 0 of 4 |
+| 30° | closed | 0 of 4 |
+| 45° | closed | 0 of 4 |
+| 90° | closed | 0 of 4 |
+
+For comparison, Discord's own panel gesture (`OverlappingPanelsLayout`) has no
+degree constant at all: it takes the drag once `|dx| > touchSlop && |dx| > |dy|`,
+which is a one-to-one ratio, i.e. **45°**, plus a minimum fling. Ours is tighter than
+theirs by design, because on this screen a steeper drag almost always means a scroll.

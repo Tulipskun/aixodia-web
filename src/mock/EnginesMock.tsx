@@ -109,11 +109,12 @@ const ENTER_STEP = 80
 const COMMIT = 72
 const FLICK = 0.35
 
-/* How a drag is told apart from a scroll, the way react-native-gesture-handler
-   asks for it: a pan activates at ±10px across and fails at ±5px up or down.
-   Whichever line the finger crosses first decides — two to one, about 26°. */
-const ACTIVATE_X = 10
-const FAIL_Y = 5
+/* How a drag is told apart from a scroll: it is the drawer's while it is within
+   twenty degrees of horizontal. Steeper than that is a scroll, and the page keeps
+   it. Nothing is decided until the finger has moved SLOP px — a wobble is not a
+   direction. */
+const SIDEWAYS_DEGREES = 20
+const SLOP = 4
 
 interface Drag {
   startX: number
@@ -630,21 +631,21 @@ export function EnginesMock() {
     return true
   }
 
-  /* Two lines, and whichever the finger crosses first wins: across by 10px makes
-     this the drawer's gesture, up or down by 5px gives it to the page. Once it is
-     the drawer's, vertical drift no longer takes it back — the finger already said
-     what it meant. */
+  /* One line: twenty degrees from horizontal. Everything inside it is the drawer's,
+     everything steeper belongs to the page. Once the gesture is the drawer's,
+     vertical drift no longer takes it back — the finger already said what it meant. */
   const follow = (clientX: number, clientY: number) => {
     const current = dragRef.current
     if (!current) return
     const dx = clientX - current.startX
     const dy = clientY - current.startY
     if (!current.active) {
-      if (Math.abs(dy) >= FAIL_Y) {
+      if (Math.hypot(dx, dy) < SLOP) return
+      const degrees = Math.abs((Math.atan2(Math.abs(dy), Math.abs(dx)) * 180) / Math.PI)
+      if (degrees > SIDEWAYS_DEGREES) {
         hold(null)
         return
       }
-      if (Math.abs(dx) < ACTIVATE_X) return
       hold({ ...current, active: true, dx })
       return
     }
