@@ -1188,3 +1188,26 @@ Measured: 14 keys, every one `44×44`, seven per row spread across the width at 
 Below `368px` the row scrolls and its right edge fades (`mask-image`) instead of
 ending in a cut key. Audits at 320/390/1440: `pageScrollY 0`, 0 low contrast, no
 small targets, no clipped text.
+
+## Round 54 — no button, the drag is the way out
+
+Three corrections, all from the app's own behaviour:
+
+1. **The menu button is gone from the terminal.** `.shell.is-full .topbar` is
+   `display: none`, so the bar and the button inside it leave the screen — measured
+   `topbar none`, button rect `0×0`, and the transcript now starts at `x24 y24`
+   (the 56px clearance that existed for a floating button went with it). The way out
+   is the sideways drag, restored in the same round: the transcript is no longer
+   `data-no-drag`, so a right drag over it opens the drawer (touch `40→210` and
+   mouse `400→600` both verified), and a left drag closes it. Typing and the key
+   rows keep `data-no-drag` — a drag there scrolls or selects, as it should. Going
+   back to Engines restores the bar (`display grid`).
+2. **CMD sends `ctrl+p`.** It is no longer a modifier toggle: pressing it appends
+   `· ctrl+p` and releases nothing (`is-held` count stays 0). Ctrl, Shift and Alt
+   remain modifiers, so `Ctrl` then `Tab` still gives `· ctrl+Tab`.
+3. **Trash empties the screen** (`0` lines — base transcript included) and **reset
+   runs `exec $SHELL`**: the screen restarts from one prompt line,
+   `root ~ $ exec $SHELL`, which is what replacing the shell does to a session.
+
+Audits on both screens at 320/390/1440: `pageScrollY 0`, 0 low contrast, no small
+targets, no clipped text.

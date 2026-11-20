@@ -185,7 +185,10 @@ const KEY_ROWS: string[][] = [
   ['Ctrl', 'Shift', 'Alt', '←', '↓', '→', 'reload'],
 ]
 
-const MODIFIERS = ['CMD', 'Ctrl', 'Shift', 'Alt']
+/* A modifier is held for one key. CMD is not one of them: it is the shortcut the
+   app binds to ctrl+p, and it sends that itself. */
+const MODIFIERS = ['Ctrl', 'Shift', 'Alt']
+const CMD = 'ctrl+p'
 
 /* What a shell on the engine has to say. The lines are literal: the lease and the
    instance id are what the engine actually reports. */
@@ -414,14 +417,27 @@ function Terminal() {
     if (!command) return
     setLines((sent) => [...sent, { kind: 'cmd', text: command }])
     setDraft('')
-    /* A command goes to a shell and something comes back: the newest line is the
-       only one the mock answers, and it answers in the engine's own terms. */
     setWiped(false)
+  }
+
+  /* Trash empties the screen: everything printed, base transcript included. */
+  const clearAll = () => {
+    setLines([])
+    setWiped(true)
+    setHeld([])
+  }
+
+  /* Reset replaces the shell, so the screen starts again from a prompt — the same
+     thing `exec $SHELL` does to a live session. */
+  const restart = () => {
+    setLines([{ kind: 'cmd', text: 'exec $SHELL' }])
+    setWiped(true)
+    setHeld([])
   }
 
   return (
     <section className="terminal" aria-label="Terminal">
-      <pre className="terminal-log" ref={logRef} data-no-drag>
+      <pre className="terminal-log" ref={logRef}>
         {[...transcript, ...lines].map(({ kind, text }, index) => (
           <span key={`${index}-${text}`} className={`terminal-line is-${kind}`}>
             {kind === 'cmd' ? (
@@ -474,13 +490,10 @@ function Terminal() {
                   aria-label={key === 'trash' ? 'Clear' : key === 'reload' ? 'Reset' : key}
                   onClick={() => {
                     if (isModifier) toggle(key)
-                    else if (key === 'trash') {
-                      setLines([])
-                      setWiped(true)
-                    } else if (key === 'reload') {
-                      setLines([])
-                      setWiped(false)
-                    } else sendKey(key)
+                    else if (key === 'CMD') sendKey(CMD)
+                    else if (key === 'trash') clearAll()
+                    else if (key === 'reload') restart()
+                    else sendKey(key)
                   }}
                 >
                   {key === 'trash' ? (
