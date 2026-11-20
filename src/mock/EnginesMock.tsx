@@ -690,10 +690,14 @@ function Drawer({
   /* Sessions are grouped by the engine they run on, in the engines' own order, and
      an engine with nothing open on it earns no heading: the menu is the list of what
      is running, not a directory of what could be. */
-  const groups = MACHINES.map((machine) => ({
-    machine,
-    shells: sessions.filter((session) => session.engine === machine.id),
-  })).filter((group) => group.shells.length)
+  const groups = MACHINES
+    .map((machine) => ({
+      machine,
+      shells: sessions.filter((session) => session.engine === machine.id),
+    }))
+    /* A machine that is not up has nothing a menu can do: its shells cannot be
+       opened, so listing them would be a row that lies. */
+    .filter((group) => group.machine.online && group.shells.length)
 
   useEffect(() => {
     /* Sliding the panel off screen leaves its buttons reachable by Tab, which puts
@@ -800,9 +804,16 @@ export function EnginesMock() {
   const [drag, setDrag] = useState<Drag | null>(null)
   const panelRef = useRef<HTMLElement>(null)
   const shellRef = useRef<HTMLDivElement>(null)
+  const topbarRef = useRef<HTMLElement>(null)
   /* The native touch listeners outlive a render, so the gesture reads from a ref
      and only the render values come from state. */
   const dragRef = useRef<Drag | null>(null)
+  /* A terminal is the whole screen, so the bar is off it — until the menu comes out,
+     which is the one moment the bar has something to say. While the finger is still
+     down, the bar follows it, so the two arrive together instead of one after the
+     other. */
+  const full = screenId === 'terminal'
+  const revealed = drag ? 1 + (drag.fromOpen ? Math.min(0, drag.dx) : Math.min(0, drag.dx - drag.width)) / drag.width : null
 
   const hold = (next: Drag | null) => {
     dragRef.current = next
@@ -864,6 +875,12 @@ export function EnginesMock() {
     hold(null)
   }
 
+  useEffect(() => {
+    /* A bar that is only translated away is still tabbable and still readable by a
+       screen reader: while it is off, it is inert. */
+    topbarRef.current?.toggleAttribute('inert', full && !menuOpen)
+  }, [full, menuOpen])
+
   /* The whole page drags, so the listeners sit on the document: on a wide screen
      the app is a column in the middle and the page around it is just as much part
      of the screen. Mouse and pen use pointer events; touch can't, because Chrome
@@ -921,13 +938,26 @@ export function EnginesMock() {
   return (
     <div
       ref={shellRef}
-      className={`shell${drag ? ' is-dragging' : ''}${screen.machines ? '' : ' is-full'}`}
+      className={`shell${drag ? ' is-dragging' : ''}${screen.machines ? '' : ' is-full'}${full && menuOpen ? ' is-menu' : ''}`}
     >
       <a className="skip-link" href="#content">
         Skip to content
       </a>
 
-      <header className="topbar">
+      <header
+        className="topbar"
+        ref={topbarRef}
+        style={
+          full && revealed !== null
+            ? {
+                transform: `translateY(${-100 * (1 - revealed)}%)`,
+                opacity: revealed,
+                pointerEvents: revealed > 0.6 ? 'auto' : 'none',
+                transition: 'none',
+              }
+            : undefined
+        }
+      >
         <button
           type="button"
           className="icon-button"

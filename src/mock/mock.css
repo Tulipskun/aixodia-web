@@ -402,22 +402,47 @@ button:disabled { cursor: not-allowed; }
     drop-shadow(0 3px 8px rgba(0, 0, 0, 0.55));
 }
 
-/* Full screen: a terminal has nothing to say to a bar, so the bar goes and the
-   one control it carried floats over the screen it belongs to. */
-/* Full screen: a terminal has nothing to say to a bar, and nothing over it
-   either. The way out is the sideways drag, the same one that opens the drawer
-   everywhere else. */
+/* Full screen: a terminal has nothing to say to a bar, and nothing over it either.
+   The way out is the sideways drag, the same one that opens the drawer everywhere
+   else — and the one moment the bar does have something to say is that menu, so it
+   comes back with it and leaves with it. */
 .shell.is-full {
   /* The screen is the screen: no breathing room borrowed from the frame. */
   padding-top: 0;
   padding-bottom: 0;
 }
 
-.shell.is-full .topbar { display: none; }
+/* It is the same layer over the same screen, not a second bar: absolute, so the
+   terminal does not move when it arrives, and translated rather than removed, so the
+   movement is the animation. */
+.shell.is-full .topbar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  transform: translateY(-100%);
+  opacity: 0;
+  pointer-events: none;
+  transition: transform 0.22s ease, opacity 0.22s ease;
+}
+
+.shell.is-full.is-menu .topbar {
+  transform: none;
+  opacity: 1;
+  pointer-events: auto;
+}
 
 /* Nothing above the panel now, so the panel hangs from the top of the frame. */
 .shell.is-full .drawer,
 .shell.is-full .scrim { top: 0; }
+
+/* The bar comes back above the scrim it arrives with, otherwise it would fade in
+   underneath it and never be seen. */
+.shell.is-full .topbar { z-index: 5; }
+
+/* And the panel starts under it, as it does on every other screen, so the bar is a
+   bar and not a strip of panel showing through. */
+.shell.is-full .drawer { padding-top: calc(var(--topbar-h) + var(--s3)); }
 
 /* --------------------------------------------------------------- screen */
 

@@ -1421,3 +1421,38 @@ Widths: at 320 the drawer is 262 wide, rows end at 249 and the mono ids at 236 �
 clipped, `scrollWidth` 320. Audits 390/1440: `scrollY 0`, no low contrast, no small
 targets; the twelve `wrappedControls` notes are the known `.terminal-key` false positive
 (44px box, one 14px line).
+
+## Round 62 — offline engines earn no rows, and the bar arrives with the menu
+
+**The menu lists only what can be opened.** A group now needs `machine.online` as well
+as a shell: a row for a shell on a machine that is down cannot do anything, so it is
+not shown. Measured: heads `["Alpha 2"]`, two session rows, one `+ New terminal` — Beta
+and its `logs` shell are gone, and re-appear the moment the engine is up.
+
+**The bar is back on the terminal, but only with the menu.** `display: none` became a
+translation, so the same layer moves instead of being swapped:
+
+- `.shell.is-full .topbar` — `position: absolute`, `translateY(-100%)`, `opacity 0`,
+  `pointer-events: none`, `inert`, `transition 220ms` (the drawer's own);
+- `.shell.is-full.is-menu .topbar` — `transform: none`, `opacity 1`;
+- while a finger is still down the bar takes the drag itself, inline and with no
+  transition, so the two arrive as one movement rather than one after the other;
+- `z-index: 5` puts it over the scrim it comes with (otherwise it faded in underneath
+  it and was never seen), and the panel takes `padding-top: 68 + 12` so it starts under
+  the bar as on every other screen.
+
+Measured during a slow drag from x40, reading computed style:
+
+| drag | bar y | opacity | transition |
+|---|---|---|---|
+| closed | -68 | 0.00 | 220ms |
+| 50px | -55 | 0.19 | none (following the finger) |
+| 120px | -38 | 0.45 | none |
+| 210px | -15 | 0.78 | none |
+| released open | 0 | 1.00 | 220ms |
+| closing, mid | -28 | 0.59 | none |
+| closed again | -68 | 0.00 | 220ms |
+
+`inert` is on while the bar is off screen and off the moment it is out, so a hidden bar
+is not a tab stop. Vision check on the open state: bar across the top with the menu
+button and the wordmark, panel content starting below it, nothing doubled.
