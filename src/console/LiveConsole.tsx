@@ -5,7 +5,8 @@ import { Console } from './Console'
 import { mountPty } from './PtyTerminal'
 import { useMachines, useTerminals } from './useLive'
 import type { Series } from './useLive'
-import { NAV, enginesListing } from './vocabulary'
+import { NAV, droidimeListing, enginesListing } from './vocabulary'
+import { DROIDIME_DEVICES } from './placeholders'
 
 /* The console on the registry.
  *
@@ -83,9 +84,10 @@ export function LiveConsole({ account, onOpenChat, onSignOut }: {
     setCurrent('')
   }, [current, screenId, sessions])
 
-  /* The card list comes from the shared vocabulary, so the preview cannot promise a
-     verb this page does not offer. */
-  const listing = useMemo<Listing>(() => {
+  /* The screens come from the shared vocabulary, so the app and the design cannot
+     disagree about what a card offers. Droidime is drawn as designed and nothing is
+     wired to it yet. */
+  const listings = useMemo<Listing[]>(() => {
     const cards = machines.map<Machine>(machine => ({
       id: machine.id,
       name: machine.name,
@@ -93,7 +95,7 @@ export function LiveConsole({ account, onOpenChat, onSignOut }: {
       meta: machine.meta,
       metrics: readings(machine.status, machine.series),
     }))
-    return enginesListing(cards, cards.filter(card => card.online).length, cards.length)
+    return [enginesListing(cards), droidimeListing(DROIDIME_DEVICES)]
   }, [machines])
 
   const refs = useMemo<MachineRef[]>(
@@ -110,7 +112,7 @@ export function LiveConsole({ account, onOpenChat, onSignOut }: {
 
   return (
     <Console
-      listings={[listing]}
+      listings={listings}
       nav={NAV}
       machines={refs}
       sessions={sessions}
@@ -124,8 +126,9 @@ export function LiveConsole({ account, onOpenChat, onSignOut }: {
         setScreenId('terminal')
       }}
       onAction={(machineId, action) => {
+        /* Two verbs have a screen behind them; the rest are drawn and not wired. */
         if (action === 'terminal') openTerminal(machineId)
-        else onOpenChat(machineId)
+        else if (action === 'ai') onOpenChat(machineId)
       }}
       onCloseSession={async session => {
         setOpening(list => list.filter(item => item.id !== session.id))

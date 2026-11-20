@@ -9,7 +9,8 @@ import { useEffect, useRef, useState } from 'react'
 import { Cpu, HardDrive, MemoryStick } from 'lucide-react'
 import type { Machine, Session, TerminalHandle, TerminalMount } from '../console/Console'
 import { Console, sampleSeries } from '../console/Console'
-import { NAV, enginesListing } from '../console/vocabulary'
+import { NAV, droidimeListing, enginesListing } from '../console/vocabulary'
+import { DROIDIME_DEVICES } from '../console/placeholders'
 
 /* ---------------------------------------------------------------- fixtures */
 
@@ -34,7 +35,7 @@ const MACHINES: Machine[] = [
   },
 ]
 
-const LISTINGS = [enginesListing(MACHINES, MACHINES.filter(m => m.online).length, MACHINES.length)]
+const LISTINGS = [enginesListing(MACHINES), droidimeListing(DROIDIME_DEVICES)]
 
 /* The terminal a fixture mounts: a transcript that answers the keys it is sent, with
    the same three-colour prompt and the same lease facts the engine reports. */
