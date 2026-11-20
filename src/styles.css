@@ -1,6 +1,13 @@
 /* AIxodia Device Console — dark UI.
    Only console/device-control styles live here; all GitHub dashboard
-   (hero / stat-grid / run-strip / release / lang-bar / commits) blocks removed. */
+   (hero / stat-grid / run-strip / release / lang-bar / commits) blocks removed.
+
+   The whole sheet is a CSS layer. The console's own sheet (console/console.css) is
+   unlayered, and an unlayered rule beats a layered one whatever order the bundler
+   emits — so the two sheets cannot fight over `.card`, `.action` or `.shell` when
+   they are concatenated into one file. */
+
+@layer dashboard {
 
 :root {
   /* AIxodia midnight palette */
@@ -1484,3 +1491,5 @@ button,
   border-radius: 8px; background: var(--surface); color: var(--text); outline: none;
 }
 .engine-field input:focus, .engine-field select:focus { border-color: var(--accent); }
+
+} /* @layer dashboard */

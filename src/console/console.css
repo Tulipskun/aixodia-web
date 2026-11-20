@@ -995,21 +995,35 @@ button:disabled { cursor: not-allowed; }
 
 /* A shell that is not open yet says why, on one line, with the one thing that can be
    done about it next to it. */
-.terminal-note {
+/* A shell that is not open says so where the prompt would be, and the one button
+   that helps sits at the end of that line. It is a line, not a card: the terminal is
+   the screen, and a panel over it would be a second surface. */
+.terminal-status {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   gap: var(--s3);
-  margin-top: var(--s3);
-  padding: var(--s3);
-  border: 1px solid var(--border);
-  border-radius: var(--s3);
-  background: var(--surface-2);
   color: var(--muted);
-  font-size: var(--fs-body);
 }
 
-.terminal-note .action { flex-direction: row; }
+.terminal-retry {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s1);
+  height: 28px;
+  padding: 0 var(--s2);
+  border-radius: var(--s1);
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: var(--fs-label);
+}
+
+.terminal-retry:active { transform: scale(0.96); }
+
+@media (hover: hover) {
+  .terminal-retry:hover { border-color: var(--accent); color: var(--accent); }
+}
 
 /* A shell prompt is three facts: who, where, ready. They read as three colours,
    the way the app draws them. */

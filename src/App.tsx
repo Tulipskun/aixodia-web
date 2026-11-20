@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import * as api from './api'
 import type { Device, Session } from './types'
 import { DeviceControl, EngineChat } from './dashboard'
-import { Console } from './live/Console'
+import { LiveConsole } from './console/LiveConsole'
 import { Boot, LoginPage } from './components'
 
 type Phase = 'boot' | 'login' | 'home'
@@ -185,7 +185,7 @@ export default function App() {
   if (view === 'home') {
     return (
       <>
-        <Console
+        <LiveConsole
           account={session?.username ?? ''}
           onOpenChat={engineId => {
             /* The chat that opens belongs to the engine the card belongs to, so the

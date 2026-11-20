@@ -1,66 +1,83 @@
-# Live console — engines and terminals on real data
+# The console — the mock, wired to the registry
 
-The mock (`src/mock/EnginesMock.tsx`) became the console (`src/live/`), so the screens a
-logged-in reader sees are the ones that were designed, drawn by the same CSS
-(`src/live/live.css`, a copy of the mock's sheet) and fed by the engine instead of by a
-constant.
+The screen that was designed as a mock **is** the screen that ships. There is one
+component (`src/console/Console.tsx`), one sheet (`src/console/console.css`) and one
+terminal chrome; `mock.html` renders a fixture of the same component, so what is
+reviewed and what is deployed cannot drift apart.
 
 ## What is where
 
 | File | Job |
 | --- | --- |
-| `src/live/live.css` | The design: tokens, bar, drawer, cards, readings, dialog, key rows. Copied from `src/mock/mock.css`; the only edits are the notes below. |
-| `src/live/useLive.ts` | `useMachines` (registry + `/healthz` + a 20-sample window), `useTerminals` (the engine's own `/api/terminals`), `useAccount`. |
-| `src/live/ConsoleShell.tsx` | The chrome: bar, drawer, drag gesture, cards, sessions menu, close dialog. |
-| `src/live/TerminalPane.tsx` | One shell: the engine's pty, drawn by `src/term/vt.js`, with the app's two key rows. |
-| `src/live/Console.tsx` | What is on screen: a shell if there is one, the engines if not. |
+| `src/console/Console.tsx` | The screen: bar, drawer, drag gesture, cards, key rows, composer, close dialog. Fully controlled — it holds only chrome state (menu, drag, half-typed line) and is given the data. |
+| `src/console/console.css` | The design: tokens, bar, drawer, cards, readings, dialog, key rows. |
+| `src/console/PtyTerminal.tsx` | What a terminal mounts on a real engine: ticket → socket → VT grid, plus the handle that turns a key press into bytes. |
+| `src/console/LiveConsole.tsx` | The registry: machines, readings, history, sessions; opens and closes shells. |
+| `src/console/useLive.ts` | `useMachines` (registry + `/healthz`, 20 samples per poll), `useTerminals` (the engine's `/api/terminals`), `useAccount`. |
+| `src/mock/EnginesMock.tsx` | Fixtures for the preview: the same `Console`, literal machines, a transcript that answers keys. |
+| `src/App.tsx` | Hand the home view to `LiveConsole`; one bar, not two. |
 
-Deleted because the console replaces them: `src/engines.tsx`, `src/TerminalView.tsx`.
-`src/App.tsx` now hands the whole surface to `<Console>` on the home view, so there is
-one bar, not two.
+Deleted because the console replaces them: `src/engines.tsx`, `src/TerminalView.tsx`,
+`src/live/` (the first pass), `src/mock/mock.css` (the preview now imports the shipped
+sheet).
+
+## The seam between the two: a mount contract
+
+The console owns the chrome and knows nothing about pty bytes; the engine side owns the
+bytes and knows nothing about keys. The seam is three things:
+
+```ts
+type TerminalMount = (session, { logRef, tapRef, onHandle, onReady }) => {
+  content: ReactNode   // the transcript, drawn inside the console's <pre>
+  echo: boolean        // a pty echoes what it is sent; a fixture does not
+}
+type TerminalHandle = { onKey, onCommand, onClear, onReset }
+```
+
+So `Ctrl`/`Esc`/`PgUp` are names in the console and byte sequences in `PtyTerminal`;
+`trash` resets the screen model and `reload` sends `exec $SHELL`.
 
 ## Data, honestly
 
-- **Readings**: CPU is `used%`, RAM and DISK are `used/whole GB`. A reading the engine
-  does not report is `—`, never a zero.
-- **History**: this browser's own window, 20 samples at one per 20-second poll. A reload
-  starts it again, which is what the chart should say.
-- **Offline**: the card stays, with a short reason. A long transport message is replaced
-  by `offline · unreachable` so it cannot be cut off at the card's edge.
-- **Sessions**: `/api/terminals` per engine, polled every 15 s. A shell opened here is
-  given a name in the engine's own shape (`t-` + 32 hex) and listed as soon as its socket
-  reports `ready`.
-- **Closing**: the dialog asks, the engine is asked, and the list is re-read — a shell
-  that the engine refused to close would still be there.
+- CPU is `used%`; RAM and DISK are `used/whole GB`. A reading the engine does not report
+  is `—`, never a zero.
+- The chart is this browser's window: 20 samples, one per 20-second poll. A reload
+  starts it again.
+- An offline engine keeps its card and says `offline · unreachable`; a long transport
+  message is not allowed to spill over the card's edge.
+- Sessions are the engine's own list, polled every 15 s. A shell opened here gets a name
+  in the engine's shape (`t-` + 32 hex) and appears in the menu once its socket says
+  `ready`.
+- Closing asks first, then asks the engine, then re-reads the list.
 
-## Measured
+## Measured (fake engine on :8790, console on :8791)
 
-390×844, fake engine on `:8790`, console on `:8791`:
+| What | 390×844 | 320×844 | 1440×900 |
+| --- | --- | --- | --- |
+| shell | 390 wide | 320 wide | 1040 centred at x=200 |
+| cards | 2 stacked | 2 stacked, no overflow | 502 each, side by side, 12 gap |
+| readings | `18%`, `3.0/121 GB`, `38.7/196 GB` + line | fit, no clipping | same |
+| terminal grid | 35 rows, no scroll (`scrollTop 0`) | 35 rows | — |
 
-- cards: 2, Alpha `up 1h 30m`, Beta `offline · unreachable`; readings `18%`, `3.0/121 GB`,
-  `38.7/196 GB`, each with a line behind it
-- terminal: 35 rows; `log` 342×647 at 390, 272×647 at 320; no scroll
-  (`scrollTop 0`, `scrollHeight 647`)
-- typing `echo hi` through the box reaches the pty and its answer comes back:
+- typing `echo hi` reaches the pty and comes back:
   `root@aixodia ~ $ echo hi` / `bash: echo hi: command not found` / `root@aixodia ~ $`
-- drawer: `TERMINALS · 6`, one group (`Alpha`, 6), rows `bash ~`, `logs`, `new shell`…,
-  `+ New terminal`, footer with the account and `Sign out`
-- close `logs`: dialog `Close logs?`, focus on `dialog-cancel`, engine list afterwards no
+- caret: `.terminal-caret` 7×15 at the end of the cursor row (blink caught off in one
+  screenshot, measured in the DOM instead)
+- drawer: `TERMINALS · 4`, group `Alpha 4`, rows `bash ~`, `logs`, `new shell`…,
+  `+ New terminal`, footer account + `Sign out`
+- close `logs`: dialog `Close logs?`, focus `dialog-cancel`, engine list afterwards no
   longer has it
 - `New terminal` adds an engine session and drops straight into it
-- 320: no horizontal overflow (`documentElement.scrollWidth` = 320), readings fit
-- 1440: one centred column of 1040, cards side by side
+- mock page (`mock.html`) renders the same cards with four verbs and charts; it shares
+  the console chunk, so it is the same code path
 
-## Two CSS changes, both because a grid is not a list
+## Two CSS decisions worth keeping
 
-1. `.terminal-log { gap: 0 }`. The mock's transcript is a list of paragraphs and 6px
-   between them reads well; a pty is a grid of cells whose row height already includes
-   the leading, and the gap made 35 rows 841px tall inside a 647px box, so the shell was
-   scrolled out of sight at the top.
-2. `.terminal-mark` (the `$`), `.terminal-note` (a shell that is not open yet, and the
-   one button that helps), `.drawer-signout` (the menu is where the account lives now).
-
-## Not wired, on purpose
-
-- Droidime's two verbs, the AI chat on a card is still its own view rather than a pane,
-  and no card offers a third action: a button that cannot do its job is worse than none.
+1. `.terminal-log { gap: 0 }`. A pty is a grid of cells whose row height already has the
+   leading; the 6px list gap made 35 rows 841px tall in a 647px box and scrolled the
+   prompt out of sight.
+2. `styles.css` is wrapped in `@layer dashboard`. The console's sheet is unlayered, and an
+   unlayered rule beats a layered one whatever order the bundler concatenates them in.
+   Without this, the dashboard's `.shell { display:grid; grid-template-columns:264px 1fr }`
+   beat the console's frame and the bar was 264px wide at 1440. `cssCodeSplit: false`
+   keeps one sheet per page, so the order is the entry's own.
