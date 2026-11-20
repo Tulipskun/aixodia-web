@@ -1240,3 +1240,32 @@ Closing also keeps the rule: with the panel open, a 20° left drag leaves it ope
 a 5° left drag closes it. `defaultPrevented` counting confirms the page keeps every
 steep move, which is what makes vertical scrolling still work under a finger that
 started sideways.
+
+## Round 56 — the gesture rules of react-native-gesture-handler
+
+The ten-degree test asked "how far off horizontal is this", which is one number for
+two different questions. `react-native-gesture-handler` splits them, and so does the
+drawer now:
+
+- a pan **activates** at `±10px` across (`activeOffsetX`), and
+- **fails** at `±5px` up or down (`failOffsetY`), checked first in the same event.
+
+Whichever line the finger crosses first decides. A drag is `active: false` until
+then, and an undecided drag moves nothing on screen (`hold()` only publishes the
+drag to React once it is active); `settle()` ignores an undecided one, so a tap or a
+steep flick leaves the panel exactly where it was. Once active, later vertical drift
+does not take the gesture back — the finger already said what it meant.
+
+Measured (touch, `x40 y400`, 70ms between moves):
+
+| path | drawer | touchmoves claimed |
+|---|---|---|
+| flat, `dx 110` | opens | 3 of 3 |
+| across first (`dx 12`, then `dy 9`) | opens | 2 of 2 |
+| down first (`dy 6` before `dx 10`) | closed | 0 of 1 |
+| steep (`dy 15`, `dy 30`) | closed | 0 of 2 |
+| true 2:1 diagonal (`dy 6` at the same move as `dx 12`) | closed | 0 of 1 |
+
+Mouse behaves the same way (`mouseOpens`, `mouseCloses`, and a mouse drag that goes
+down first leaves it closed), and a slightly diagonal swipe still closes an open
+panel. The two lines are constants: `ACTIVATE_X = 10`, `FAIL_Y = 5`.

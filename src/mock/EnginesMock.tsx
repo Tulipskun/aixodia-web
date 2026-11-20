@@ -108,10 +108,12 @@ const ENTER_STEP = 80
 
 const COMMIT = 72
 const FLICK = 0.35
-const SLOP = 4
-/* A gesture is the drawer's only while it is still sideways: within ten degrees of
-   horizontal. Past that the finger is scrolling, and the page keeps it. */
-const SIDEWAYS_DEGREES = 10
+
+/* How a drag is told apart from a scroll, the way react-native-gesture-handler
+   asks for it: a pan activates at ±10px across and fails at ±5px up or down.
+   Whichever line the finger crosses first decides — two to one, about 26°. */
+const ACTIVATE_X = 10
+const FAIL_Y = 5
 
 interface Drag {
   startX: number
@@ -120,6 +122,9 @@ interface Drag {
   fromOpen: boolean
   width: number
   dx: number
+  /* False while the gesture is still undecided: it is only the drawer's once the
+     finger has crossed the across line without crossing the up-or-down one. */
+  active: boolean
 }
 
 /* The phones DroidIME runs on: the same card, read as a device rather than a
@@ -602,7 +607,8 @@ export function EnginesMock() {
 
   const hold = (next: Drag | null) => {
     dragRef.current = next
-    setDrag(next)
+    /* An undecided gesture moves nothing on screen. */
+    setDrag(next?.active ? next : null)
   }
 
   const begin = (target: EventTarget | null, clientX: number, clientY: number) => {
@@ -619,35 +625,39 @@ export function EnginesMock() {
       fromOpen: menuOpen,
       width,
       dx: 0,
+      active: false,
     })
     return true
   }
 
-  const follow = (clientX: number) => {
+  /* Two lines, and whichever the finger crosses first wins: across by 10px makes
+     this the drawer's gesture, up or down by 5px gives it to the page. Once it is
+     the drawer's, vertical drift no longer takes it back — the finger already said
+     what it meant. */
+  const follow = (clientX: number, clientY: number) => {
     const current = dragRef.current
     if (!current) return
     const dx = clientX - current.startX
-    if (current.dx === 0 && Math.abs(dx) < SLOP) return
-    hold({ ...current, dx })
-  }
-
-  /* A gesture that turns out to be vertical belongs to the page: let it go before
-     the drag claims any of it, so scrolling still works. */
-  /* Nothing is decided until the finger has actually moved: a wobble of a pixel or
-     two is not a direction. After that, ten degrees from horizontal is the line. */
-  const letGoIfNotSideways = (clientX: number, clientY: number) => {
-    const current = dragRef.current
-    if (!current || current.dx !== 0) return
     const dy = clientY - current.startY
-    const dx = clientX - current.startX
-    if (Math.hypot(dx, dy) < SLOP) return
-    const degrees = Math.abs((Math.atan2(Math.abs(dy), Math.abs(dx)) * 180) / Math.PI)
-    if (degrees > SIDEWAYS_DEGREES) hold(null)
+    if (!current.active) {
+      if (Math.abs(dy) >= FAIL_Y) {
+        hold(null)
+        return
+      }
+      if (Math.abs(dx) < ACTIVATE_X) return
+      hold({ ...current, active: true, dx })
+      return
+    }
+    hold({ ...current, dx })
   }
 
   const settle = () => {
     const current = dragRef.current
     if (!current) return
+    if (!current.active) {
+      hold(null)
+      return
+    }
     /* Distance travelled towards the commit, and how fast it went there. */
     const travelled = current.fromOpen ? -current.dx : current.dx
     const speed = travelled / Math.max(16, performance.now() - current.startedAt)
@@ -669,8 +679,7 @@ export function EnginesMock() {
     }
     const onPointerMove = (event: PointerEvent) => {
       if (event.pointerType === 'touch') return
-      letGoIfNotSideways(event.clientX, event.clientY)
-      follow(event.clientX)
+      follow(event.clientX, event.clientY)
     }
     const onPointerUp = (event: PointerEvent) => {
       if (event.pointerType === 'touch') return
@@ -685,10 +694,10 @@ export function EnginesMock() {
     const onTouchMove = (event: TouchEvent) => {
       const touch = event.touches[0]
       if (!touch || !dragRef.current) return
-      letGoIfNotSideways(touch.clientX, touch.clientY)
-      if (!dragRef.current) return
-      event.preventDefault()
-      follow(touch.clientX)
+      follow(touch.clientX, touch.clientY)
+      /* Only a gesture the drawer has claimed is prevented: everything else stays
+         the page's to scroll. */
+      if (dragRef.current?.active) event.preventDefault()
     }
     const onTouchEnd = () => settle()
 
