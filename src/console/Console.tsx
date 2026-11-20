@@ -328,6 +328,14 @@ function TerminalScreen({
   const [handle, setHandle] = useState<TerminalHandle | null>(null)
 
   const chord = held.map(key => key.toLowerCase()).join('+')
+
+  /* The chord a key press carries: what the rows are holding, and what a PC's own
+     keyboard is holding, are the same thing to a shell. */
+  const chordOf = (event: React.KeyboardEvent) =>
+    [...held, event.ctrlKey ? 'ctrl' : '', event.altKey ? 'alt' : '', event.shiftKey ? 'shift' : '']
+      .filter(Boolean)
+      .join('+')
+
   const view = mount(session, { logRef, tapRef, onHandle: setHandle, onReady })
 
   /* The box grows with a multi-line command instead of scrolling inside 44px. */
@@ -350,8 +358,16 @@ function TerminalScreen({
 
   /* Enter is the ordinary return key, as in the app: at the end of the text it hands
      the line to the shell, anywhere else it is a line break, so a loop or a here-doc
-     can be written over several lines before it goes. */
+     can be written over several lines before it goes. A letter pressed with a modifier
+     held is not text — it is a chord, and a chord is a byte the shell gets at once. */
   const onBoxKey = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    const modifiers = chordOf(event)
+    if (modifiers && event.key.length === 1) {
+      event.preventDefault()
+      onChange({ held: [] })
+      handle?.onKey(event.key, modifiers)
+      return
+    }
     if (event.key !== 'Enter') return
     const box = event.currentTarget
     const atEnd = box.selectionStart === box.value.length && box.selectionEnd === box.value.length
@@ -374,6 +390,21 @@ function TerminalScreen({
     const command = typed.trim()
     onChange({ typed: '', held: [] })
     if (command) handle?.onCommand(command)
+  }
+
+  /* In direct mode the grid takes the keyboard. A real shell echoes what it is given,
+     so there is nothing to keep here: every key is a byte, and a chord is the byte a
+     keyboard would have made. The fixture has no shell behind it, so it keeps the line
+     and draws it, as it draws everything else. */
+  const onTapKey = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (view.echo) {
+      if (event.key !== 'Enter') return
+      event.preventDefault()
+      runDirect()
+      return
+    }
+    event.preventDefault()
+    handle?.onKey(event.key, chordOf(event))
   }
 
   const composerBar = (
@@ -476,11 +507,7 @@ function TerminalScreen({
         className="terminal-tap"
         value={typed}
         onChange={event => onChange({ typed: event.target.value })}
-        onKeyDown={event => {
-          if (event.key !== 'Enter') return
-          event.preventDefault()
-          runDirect()
-        }}
+        onKeyDown={onTapKey}
         aria-label="Terminal input"
         autoCapitalize="off"
         autoCorrect="off"

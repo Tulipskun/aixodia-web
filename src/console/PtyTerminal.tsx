@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { RotateCw } from 'lucide-react'
 import * as api from '../api'
 import { Screen, runs } from '../term/vt.js'
+import { keyBytes } from '../term/keys.js'
 import type { Session, TerminalHandle, TerminalMount } from './Console'
 
 /* A shell on an engine, drawn as the console's terminal.
@@ -12,21 +13,6 @@ import type { Session, TerminalHandle, TerminalMount } from './Console'
  * gives back what to draw. */
 
 type Phase = 'connecting' | 'open' | 'closed' | 'error'
-
-/* What each key in the console's two rows sends. A shell names keys this way, so the
-   console can name them too and this is the only place that knows the bytes. */
-const SEQUENCES: Record<string, string> = {
-  Esc: '\x1b',
-  Tab: '\t',
-  /* The app binds CMD to ctrl+p, so that is what the key is. */
-  CMD: '\x10',
-  PgUp: '\x1b[5~',
-  PgDn: '\x1b[6~',
-  '↑': '\x1b[A',
-  '↓': '\x1b[B',
-  '←': '\x1b[D',
-  '→': '\x1b[C',
-}
 
 const PALETTE = [
   '', '#6f6f78', '#4fbf8b', '#f6c66b', '#7fa6d3', '#d98bff', '#69c8ff', '#f2f2f3',
@@ -189,10 +175,11 @@ function PtyShell({
   useEffect(() => {
     onHandle({
       /* A chord is the console's own bookkeeping; a shell wants bytes. The rows carry
-         no letters, so the modifier is only ever a note about what was pressed. */
-      onKey: (key: string) => {
-        const sequence = SEQUENCES[key]
-        if (sequence) send(sequence)
+         no letters, so the modifier is only ever a note about what was pressed — the
+         key the modifier was held with is this key, and keyBytes says what that means. */
+      onKey: (key: string, chord: string) => {
+        const data = keyBytes(key, chord)
+        if (data) send(data)
       },
       onCommand: (line: string) => send(`${line}\r`),
       /* Trash empties the screen: the shell keeps its state, the reader loses the
