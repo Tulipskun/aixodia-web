@@ -1456,3 +1456,14 @@ Measured during a slow drag from x40, reading computed style:
 `inert` is on while the bar is off screen and off the moment it is out, so a hidden bar
 is not a tab stop. Vision check on the open state: bar across the top with the menu
 button and the wordmark, panel content starting below it, nothing doubled.
+
+## Round 63 — the terminal strip belongs to the terminal
+
+The list of shells is a switch between terminals, so it is only there while one is
+open: on `Engines` and `Droidime` the menu is the two nav rows again.
+
+Measured: on the engines screen `strip: false`, 0 session rows, nav `["Engines",
+"Droidime"]`; on the terminal screen `strip: true`, 2 rows, and the account line stays
+at `y800` in both states (it was `margin: auto 0 0`, so nothing moved when the strip
+went away). Coming back to engines from the menu drops the strip again in the same
+step.

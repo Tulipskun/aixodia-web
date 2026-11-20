@@ -743,6 +743,9 @@ function Drawer({
           ))}
         </nav>
 
+        {/* The list of shells belongs to the terminal it switches between: on any
+            other screen there is no terminal open, so there is no strip to show. */}
+        {screen === 'terminal' && (
         <div className="drawer-scroll">
           <p className="drawer-label">{`Terminals · ${sessions.length}`}</p>
 
@@ -780,6 +783,7 @@ function Drawer({
             </section>
           ))}
         </div>
+        )}
 
         <p className="drawer-foot">
           <span className="drawer-account">{ACCOUNT}</span>
