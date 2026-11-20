@@ -25,6 +25,7 @@ import {
   Sparkles,
   SquareTerminal,
   Trash2,
+  X,
 } from 'lucide-react'
 
 interface Metric {
@@ -228,14 +229,12 @@ interface Session {
   id: string
   engine: string
   title: string
-  /* The id the engine knows this shell by, short enough to sit at the row's end. */
-  ref: string
 }
 
 const SESSIONS: Session[] = [
-  { id: 's1', engine: 'alpha', title: 'shell 1', ref: 'm-8a7d1192' },
-  { id: 's2', engine: 'alpha', title: 'shell 2', ref: 'm-8a7d1192' },
-  { id: 's3', engine: 'beta', title: 'logs', ref: 'm-2c41f5d8' },
+  { id: 's1', engine: 'alpha', title: 'shell 1' },
+  { id: 's2', engine: 'alpha', title: 'shell 2' },
+  { id: 's3', engine: 'beta', title: 'logs' },
 ]
 
 /* One tab's whole state: what it printed, what is being typed into it, and which
@@ -666,6 +665,7 @@ function Drawer({
   sessions,
   current,
   onSession,
+  onCloseSession,
   onOpen,
   drag,
   panelRef,
@@ -679,6 +679,7 @@ function Drawer({
   sessions: Session[]
   current: string
   onSession: (id: string) => void
+  onCloseSession: (id: string) => void
   onOpen: (engine: string) => void
   drag: Drag | null
   panelRef: React.RefObject<HTMLElement>
@@ -695,9 +696,7 @@ function Drawer({
       machine,
       shells: sessions.filter((session) => session.engine === machine.id),
     }))
-    /* A machine that is not up has nothing a menu can do: its shells cannot be
-       opened, so listing them would be a row that lies. */
-    .filter((group) => group.machine.online && group.shells.length)
+    .filter((group) => group.shells.length)
 
   useEffect(() => {
     /* Sliding the panel off screen leaves its buttons reachable by Tab, which puts
@@ -759,21 +758,35 @@ function Drawer({
                 <span className="drawer-count">{shells.length}</span>
               </p>
 
+              {/* Two controls in one row: opening the shell is the row, closing it
+                  is the x at the end. Closing the one you are in hands the screen to
+                  the next shell, or back to the engines when it was the last. */}
               {shells.map((session) => (
-                <button
+                <div
                   key={session.id}
-                  type="button"
-                  className={`drawer-item drawer-session${session.id === current ? ' is-current' : ''}`}
-                  aria-current={session.id === current ? 'true' : undefined}
-                  onClick={() => {
-                    onSession(session.id)
-                    onClose()
-                  }}
+                  className={`drawer-session${session.id === current ? ' is-current' : ''}`}
                 >
-                  <SquareTerminal size={16} />
-                  <span className="drawer-session-title">{session.title}</span>
-                  <span className="drawer-ref">{session.ref}</span>
-                </button>
+                  <button
+                    type="button"
+                    className="drawer-session-open"
+                    aria-current={session.id === current ? 'true' : undefined}
+                    onClick={() => {
+                      onSession(session.id)
+                      onClose()
+                    }}
+                  >
+                    <SquareTerminal size={16} />
+                    <span className="drawer-session-title">{session.title}</span>
+                  </button>
+                  <button
+                    type="button"
+                    className="drawer-session-close"
+                    aria-label={`Close ${session.title}`}
+                    onClick={() => onCloseSession(session.id)}
+                  >
+                    <X size={14} aria-hidden="true" />
+                  </button>
+                </div>
               ))}
 
               <button type="button" className="drawer-new" onClick={() => onOpen(machine.id)}>
@@ -805,6 +818,11 @@ export function EnginesMock() {
     Object.fromEntries(SESSIONS.map((session) => [session.id, freshShell()])),
   )
   const shell = shells[current] ?? freshShell()
+  /* A shell whose engine is down cannot be opened, so it is offered nowhere: not in
+     the menu, and not as the tab the screen falls back to. */
+  const open = sessions.filter((session) =>
+    MACHINES.find((machine) => machine.id === session.engine)?.online,
+  )
   const [drag, setDrag] = useState<Drag | null>(null)
   const panelRef = useRef<HTMLElement>(null)
   const shellRef = useRef<HTMLDivElement>(null)
@@ -982,18 +1000,32 @@ export function EnginesMock() {
         onClose={() => setMenuOpen(false)}
         screen={screenId}
         onScreen={setScreenId}
-        sessions={sessions}
+        sessions={open}
         current={current}
         onSession={(id) => {
           setCurrent(id)
           setScreenId('terminal')
+        }}
+        onCloseSession={(id) => {
+          const left = open.filter((session) => session.id !== id)
+          setSessions(left)
+          setShells((map) => {
+            const { [id]: _closed, ...rest } = map
+            return rest
+          })
+          if (id !== current) return
+          /* The tab you were in is gone, so the screen goes to whatever is left of
+             the same engine, and to the engines when nothing is left at all. */
+          const engine = sessions.find((session) => session.id === id)?.engine
+          const next = left.find((session) => session.engine === engine) ?? left[0]
+          if (next) setCurrent(next.id)
+          else setScreenId('engines')
         }}
         onOpen={(engine) => {
           const session: Session = {
             id: `s${Date.now()}`,
             engine,
             title: `shell ${sessions.filter((s) => s.engine === engine).length + 1}`,
-            ref: MACHINES.find((machine) => machine.id === engine)?.id === 'alpha' ? 'm-8a7d1192' : 'm-2c41f5d8',
           }
           setSessions((list) => [...list, session])
           setShells((map) => ({ ...map, [session.id]: freshShell() }))

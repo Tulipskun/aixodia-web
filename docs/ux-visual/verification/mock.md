@@ -1467,3 +1467,28 @@ Measured: on the engines screen `strip: false`, 0 session rows, nav `["Engines",
 at `y800` in both states (it was `margin: auto 0 0`, so nothing moved when the strip
 went away). Coming back to engines from the menu drops the strip again in the same
 step.
+
+## Round 64 — closing a shell, and the ghost tab it exposed
+
+Each session row is now two controls: the row opens the shell, a 44×44 `×` at its end
+closes it. The row carries the state (`is-current` on the row, not on either button), so
+the mark does not move when the finger is on the ×. The mono engine id left the row —
+the group head already names the engine — which is what made room for the ×.
+
+Closing rules: closing a shell you are not in leaves the screen alone; closing the one
+you are in hands the screen to the next shell of the same engine; closing the last one
+takes you back to Engines.
+
+**The bug that came out of it.** Testing that last rule left the terminal on screen with
+zero rows. Cause: `logs` runs on Beta, Beta is offline, so the group is hidden — but the
+session still existed in state, and the fallback picked it (`left[0]`), so the screen
+switched to a tab that the menu cannot show. A shell on a downed engine is now excluded
+once, at the source, and everything downstream uses that list:
+
+```ts
+const open = sessions.filter((s) => MACHINES.find((m) => m.id === s.engine)?.online)
+```
+
+Measured, after the fix: close `shell 2` → rows 1, still on the terminal; close `shell 1`
+→ rows 0, `terminal: false`, heading `Engines`. Row height 46 (44 + the row's hairline),
+close target 44×44. Audits 390/1440 clean, 19 tests pass.
