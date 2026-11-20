@@ -6,12 +6,10 @@
 //! fixed history and a transcript that answers the keys it is sent.
 
 import { useEffect, useRef, useState } from 'react'
-import {
-  BatteryMedium, Boxes, Cpu, Ellipsis, Eye, HardDrive, MemoryStick, MonitorSmartphone,
-  MousePointerClick, Smartphone, Sparkles, SquareTerminal,
-} from 'lucide-react'
-import type { Listing, Machine, NavItem, Session, TerminalHandle, TerminalMount, TerminalView } from '../console/Console'
+import { Cpu, HardDrive, MemoryStick } from 'lucide-react'
+import type { Machine, Session, TerminalHandle, TerminalMount } from '../console/Console'
 import { Console, sampleSeries } from '../console/Console'
+import { NAV, enginesListing } from '../console/vocabulary'
 
 /* ---------------------------------------------------------------- fixtures */
 
@@ -36,48 +34,7 @@ const MACHINES: Machine[] = [
   },
 ]
 
-const DEVICES: Machine[] = [
-  {
-    id: 'pixel-8', name: 'Pixel 8', online: true, meta: 'tunnel live 2m ago',
-    metrics: [
-      { label: 'CPU', icon: Cpu, unit: '%', digits: 0, series: sampleSeries(31, 24, 12, WINDOW) },
-      { label: 'RAM', icon: MemoryStick, unit: 'GB', digits: 1, total: '8', series: sampleSeries(53, 5.2, 0.3, WINDOW) },
-      { label: 'BATTERY', icon: BatteryMedium, unit: '%', digits: 0, series: sampleSeries(88, 86, 2, WINDOW) },
-    ],
-  },
-  {
-    id: 'pixel-4a', name: 'Pixel 4a', online: false, meta: 'last seen 2d ago',
-    metrics: [
-      { label: 'CPU', icon: Cpu, unit: '%', digits: 0, series: [] },
-      { label: 'RAM', icon: MemoryStick, unit: 'GB', digits: 1, total: '6', series: [] },
-      { label: 'BATTERY', icon: BatteryMedium, unit: '%', digits: 0, series: [] },
-    ],
-  },
-]
-
-const LISTINGS: Listing[] = [
-  {
-    id: 'engines', title: 'Engines', count: `${MACHINES.length} engines`, machines: MACHINES,
-    actions: [
-      { id: 'terminal', label: 'Terminal', icon: SquareTerminal },
-      { id: 'ai', label: 'AI', icon: Sparkles },
-      { id: 'screen', label: 'Screen', icon: MonitorSmartphone },
-      { id: 'more', label: 'More', icon: Ellipsis },
-    ],
-  },
-  {
-    id: 'droidime', title: 'Droidime', count: `${DEVICES.length} devices`, machines: DEVICES,
-    actions: [
-      { id: 'view', label: 'View screen', icon: Eye },
-      { id: 'control', label: 'Control screen', icon: MousePointerClick },
-    ],
-  },
-]
-
-const NAV: NavItem[] = [
-  { id: 'engines', label: 'Engines', icon: Boxes },
-  { id: 'droidime', label: 'Droidime', icon: Smartphone },
-]
+const LISTINGS = [enginesListing(MACHINES, MACHINES.filter(m => m.online).length, MACHINES.length)]
 
 /* The terminal a fixture mounts: a transcript that answers the keys it is sent, with
    the same three-colour prompt and the same lease facts the engine reports. */

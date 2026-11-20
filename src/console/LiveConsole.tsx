@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { Boxes, Cpu, HardDrive, MemoryStick, MessagesSquare, SquareTerminal } from 'lucide-react'
+import { Cpu, HardDrive, MemoryStick } from 'lucide-react'
 import type { Listing, Machine, MachineRef, Metric, Session } from './Console'
 import { Console } from './Console'
 import { mountPty } from './PtyTerminal'
 import { useMachines, useTerminals } from './useLive'
 import type { Series } from './useLive'
+import { NAV, enginesListing } from './vocabulary'
 
 /* The console on the registry.
  *
@@ -49,7 +50,7 @@ function newId(): string {
 
 export function LiveConsole({ account, onOpenChat, onSignOut }: {
   account: string
-  onOpenChat?: (engineId: string) => void
+  onOpenChat: (engineId: string) => void
   onSignOut?: () => void
 }) {
   const { machines } = useMachines()
@@ -82,27 +83,18 @@ export function LiveConsole({ account, onOpenChat, onSignOut }: {
     setCurrent('')
   }, [current, screenId, sessions])
 
-  const listing = useMemo<Listing>(
-    () => ({
-      id: 'engines',
-      title: 'Engines',
-      count: `${machines.filter(machine => machine.online).length}/${machines.length} up`,
-      machines: machines.map<Machine>(machine => ({
-        id: machine.id,
-        name: machine.name,
-        online: machine.online,
-        meta: machine.meta,
-        metrics: readings(machine.status, machine.series),
-      })),
-      /* Two verbs, both with a screen behind them: a shell on this machine, and the
-         conversation with it. */
-      actions: [
-        ...(onOpenChat ? [{ id: 'chat', label: 'Chat', icon: MessagesSquare }] : []),
-        { id: 'terminal', label: 'Terminal', icon: SquareTerminal },
-      ],
-    }),
-    [machines, onOpenChat],
-  )
+  /* The card list comes from the shared vocabulary, so the preview cannot promise a
+     verb this page does not offer. */
+  const listing = useMemo<Listing>(() => {
+    const cards = machines.map<Machine>(machine => ({
+      id: machine.id,
+      name: machine.name,
+      online: machine.online,
+      meta: machine.meta,
+      metrics: readings(machine.status, machine.series),
+    }))
+    return enginesListing(cards, cards.filter(card => card.online).length, cards.length)
+  }, [machines])
 
   const refs = useMemo<MachineRef[]>(
     () => machines.map(machine => ({ id: machine.id, name: machine.name, online: machine.online })),
@@ -119,7 +111,7 @@ export function LiveConsole({ account, onOpenChat, onSignOut }: {
   return (
     <Console
       listings={[listing]}
-      nav={[{ id: 'engines', label: 'Engines', icon: Boxes }]}
+      nav={NAV}
       machines={refs}
       sessions={sessions}
       current={current}
@@ -133,7 +125,7 @@ export function LiveConsole({ account, onOpenChat, onSignOut }: {
       }}
       onAction={(machineId, action) => {
         if (action === 'terminal') openTerminal(machineId)
-        else onOpenChat?.(machineId)
+        else onOpenChat(machineId)
       }}
       onCloseSession={async session => {
         setOpening(list => list.filter(item => item.id !== session.id))
