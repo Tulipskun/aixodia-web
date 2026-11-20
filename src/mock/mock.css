@@ -377,9 +377,9 @@ button:disabled { cursor: not-allowed; }
   margin-top: var(--s4);
 }
 
-/* The safe answer is the filled one, the destructive one only carries the accent:
-   the weight sits on the choice that keeps something running. */
-.dialog-keep,
+/* The safe answer is the filled one; the destructive one is red, so the colour says
+   which of the two ends something rather than which one is merely first. */
+.dialog-cancel,
 .dialog-close {
   min-height: 44px;
   padding: 0 var(--s4);
@@ -389,24 +389,24 @@ button:disabled { cursor: not-allowed; }
     transform 0.12s ease;
 }
 
-.dialog-keep {
+.dialog-cancel {
   border: 1px solid var(--border-strong);
   background: var(--surface-3);
   color: var(--text);
 }
 
 .dialog-close {
-  border: 1px solid transparent;
+  border: 1px solid var(--danger);
   background: transparent;
-  color: var(--accent);
+  color: var(--danger);
 }
 
-.dialog-keep:active,
+.dialog-cancel:active,
 .dialog-close:active { transform: scale(0.97); }
 
 @media (hover: hover) {
-  .dialog-keep:hover { background: var(--surface-2); border-color: var(--text); }
-  .dialog-close:hover { background: var(--surface-2); }
+  .dialog-cancel:hover { background: var(--surface-2); border-color: var(--text); }
+  .dialog-close:hover { background: rgba(224, 99, 110, 0.12); }
 }
 
 @keyframes fade-in {

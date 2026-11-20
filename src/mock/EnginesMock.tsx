@@ -872,11 +872,11 @@ function Confirm({
           {`The shell on ${engine} stops. Anything still running in it ends with it.`}
         </p>
         <div className="dialog-actions">
-          <button ref={keepRef} type="button" className="dialog-keep" onClick={onKeep}>
-            Keep
+          <button ref={keepRef} type="button" className="dialog-cancel" onClick={onKeep}>
+            Cancel
           </button>
           <button type="button" className="dialog-close" onClick={onClose}>
-            {`Close ${session.title}`}
+            Close
           </button>
         </div>
       </div>

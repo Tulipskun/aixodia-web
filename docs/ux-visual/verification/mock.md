@@ -1527,3 +1527,14 @@ Measured: 390 → dialog `x35 y346 w320 h160`; 320 → `x12 y270 w296 h160`, fit
 `x560 y370 w320 h160`. Tab order `dialog-keep → dialog-close → dialog-keep →
 dialog-close` at both widths. Escape → dialog gone, rows unchanged; confirming → rows
 2 → 1. Audits 390/1440 clean, 19 tests pass.
+
+## Round 67 — Cancel and Close, and the colour says which one ends something
+
+The buttons are two words, not two sentences: `Cancel` and `Close`. The destructive one
+is `--danger` (`#e0636e`) on both border and text, so the red — not the position, and not
+the accent — is what marks the choice that stops a shell; `Cancel` stays the filled
+neutral one and keeps the focus.
+
+Measured: `Cancel` 77×44, `Close` 69×44 (was 113 wide as `Close shell 2`), `Close`
+computed colour `rgb(224, 99, 110)`, dialog still 320×160 at 390 and fitting at 320.
+Audits 390/1440 clean, 19 tests pass.
