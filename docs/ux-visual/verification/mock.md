@@ -1322,3 +1322,31 @@ Pitfall recorded: the earlier twenty-degree run read `touchmove`'s `defaultPreve
 through an injected listener, and that flag depends on listener order — once the app's
 own listeners are re-registered by an effect, the injected one runs first and reports
 `false` for a drag that is in fact being claimed. Read the drawer's `transform` instead.
+
+## Round 59 — the >_ key
+
+The leading mark on the composer was decoration (`aria-hidden`). It is now the switch
+the app has: `>_` toggles **direct typing**, and in that mode the two key rows move
+**above** the line, because a thumb on the phone's own keyboard should not have to
+reach past them.
+
+- the button is a real control: `aria-pressed`, label "Type directly into the
+  terminal", 44×44 in composer mode, and in direct mode it shrinks to its two glyphs
+  (`19px`) so the prompt starts where the transcript does;
+- direct mode drops the field's border and background — the line is the shell's own
+  line, not a control to be found — and the prompt takes the accent;
+- the two blocks are keyed fragments, so the input is *moved* rather than rebuilt and
+  keeps its value and focus; the toggle also focuses it explicitly (a mode switch is a
+  request to type).
+
+Measured (390×844, terminal screen):
+
+| | composer y | keys y | field x/width | field border |
+|---|---|---|---|---|
+| off | 672 | 722 (below) | 76 / 290 | `--accent` |
+| on | 772 (below keys) | 672 (above) | 51 / 315 | transparent |
+
+Typing through the toggle end to end: click `>_` → `aria-pressed=true`, focus on
+`terminal-input`, `Input.insertText('aixodia status')` → `Enter` → the log gains
+`root ~ $ aixodia status`. Clicking `>_` again restores the composer-first order and
+the accent border, and the transcript line stays at `x24` in both states.

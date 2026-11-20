@@ -5,7 +5,7 @@
 //! It exists so the shape of the screen can be argued about before any of it is
 //! wired to the registry. Everything below is a literal.
 
-import { useEffect, useRef, useState, type CSSProperties } from 'react'
+import { Fragment, useEffect, useRef, useState, type CSSProperties } from 'react'
 import type { LucideIcon } from 'lucide-react'
 import {
   BatteryMedium,
@@ -400,7 +400,12 @@ function Terminal() {
   const [draft, setDraft] = useState('')
   /* A modifier applies to the next key only, the way a physical chord works. */
   const [held, setHeld] = useState<string[]>([])
+  /* Direct typing: the line stops being a field you fill in and becomes the
+     terminal's own line, so the keys that are not on a phone keyboard move above
+     it and out of the way of the thumb. */
+  const [direct, setDirect] = useState(false)
   const logRef = useRef<HTMLPreElement>(null)
+  const inputRef = useRef<HTMLInputElement>(null)
 
   const chord = held.map((key) => key.toLowerCase()).join('+')
   const transcript = wiped ? [] : TRANSCRIPT
@@ -435,6 +440,13 @@ function Terminal() {
     setHeld([])
   }
 
+  /* Switching modes is a request to type, so the keyboard comes up with it. The
+     field keeps its element when the bar reorders, so the focus sticks. */
+  const toggleDirect = () => {
+    setDirect((on) => !on)
+    requestAnimationFrame(() => inputRef.current?.focus())
+  }
+
   /* Reset replaces the shell, so the screen starts again from a prompt — the same
      thing `exec $SHELL` does to a live session. */
   const restart = () => {
@@ -443,8 +455,75 @@ function Terminal() {
     setHeld([])
   }
 
+  const composer = (
+    <div className="terminal-composer" data-no-drag>
+      {/* The >_ key. It is not a key the shell receives: it is the switch between
+          filling in a line and typing straight into the terminal. */}
+      <button
+        type="button"
+        className="terminal-direct"
+        aria-pressed={direct}
+        aria-label="Type directly into the terminal"
+        onClick={toggleDirect}
+      >
+        {'>_'}
+      </button>
+      <form className="terminal-field" onSubmit={submit}>
+        <input
+          ref={inputRef}
+          className="terminal-input"
+          value={draft}
+          onChange={(event) => setDraft(event.target.value)}
+          placeholder={held.length ? 'key for the chord…' : 'Type a command…'}
+          aria-label="Command"
+          enterKeyHint="send"
+          autoCapitalize="off"
+          autoCorrect="off"
+          spellCheck={false}
+        />
+      </form>
+    </div>
+  )
+
+  const keys = (
+    <>
+      {KEY_ROWS.map((row) => (
+        <div className="terminal-keys" key={row.join()} data-no-drag>
+          {row.map((key) => {
+            const isModifier = MODIFIERS.includes(key)
+            const on = held.includes(key)
+            return (
+              <button
+                key={key}
+                type="button"
+                className={`terminal-key${on ? ' is-held' : ''}`}
+                aria-pressed={isModifier ? on : undefined}
+                aria-label={key === 'trash' ? 'Clear' : key === 'reload' ? 'Reset' : key}
+                onClick={() => {
+                  if (isModifier) toggle(key)
+                  else if (key === 'CMD') sendKey(CMD)
+                  else if (key === 'trash') clearAll()
+                  else if (key === 'reload') restart()
+                  else sendKey(key)
+                }}
+              >
+                {key === 'trash' ? (
+                  <Trash2 size={14} aria-hidden="true" />
+                ) : key === 'reload' ? (
+                  <RotateCw size={14} aria-hidden="true" />
+                ) : (
+                  key
+                )}
+              </button>
+            )
+          })}
+        </div>
+      ))}
+    </>
+  )
+
   return (
-    <section className="terminal" aria-label="Terminal">
+    <section className={`terminal${direct ? ' is-direct' : ''}`} aria-label="Terminal">
       <pre className="terminal-log" ref={logRef}>
         {[...transcript, ...lines].map(({ kind, text }, index) => (
           <span key={`${index}-${text}`} className={`terminal-line is-${kind}`}>
@@ -464,58 +543,11 @@ function Terminal() {
       </pre>
 
       <div className="terminal-bar">
-        {/* An input, so tapping it raises the phone's own keyboard: every language
-            and every layout already lives there. The prompt sits outside the field,
-            the way the app draws it. */}
-        <div className="terminal-composer" data-no-drag>
-          <SquareTerminal className="terminal-composer-mark" size={16} aria-hidden="true" />
-          <form className="terminal-field" onSubmit={submit}>
-            <input
-              className="terminal-input"
-              value={draft}
-              onChange={(event) => setDraft(event.target.value)}
-              placeholder={held.length ? 'key for the chord…' : 'Type a command…'}
-              aria-label="Command"
-              enterKeyHint="send"
-              autoCapitalize="off"
-              autoCorrect="off"
-              spellCheck={false}
-            />
-          </form>
-        </div>
-
-        {KEY_ROWS.map((row) => (
-          <div className="terminal-keys" key={row.join()} data-no-drag>
-            {row.map((key) => {
-              const isModifier = MODIFIERS.includes(key)
-              const on = held.includes(key)
-              return (
-                <button
-                  key={key}
-                  type="button"
-                  className={`terminal-key${on ? ' is-held' : ''}`}
-                  aria-pressed={isModifier ? on : undefined}
-                  aria-label={key === 'trash' ? 'Clear' : key === 'reload' ? 'Reset' : key}
-                  onClick={() => {
-                    if (isModifier) toggle(key)
-                    else if (key === 'CMD') sendKey(CMD)
-                    else if (key === 'trash') clearAll()
-                    else if (key === 'reload') restart()
-                    else sendKey(key)
-                  }}
-                >
-                  {key === 'trash' ? (
-                    <Trash2 size={14} aria-hidden="true" />
-                  ) : key === 'reload' ? (
-                    <RotateCw size={14} aria-hidden="true" />
-                  ) : (
-                    key
-                  )}
-                </button>
-              )
-            })}
-          </div>
-        ))}
+        {/* Direct typing puts the keys above the line: they are for reaching keys a
+            phone lacks, and the thumb typing on the phone's own keyboard should not
+            have to cross them. Keyed fragments, so the field is moved rather than
+            rebuilt and keeps the focus and the caret. */}
+        {(direct ? [<Fragment key="keys">{keys}</Fragment>, <Fragment key="composer">{composer}</Fragment>] : [<Fragment key="composer">{composer}</Fragment>, <Fragment key="keys">{keys}</Fragment>])}
       </div>
     </section>
   )

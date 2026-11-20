@@ -720,7 +720,36 @@ button:disabled { cursor: not-allowed; }
   gap: var(--s2);
 }
 
-.terminal-composer-mark { flex: 0 0 auto; color: var(--accent); }
+/* The >_ key sits where the app puts it, at the head of the line. It is a switch,
+   not a character: pressed, the line stops being a field and typing goes straight
+   into the terminal. */
+.terminal-direct {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: var(--s2);
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: var(--fs-label);
+  transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease,
+    transform 0.12s ease;
+}
+
+.terminal-direct:active { transform: scale(0.94); }
+
+.terminal-direct[aria-pressed='true'] {
+  border-color: var(--accent);
+  background: var(--surface-3);
+  color: var(--accent);
+}
+
+@media (hover: hover) {
+  .terminal-direct:hover { border-color: var(--border-strong); }
+}
 
 /* The field is the one control on this screen that is meant to be found: it
    carries the accent, the way the app's does. */
@@ -754,6 +783,27 @@ button:disabled { cursor: not-allowed; }
 }
 
 .terminal-input::placeholder { color: var(--muted); }
+
+/* Direct typing: the field is no longer a control to be found, it is the shell's
+   own line, so the border goes and the prompt carries the accent instead. The keys
+   have moved above it. */
+.terminal.is-direct .terminal-composer { gap: 6px; }
+
+.terminal.is-direct .terminal-field {
+  padding: 0;
+  border-color: transparent;
+  background: none;
+}
+
+/* The prompt is a character again, not a 44px button: it hugs its two glyphs so
+   the line starts where the transcript does. */
+.terminal.is-direct .terminal-direct {
+  width: auto;
+  padding: 0 var(--s1) 0 0;
+  border-color: transparent;
+  background: none;
+  color: var(--accent);
+}
 
 /* Two rows of keys, spread across the width as the app spreads them. */
 .terminal-keys {
