@@ -9,6 +9,11 @@ import { TerminalView } from './TerminalView'
 import { Boot, LoginPage } from './components'
 
 type Phase = 'boot' | 'login' | 'home'
+
+/* Said only when the browser has come back from the Access hop and still has no
+   session: it names what failed instead of showing the same button again. */
+const SIGNIN_REFUSED =
+  'Cloudflare Access let you through, but no session came back. Your address may not be on the allowlist for this console.'
 type View = 'home' | 'chat' | 'device' | 'terminal'
 
 export default function App() {
@@ -34,6 +39,7 @@ export default function App() {
     api.refreshSession()
       .then(next => {
         setSession(next)
+        if (!next.authenticated && api.takeSignInReturn()) setLoginError(SIGNIN_REFUSED)
         setPhase(next.authenticated ? 'home' : 'login')
       })
       .catch(() => {

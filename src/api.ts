@@ -416,12 +416,31 @@ export async function refreshSession(): Promise<Session> {
   }
 }
 
+/* Where the sign-in hop started, so the page it comes back to can tell "never tried"
+   from "tried and Access did not hand us a session". Without this the second case
+   looks exactly like the first, which is how a broken sign-in hides. */
+const SIGNIN_HOP_KEY = 'aixodia.signin.hop.v1'
+const SIGNIN_HOP_WINDOW_MS = 5 * 60 * 1000
+
 export function signIn(): void {
   clearProfile()
+  try { window.sessionStorage.setItem(SIGNIN_HOP_KEY, String(Date.now())) } catch { /* storage disabled */ }
   /* The hop through /engine/auth/start is what establishes the Access session; the
      `next` path is where it comes back to, so the console returns where it was. */
   const next = `${window.location.pathname}${window.location.search}`
   window.location.assign(`/engine/auth/start?next=${encodeURIComponent(next)}`)
+}
+
+/** Clears the marker and says whether the browser has just come back from the hop. */
+export function takeSignInReturn(now = Date.now()): boolean {
+  let at = 0
+  try {
+    at = Number(window.sessionStorage.getItem(SIGNIN_HOP_KEY) || 0)
+    window.sessionStorage.removeItem(SIGNIN_HOP_KEY)
+  } catch {
+    return false
+  }
+  return Number.isFinite(at) && at > 0 && now - at < SIGNIN_HOP_WINDOW_MS
 }
 
 export function logout(): void {
