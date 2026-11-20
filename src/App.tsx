@@ -44,6 +44,14 @@ export default function App() {
     if (booted.current) return
     booted.current = true
     const cached = api.getSession()
+    /* A profile and a bearer are all the console needs to start: Access is the exchange,
+       not the door. Asking it again on every page load was the last thing that still
+       depended on its cookie rather than on the token this tab already has. */
+    if (cached.authenticated && api.hasEngineToken()) {
+      setSession(cached)
+      setPhase('home')
+      return
+    }
     api.refreshSession()
       .then(next => {
         setSession(next)

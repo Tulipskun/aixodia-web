@@ -377,6 +377,17 @@ function clearStoredToken(): void {
 
 readStoredToken()
 
+/**
+ * Whether this tab already holds a bearer it can work with.
+ *
+ * The console asks nothing of Cloudflare Access while this is true: Access is only the
+ * place a token is exchanged for, the way the phone app treats it, and a page load with a
+ * token in hand does not need to ask who the visitor is a second time.
+ */
+export function hasEngineToken(): boolean {
+  return Boolean(engineToken) && engineTokenExpiresAt > Date.now() + 60_000
+}
+
 async function fetchEngineToken(): Promise<string | null> {
   try {
     const res = await fetch(`${AUTH_URL}/auth/token`, {
