@@ -4,8 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import * as api from './api'
 import type { Device, Session } from './types'
 import { DeviceControl, EngineChat } from './dashboard'
-import { EnginesScreen } from './engines'
-import { TerminalView } from './TerminalView'
+import { Console } from './live/Console'
 import { Boot, LoginPage } from './components'
 
 type Phase = 'boot' | 'login' | 'home'
@@ -14,14 +13,13 @@ type Phase = 'boot' | 'login' | 'home'
    session: it names what failed instead of showing the same button again. */
 const SIGNIN_REFUSED =
   'Cloudflare Access let you through, but no session came back. Your address may not be on the allowlist for this console.'
-type View = 'home' | 'chat' | 'device' | 'terminal'
+type View = 'home' | 'chat' | 'device'
 
 export default function App() {
   const [phase, setPhase] = useState<Phase>('boot')
   const [session, setSession] = useState<Session | null>(null)
   const [view, setView] = useState<View>('home')
   const [selectedDevice, setSelectedDevice] = useState<Device | null>(null)
-  const [terminalEngine, setTerminalEngine] = useState<{ id: string; name: string } | null>(null)
   const [loginBusy, setLoginBusy] = useState(false)
   const [loginError, setLoginError] = useState<string | null>(null)
   const [accountMenuOpen, setAccountMenuOpen] = useState(false)
@@ -148,6 +146,60 @@ export default function App() {
     )
   }
 
+  const signOutDialog = logoutConfirmOpen && (
+    <div
+      className="logout-confirm-backdrop"
+      onMouseDown={event => {
+        if (event.target === event.currentTarget) setLogoutConfirmOpen(false)
+      }}
+    >
+      <section
+        className="logout-confirm-dialog"
+        role="alertdialog"
+        aria-modal="true"
+        aria-labelledby="logout-confirm-title"
+        aria-describedby="logout-confirm-description"
+      >
+        <div className="logout-confirm-icon" aria-hidden="true">↪</div>
+        <h2 id="logout-confirm-title">Sign out?</h2>
+        <p id="logout-confirm-description">Are you sure you want to sign out of your AIxodia account?</p>
+        <div className="logout-confirm-actions">
+          <button
+            className="logout-confirm-cancel"
+            type="button"
+            autoFocus
+            onClick={() => setLogoutConfirmOpen(false)}
+          >
+            Cancel
+          </button>
+          <button className="logout-confirm-submit" type="button" onClick={handleLogout}>
+            Sign out
+          </button>
+        </div>
+      </section>
+    </div>
+  )
+
+  /* The console is the whole surface for the machines and their shells: it draws its
+     own bar, its own menu and its own lists, so the dashboard chrome is not around it. */
+  if (view === 'home') {
+    return (
+      <>
+        <Console
+          account={session?.username ?? ''}
+          onOpenChat={engineId => {
+            /* The chat that opens belongs to the engine the card belongs to, so the
+               active engine moves before the view does. */
+            api.setActiveEngineId(engineId)
+            setView('chat')
+          }}
+          onSignOut={() => setLogoutConfirmOpen(true)}
+        />
+        {signOutDialog}
+      </>
+    )
+  }
+
   return (
     <div className="hello-world-layout">
       <header className="hello-world-topbar">
@@ -182,74 +234,13 @@ export default function App() {
           )}
         </div>
       </header>
-      <main className={`hello-world-screen app-content ${view !== 'home' ? 'is-subview' : ''}`} aria-label="Dashboard">
-        {view === 'home' && (
-          <EnginesScreen
-            onOpenChat={engineId => {
-              /* The chat that opens belongs to the engine the card belongs to, so the
-                 active engine moves before the view does. */
-              api.setActiveEngineId(engineId)
-              setView('chat')
-            }}
-            onOpenTerminal={engineId => {
-              api.setActiveEngineId(engineId)
-              setTerminalEngine({ id: engineId, name: api.getActiveEngine().name })
-              setView('terminal')
-            }}
-          />
-        )}
+      <main className="hello-world-screen app-content is-subview" aria-label="Dashboard">
         {view === 'chat' && <EngineChat onBack={() => setView('home')} />}
-        {view === 'terminal' && terminalEngine && (
-          /* The key is the engine: switching engines must give a new shell, not a
-             component that silently re-points at another pty. */
-          <TerminalView
-            key={terminalEngine.id}
-            engineId={terminalEngine.id}
-            engineName={terminalEngine.name}
-            onBack={() => setView('home')}
-          />
-        )}
         {view === 'device' && selectedDevice && (
           <DeviceControl device={selectedDevice} onBack={() => setView('home')} />
         )}
       </main>
-      {logoutConfirmOpen && (
-        <div
-          className="logout-confirm-backdrop"
-          onMouseDown={event => {
-            if (event.target === event.currentTarget) setLogoutConfirmOpen(false)
-          }}
-        >
-          <section
-            className="logout-confirm-dialog"
-            role="alertdialog"
-            aria-modal="true"
-            aria-labelledby="logout-confirm-title"
-            aria-describedby="logout-confirm-description"
-          >
-            <div className="logout-confirm-icon" aria-hidden="true">↪</div>
-            <h2 id="logout-confirm-title">Sign out?</h2>
-            <p id="logout-confirm-description">Are you sure you want to sign out of your AIxodia account?</p>
-            <div className="logout-confirm-actions">
-              <button
-                className="logout-confirm-cancel"
-                type="button"
-                autoFocus
-                onClick={() => setLogoutConfirmOpen(false)}
-              >
-                Cancel
-              </button>
-              <button
-                className="logout-confirm-submit"
-                type="button"
-                onClick={handleLogout}
-              >
-                Sign out
-              </button>
-            </div>
-          </section>
-        </div>
-      )}
+      {signOutDialog}
     </div>
   )
 }

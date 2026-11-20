@@ -54,6 +54,9 @@ interface HealthzResponse {
   memory_used_bytes?: number | null
   memory_total_bytes?: number | null
   memory_percent?: number | null
+  disk_used_bytes?: number | null
+  disk_total_bytes?: number | null
+  disk_percent?: number | null
 }
 
 function loadSavedActiveId(): string {
@@ -564,6 +567,9 @@ export async function getEngineStatus(engineId?: string): Promise<EngineStatus> 
       memoryUsedBytes: finite(data.memory_used_bytes),
       memoryTotalBytes: finite(data.memory_total_bytes),
       memoryPercent: finite(data.memory_percent),
+      diskUsedBytes: finite(data.disk_used_bytes),
+      diskTotalBytes: finite(data.disk_total_bytes),
+      diskPercent: finite(data.disk_percent),
     },
   }
 }
@@ -681,11 +687,53 @@ export async function createTerminalTicket(engineId?: string): Promise<TerminalT
   return { ticket: data.ticket, expiresAt: Number(data.expires_at) || 0 }
 }
 
+/* A shell the engine already has running. The list is the menu: a terminal is a
+   session, and a session outlives the tab that opened it. */
+export interface TerminalInfo {
+  id: string
+  title: string
+  shell: string
+  cwd: string
+  alive: boolean
+  createdAt: number
+  cols: number
+  rows: number
+}
+
+export async function listTerminals(engineId?: string): Promise<TerminalInfo[]> {
+  const data = await request<{ terminals?: unknown }>('/api/terminals', {}, engineId)
+  const items = Array.isArray(data?.terminals) ? data.terminals : []
+  return items
+    .filter((item): item is Record<string, unknown> => Boolean(item && typeof item === 'object'))
+    .map(item => ({
+      id: String(item.id || ''),
+      title: String(item.title || '') || `shell ${String(item.id || '').slice(-4)}`,
+      shell: String(item.shell || ''),
+      cwd: String(item.cwd || ''),
+      alive: item.alive !== false,
+      createdAt: Number(item.created_at) || 0,
+      cols: Number(item.cols) || 0,
+      rows: Number(item.rows) || 0,
+    }))
+    .filter(item => item.id && item.alive)
+}
+
+export async function closeTerminal(id: string, engineId?: string): Promise<void> {
+  await request(`/api/terminals/${encodeURIComponent(id)}`, { method: 'DELETE' }, engineId)
+}
+
 /* The socket URL for an engine: same origin as its HTTP API, but the scheme has to
    follow the page — a wss:// URL on an http:// page is refused by the browser. */
-export function terminalSocketUrl(engineId: string, ticket: string): string {
+export function terminalSocketUrl(engineId: string, ticket: string, options: { id?: string; cols?: number; rows?: number } = {}): string {
   const engine = resolveTargetEngine(engineId)
   const base = new URL(engine.url, window.location.href)
   const scheme = base.protocol === 'https:' ? 'wss:' : 'ws:'
-  return `${scheme}//${base.host}${base.pathname.replace(/\/+$/, '')}/terminal?ticket=${encodeURIComponent(ticket)}`
+  const root = `${scheme}//${base.host}${base.pathname.replace(/\/+$/, '')}/terminal`
+  /* An `id` attaches to a shell that is already running; no id asks the engine for a
+     new one and the `ready` frame brings its name back. */
+  const query = new URLSearchParams({ ticket })
+  if (options.id) query.set('id', options.id)
+  if (options.cols) query.set('cols', String(options.cols))
+  if (options.rows) query.set('rows', String(options.rows))
+  return `${root}?${query.toString()}`
 }

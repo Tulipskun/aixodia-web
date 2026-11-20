@@ -43,6 +43,9 @@ export interface EngineMetrics {
   memoryUsedBytes: number | null
   memoryTotalBytes: number | null
   memoryPercent: number | null
+  diskUsedBytes: number | null
+  diskTotalBytes: number | null
+  diskPercent: number | null
 }
 
 export interface EngineStatus {
