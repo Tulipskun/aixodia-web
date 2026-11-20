@@ -109,11 +109,10 @@ const ENTER_STEP = 80
 const COMMIT = 72
 const FLICK = 0.35
 
-/* How a drag is told apart from a scroll: it is the drawer's while it is within
-   twenty degrees of horizontal. Steeper than that is a scroll, and the page keeps
-   it. Nothing is decided until the finger has moved SLOP px — a wobble is not a
-   direction. */
-const SIDEWAYS_DEGREES = 20
+/* How a drag is told apart from a scroll, the way Discord's own panel gesture does
+   it: the drag is the drawer's once it has moved SLOP px across and that sideways
+   travel is larger than the up-or-down travel — a one-to-one ratio, so the line sits
+   at forty-five degrees. No angle is measured. */
 const SLOP = 4
 
 interface Drag {
@@ -631,18 +630,17 @@ export function EnginesMock() {
     return true
   }
 
-  /* One line: twenty degrees from horizontal. Everything inside it is the drawer's,
-     everything steeper belongs to the page. Once the gesture is the drawer's,
-     vertical drift no longer takes it back — the finger already said what it meant. */
+  /* Across is the measure: the drag belongs to the drawer once it is wider than it is
+     tall, and to the page otherwise. Once it is the drawer's, vertical drift no longer
+     takes it back — the finger already said what it meant. */
   const follow = (clientX: number, clientY: number) => {
     const current = dragRef.current
     if (!current) return
     const dx = clientX - current.startX
     const dy = clientY - current.startY
     if (!current.active) {
-      if (Math.hypot(dx, dy) < SLOP) return
-      const degrees = Math.abs((Math.atan2(Math.abs(dy), Math.abs(dx)) * 180) / Math.PI)
-      if (degrees > SIDEWAYS_DEGREES) {
+      if (Math.abs(dx) < SLOP) return
+      if (Math.abs(dx) <= Math.abs(dy)) {
         hold(null)
         return
       }

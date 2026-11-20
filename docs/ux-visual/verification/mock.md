@@ -1294,3 +1294,31 @@ For comparison, Discord's own panel gesture (`OverlappingPanelsLayout`) has no
 degree constant at all: it takes the drag once `|dx| > touchSlop && |dx| > |dy|`,
 which is a one-to-one ratio, i.e. **45°**, plus a minimum fling. Ours is tighter than
 theirs by design, because on this screen a steeper drag almost always means a scroll.
+
+## Round 58 — the Discord rule: as wide as it is tall
+
+The angle went away entirely. A drag is the drawer's once it has moved `SLOP = 4px`
+across **and** that sideways travel is larger than the up-or-down travel — the test
+Discord's own `OverlappingPanelsLayout` uses (`|dx| > slop && |dx| > |dy|`). No
+`atan2`, no degrees; the line is wherever one-to-one falls, forty-five degrees.
+
+Measured (touch, `x40 y400`, four moves over 150px, 70ms apart, read from the drawer's
+own `transform`, not from `defaultPrevented`):
+
+| angle | panel followed the finger | result |
+|---|---|---|
+| 0° | 4 of 4 | opens |
+| 20° | 4 of 4 | opens |
+| 40° | 4 of 4 | opens |
+| 44° | 4 of 4 | opens |
+| 46° | 0 of 4 | stays closed |
+| 60° | 0 of 4 | stays closed |
+| 90° | 0 of 4 | stays closed |
+
+Mouse and touch both still open, close, and leave a down-first drag alone
+(`mouseOpens`, `mouseCloses`, `mouseSteepStaysClosed`, `touchOpens`, `touchCloses`).
+
+Pitfall recorded: the earlier twenty-degree run read `touchmove`'s `defaultPrevented`
+through an injected listener, and that flag depends on listener order — once the app's
+own listeners are re-registered by an effect, the injected one runs first and reports
+`false` for a drag that is in fact being claimed. Read the drawer's `transform` instead.
