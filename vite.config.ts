@@ -28,10 +28,8 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     sourcemap: false,
-    /* One sheet per page, with the imports in the order the entry declares them.
-       Split per chunk, the console's sheet was hoisted above the dashboard's, and
-       the dashboard's `.shell` grid beat the console's frame — the same class name
-       in two sheets is a coin toss the markup should not have to win. */
+    /* One sheet per page, with the imports in the order the entry declares them, so
+       the cascade is a property of the imports rather than of chunk splitting. */
     cssCodeSplit: false,
     // `mock.html` is a second entry: the engines screen mocked up on its own, so
     // it can be looked at without signing in or touching the console.
