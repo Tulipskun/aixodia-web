@@ -418,7 +418,10 @@ export async function refreshSession(): Promise<Session> {
 
 export function signIn(): void {
   clearProfile()
-  window.location.assign('/engine/auth/start')
+  /* The hop through /engine/auth/start is what establishes the Access session; the
+     `next` path is where it comes back to, so the console returns where it was. */
+  const next = `${window.location.pathname}${window.location.search}`
+  window.location.assign(`/engine/auth/start?next=${encodeURIComponent(next)}`)
 }
 
 export function logout(): void {
