@@ -662,6 +662,7 @@ button:disabled { cursor: not-allowed; }
    the screen itself, the way a shell window is, so the transcript starts at the
    top left and the surface behind it is the app's own. */
 .terminal {
+  position: relative;
   display: flex;
   flex-direction: column;
   min-height: 0;
@@ -784,25 +785,44 @@ button:disabled { cursor: not-allowed; }
 
 .terminal-input::placeholder { color: var(--muted); }
 
-/* Direct typing: the field is no longer a control to be found, it is the shell's
-   own line, so the border goes and the prompt carries the accent instead. The keys
-   have moved above it. */
-.terminal.is-direct .terminal-composer { gap: 6px; }
-
-.terminal.is-direct .terminal-field {
-  padding: 0;
-  border-color: transparent;
-  background: none;
+/* Direct typing has no box: the sentence says what the grid does now, and the
+   keyboard is aimed at the terminal itself. */
+.terminal-hint {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin: 0;
+  padding-right: var(--s2);
+  color: var(--muted);
+  font-size: var(--fs-body);
+  line-height: 1.3;
 }
 
-/* The prompt is a character again, not a 44px button: it hugs its two glyphs so
-   the line starts where the transcript does. */
-.terminal.is-direct .terminal-direct {
-  width: auto;
-  padding: 0 var(--s1) 0 0;
-  border-color: transparent;
-  background: none;
-  color: var(--accent);
+/* The field that is not there: focusable, so the phone's keyboard comes up, but a
+   pixel wide and out of the way. What it holds is printed on the last line of the
+   transcript, not in a box. */
+.terminal-tap {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  border: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* A block caret at the end of the line being typed, the way a shell draws one. */
+.terminal-caret {
+  display: inline-block;
+  width: 7px;
+  height: 15px;
+  margin-left: 1px;
+  background: var(--text);
+  vertical-align: text-bottom;
+  animation: caret-blink 1.1s steps(1) infinite;
+}
+
+@keyframes caret-blink {
+  50% { opacity: 0; }
 }
 
 /* Two rows of keys, spread across the width as the app spreads them. */

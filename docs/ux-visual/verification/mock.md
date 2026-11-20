@@ -1350,3 +1350,36 @@ Typing through the toggle end to end: click `>_` → `aria-pressed=true`, focus 
 `terminal-input`, `Input.insertText('aixodia status')` → `Enter` → the log gains
 `root ~ $ aixodia status`. Clicking `>_` again restores the composer-first order and
 the accent border, and the transcript line stays at `x24` in both states.
+
+## Round 60 — corrected against the app: keys always above, >_ swaps the box for the grid
+
+Round 59 read the >_ key from memory and got the floor wrong. Checked against the
+Android app (`ui/terminal/TerminalPanel.kt`), the floor is `Column { TerminalKeys(…);
+TerminalComposer(…) }` — the key rows are **always above** the line, in both modes —
+and `TerminalComposer` has no field at all in direct mode:
+
+```kotlin
+TextButton(onClick = onToggleDirect) {   // Terminal icon in box mode, Keyboard icon in direct
+if (directInput) Text("Tap the terminal to type — keys go straight to the shell")
+else OutlinedTextField(…)
+```
+
+and on entering direct mode the grid takes the IME (`view.showSoftKeyboard()`), which
+is why the button's description flips to "Type in the command box".
+
+The mock now does the same:
+
+- keys `y672` above the line `y772` **in both modes** — the reordering is gone;
+- box mode: `>_` (label "Type directly into the terminal") + the accent-bordered field;
+- direct mode: the field is **removed**, the button becomes a keyboard glyph (label
+  "Type in the command box"), and a hint reads "Tap the terminal to type — keys go
+  straight to the shell";
+- tapping the grid focuses a 1×1 hidden field, so the phone's keyboard comes up and the
+  characters land **on the transcript's last line** behind a block caret
+  (`caret-blink`, `steps(1)`), with Enter printing `root ~ $ <command>` and starting a
+  fresh prompt — not in a box.
+
+Measured (390×844): keys `y672`, line/hint row `y772`, field x76 w290 (box mode),
+hint x76 w290 h34 (direct), toggle 44×44 at x24, focus `terminal-tap` after the switch
+and `terminal-input` after switching back. Typed `aixodia status` + Enter → the log
+gains `root ~ $ aixodia status`. Audits 390/1440 clean, 19 tests pass.

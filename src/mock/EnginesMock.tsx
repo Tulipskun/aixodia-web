@@ -5,7 +5,7 @@
 //! It exists so the shape of the screen can be argued about before any of it is
 //! wired to the registry. Everything below is a literal.
 
-import { Fragment, useEffect, useRef, useState, type CSSProperties } from 'react'
+import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import type { LucideIcon } from 'lucide-react'
 import {
   BatteryMedium,
@@ -14,6 +14,7 @@ import {
   Eye,
   Ellipsis,
   HardDrive,
+  Keyboard,
   MemoryStick,
   Menu,
   MonitorSmartphone,
@@ -400,12 +401,14 @@ function Terminal() {
   const [draft, setDraft] = useState('')
   /* A modifier applies to the next key only, the way a physical chord works. */
   const [held, setHeld] = useState<string[]>([])
-  /* Direct typing: the line stops being a field you fill in and becomes the
-     terminal's own line, so the keys that are not on a phone keyboard move above
-     it and out of the way of the thumb. */
+  /* Direct typing: the box goes away and the grid itself takes the keys, the way
+     the app hands the terminal to the keyboard. What is typed lives on the last
+     line of the transcript until Enter sends it. */
   const [direct, setDirect] = useState(false)
+  const [typed, setTyped] = useState('')
   const logRef = useRef<HTMLPreElement>(null)
-  const inputRef = useRef<HTMLInputElement>(null)
+  const tapRef = useRef<HTMLInputElement>(null)
+  const boxRef = useRef<HTMLInputElement>(null)
 
   const chord = held.map((key) => key.toLowerCase()).join('+')
   const transcript = wiped ? [] : TRANSCRIPT
@@ -440,11 +443,23 @@ function Terminal() {
     setHeld([])
   }
 
-  /* Switching modes is a request to type, so the keyboard comes up with it. The
-     field keeps its element when the bar reorders, so the focus sticks. */
+  /* The switch offers the surface a tap would take you to, and taking it raises
+     the keyboard at once so the change is felt. */
   const toggleDirect = () => {
-    setDirect((on) => !on)
-    requestAnimationFrame(() => inputRef.current?.focus())
+    const to = !direct
+    setDirect(to)
+    setTyped('')
+    requestAnimationFrame(() => (to ? tapRef.current : boxRef.current)?.focus())
+  }
+
+  /* In direct mode the line is the terminal's, so Enter is the byte the shell
+     gets: the line is printed and the prompt starts again. */
+  const runDirect = () => {
+    const command = typed.trim()
+    setTyped('')
+    if (!command) return
+    setLines((sent) => [...sent, { kind: 'cmd', text: command }])
+    setWiped(false)
   }
 
   /* Reset replaces the shell, so the screen starts again from a prompt — the same
@@ -458,30 +473,34 @@ function Terminal() {
   const composer = (
     <div className="terminal-composer" data-no-drag>
       {/* The >_ key. It is not a key the shell receives: it is the switch between
-          filling in a line and typing straight into the terminal. */}
+          the box and the grid, and it shows the surface a tap would take you to. */}
       <button
         type="button"
         className="terminal-direct"
         aria-pressed={direct}
-        aria-label="Type directly into the terminal"
+        aria-label={direct ? 'Type in the command box' : 'Type directly into the terminal'}
         onClick={toggleDirect}
       >
-        {'>_'}
+        {direct ? <Keyboard size={16} aria-hidden="true" /> : '>_'}
       </button>
-      <form className="terminal-field" onSubmit={submit}>
-        <input
-          ref={inputRef}
-          className="terminal-input"
-          value={draft}
-          onChange={(event) => setDraft(event.target.value)}
-          placeholder={held.length ? 'key for the chord…' : 'Type a command…'}
-          aria-label="Command"
-          enterKeyHint="send"
-          autoCapitalize="off"
-          autoCorrect="off"
-          spellCheck={false}
-        />
-      </form>
+      {direct ? (
+        <p className="terminal-hint">Tap the terminal to type — keys go straight to the shell</p>
+      ) : (
+        <form className="terminal-field" onSubmit={submit}>
+          <input
+            ref={boxRef}
+            className="terminal-input"
+            value={draft}
+            onChange={(event) => setDraft(event.target.value)}
+            placeholder={held.length ? 'key for the chord…' : 'Type a command…'}
+            aria-label="Command"
+            enterKeyHint="send"
+            autoCapitalize="off"
+            autoCorrect="off"
+            spellCheck={false}
+          />
+        </form>
+      )}
     </div>
   )
 
@@ -524,7 +543,13 @@ function Terminal() {
 
   return (
     <section className={`terminal${direct ? ' is-direct' : ''}`} aria-label="Terminal">
-      <pre className="terminal-log" ref={logRef}>
+      {/* In direct mode a tap anywhere on the grid is a tap on the terminal, and the
+          terminal is what the keyboard is typing into. */}
+      <pre
+        className="terminal-log"
+        ref={logRef}
+        onClick={direct ? () => tapRef.current?.focus() : undefined}
+      >
         {[...transcript, ...lines].map(({ kind, text }, index) => (
           <span key={`${index}-${text}`} className={`terminal-line is-${kind}`}>
             {kind === 'cmd' ? (
@@ -540,14 +565,40 @@ function Terminal() {
             )}
           </span>
         ))}
+        {direct && (
+          <span className="terminal-line is-cmd">
+            <span className="terminal-user">root</span>{' '}
+            <span className="terminal-cwd">~</span>{' '}
+            <span className="terminal-mark">$</span> <span>{typed}</span>
+            <span className="terminal-caret" aria-hidden="true" />
+          </span>
+        )}
       </pre>
 
+      {/* The keyboard the grid takes in direct mode: a field the size of nothing,
+          focusable so the phone's own keyboard comes up, and read from as the
+          terminal's input rather than shown. */}
+      <input
+        ref={tapRef}
+        className="terminal-tap"
+        value={typed}
+        onChange={(event) => setTyped(event.target.value)}
+        onKeyDown={(event) => {
+          if (event.key !== 'Enter') return
+          event.preventDefault()
+          runDirect()
+        }}
+        aria-label="Terminal input"
+        autoCapitalize="off"
+        autoCorrect="off"
+        spellCheck={false}
+      />
+
       <div className="terminal-bar">
-        {/* Direct typing puts the keys above the line: they are for reaching keys a
-            phone lacks, and the thumb typing on the phone's own keyboard should not
-            have to cross them. Keyed fragments, so the field is moved rather than
-            rebuilt and keeps the focus and the caret. */}
-        {(direct ? [<Fragment key="keys">{keys}</Fragment>, <Fragment key="composer">{composer}</Fragment>] : [<Fragment key="composer">{composer}</Fragment>, <Fragment key="keys">{keys}</Fragment>])}
+        {/* The keys sit above the line, as the app has them: they reach keys a phone
+            lacks, and the line below is where typing goes. */}
+        {keys}
+        {composer}
       </div>
     </section>
   )
