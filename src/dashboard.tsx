@@ -1,31 +1,17 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import type { PointerEvent, ReactNode } from 'react'
+import type { PointerEvent } from 'react'
 import {
-  Activity, ArrowLeft, Bot, ChevronRight, Cpu,
-  Keyboard, LoaderCircle, MessageSquare, MonitorSmartphone, Plus, Send,
-  Smartphone, Square, Wifi, WifiOff, X,
+  Activity, ArrowLeft, Bot, Keyboard, LoaderCircle, MessageSquare, MonitorSmartphone,
+  Plus, Send, Smartphone, Square, X,
 } from 'lucide-react'
 import * as api from './api'
 import type {
-  Device, DeviceActionResult, DeviceTool, EngineEvent, EngineSession,
-  EngineStatus, EngineTurn,
+  Device, DeviceActionResult, DeviceTool, EngineEvent, EngineSession, EngineTurn,
 } from './types'
 
 type ChatMessage = { id: string; role: 'user' | 'assistant'; text: string; error?: boolean; tool?: string }
 type ScreenPoint = { x: number; y: number; at: number }
 
-function formatBytes(value: number | null | undefined): string {
-  if (value == null || !Number.isFinite(value)) return '—'
-  if (value < 1024 ** 3) return `${(value / 1024 ** 2).toFixed(0)} MB`
-  return `${(value / 1024 ** 3).toFixed(1)} GB`
-}
-function formatUptime(seconds: number | null | undefined): string {
-  if (seconds == null || !Number.isFinite(seconds)) return '—'
-  const days = Math.floor(seconds / 86400)
-  const hours = Math.floor((seconds % 86400) / 3600)
-  const minutes = Math.floor((seconds % 3600) / 60)
-  return days > 0 ? `${days}d ${hours}h` : hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`
-}
 function parseEvents(raw: string): EngineEvent[] {
   const result: EngineEvent[] = []
   for (const block of raw.split(/\r?\n\r?\n/)) {
@@ -40,128 +26,6 @@ function parseEvents(raw: string): EngineEvent[] {
 }
 function sessionTitle(session: EngineSession): string {
   return session.title?.trim() || 'New chat'
-}
-
-export function DashboardHome({ onOpenChat, onOpenDevice }: {
-  onOpenChat: () => void
-  onOpenDevice: (device: Device) => void
-}) {
-  const [engine, setEngine] = useState<EngineStatus | null>(null)
-  const [devices, setDevices] = useState<Device[]>([])
-  const [deviceError, setDeviceError] = useState('')
-  const [deviceNote, setDeviceNote] = useState<string | null>(null)
-  const [loadingDevices, setLoadingDevices] = useState(true)
-
-  const refreshEngine = useCallback(async () => {
-    try { setEngine(await api.getEngineStatus()) }
-    catch { setEngine({ configured: false, online: false, checkedAt: new Date().toISOString(), metrics: null, reason: 'Unable to reach the engine' }) }
-  }, [])
-  const refreshDevices = useCallback(async (refresh = false) => {
-    try {
-      const result = await api.getDevices(refresh)
-      setDevices(result.items)
-      setDeviceNote(result.note ?? null)
-      setDeviceError('')
-    } catch (error) {
-      setDevices([])
-      setDeviceNote(null)
-      setDeviceError(error instanceof Error ? error.message : 'Unable to load devices')
-    } finally {
-      setLoadingDevices(false)
-    }
-  }, [])
-
-  useEffect(() => {
-    void refreshEngine()
-    void refreshDevices()
-    const engineTimer = window.setInterval(() => { if (!document.hidden) void refreshEngine() }, 30000)
-    const deviceTimer = window.setInterval(() => { if (!document.hidden) void refreshDevices() }, 30000)
-    return () => { window.clearInterval(engineTimer); window.clearInterval(deviceTimer) }
-  }, [refreshEngine, refreshDevices])
-
-  const metrics = engine?.metrics
-  return (
-    <main className="dashboard-home" aria-label="Dashboard">
-      <section className="service-card engine-card" aria-labelledby="engine-card-title">
-        <div className="service-card-head">
-          <div className="service-card-identity">
-            <div className="service-icon engine-icon"><Bot size={22} /></div>
-            <div className="service-heading">
-              <h1 id="engine-card-title">AIxodia Engine</h1>
-            </div>
-          </div>
-          <span className={`connection-state ${engine?.online ? 'is-online' : 'is-offline'}`}>
-            <span className="state-dot" />{engine?.online ? 'Online' : engine ? 'Offline' : 'Checking'}
-          </span>
-        </div>
-        <div className="engine-metrics">
-          <Metric icon={<Cpu size={16} />} label="CPU" value={metrics?.cpuPercent == null ? '—' : `${metrics.cpuPercent.toFixed(1)}%`} percent={metrics?.cpuPercent ?? null} />
-          <Metric icon={<Activity size={16} />} label="Memory" value={metrics?.memoryUsedBytes == null || metrics.memoryTotalBytes == null ? '—' : `${formatBytes(metrics.memoryUsedBytes)} / ${formatBytes(metrics.memoryTotalBytes)}`} percent={metrics?.memoryPercent ?? null} />
-          <div className="metric-stat">
-            <div className="metric-label"><Wifi size={16} /> Uptime</div>
-            <strong>{engine?.online ? formatUptime(engine.uptimeSeconds) : '—'}</strong>
-          </div>
-        </div>
-        <div className="service-card-foot">
-          <button className="action-button primary" type="button" onClick={onOpenChat} disabled={!engine?.online}>
-            Open AIxodia <ChevronRight size={17} />
-          </button>
-        </div>
-      </section>
-
-      <section className="service-card devices-card" aria-labelledby="devices-card-title">
-        <div className="service-card-head devices-card-head">
-          <div className="service-card-identity">
-            <div className="service-icon devices-icon"><MonitorSmartphone size={21} /></div>
-            <div className="service-heading">
-              <h2 id="devices-card-title">DroidIME Devices</h2>
-            </div>
-          </div>
-          <button className="icon-action" type="button" aria-label="Refresh device list" onClick={() => void refreshDevices(true)}>
-            <Activity size={17} />
-          </button>
-        </div>
-        <div className="device-list" aria-live="polite">
-          {loadingDevices && devices.length === 0 ? (
-            <div className="empty-service"><LoaderCircle className="spin" size={19} /><span>Discovering devices…</span></div>
-          ) : deviceError ? (
-            <div className="empty-service error-text"><WifiOff size={18} /><span>{deviceError}</span></div>
-          ) : devices.length === 0 ? (
-            <div className="empty-service"><Smartphone size={21} /><span>{deviceNote || 'No DroidIME devices registered.'}</span></div>
-          ) : devices.map(device => (
-            <div className="device-row" key={device.id}>
-              <div className="device-row-icon"><Smartphone size={18} /></div>
-              <div className="device-row-copy">
-                <strong>{device.name}</strong>
-                <span className={device.status.online ? 'online-text' : 'offline-text'}>
-                  <span className="state-dot" />{device.status.online ? 'Online' : 'Offline'}
-                </span>
-              </div>
-              <button className="action-button secondary" type="button" disabled={!device.status.online} onClick={() => onOpenDevice(device)}>
-                Control <ChevronRight size={15} />
-              </button>
-            </div>
-          ))}
-        </div>
-        <div className="service-card-foot">
-          <span className="updated-at">{devices.length} registered {devices.length === 1 ? 'device' : 'devices'}</span>
-          <span className="device-summary"><span className="state-dot is-online-dot" /> {devices.filter(device => device.status.online).length} online</span>
-        </div>
-      </section>
-    </main>
-  )
-}
-
-function Metric({ icon, label, value, percent }: {
-  icon: ReactNode; label: string; value: string; percent: number | null
-}) {
-  return (
-    <div className="metric-stat">
-      <div className="metric-label">{icon}{label}</div>
-      <strong>{value}</strong>
-      <div className="metric-bar"><span style={{ width: percent == null ? '0%' : `${Math.max(0, Math.min(100, percent))}%` }} /></div>
-    </div>
-  )
 }
 
 export function EngineChat({ onBack }: { onBack: () => void }) {

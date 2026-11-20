@@ -3,7 +3,8 @@ import { useEffect, useRef, useState } from 'react'
 
 import * as api from './api'
 import type { Device, Session } from './types'
-import { DashboardHome, DeviceControl, EngineChat } from './dashboard'
+import { DeviceControl, EngineChat } from './dashboard'
+import { EnginesScreen } from './engines'
 import { Boot, LoginPage } from './components'
 
 type Phase = 'boot' | 'login' | 'home'
@@ -175,9 +176,13 @@ export default function App() {
       </header>
       <main className={`hello-world-screen app-content ${view !== 'home' ? 'is-subview' : ''}`} aria-label="Dashboard">
         {view === 'home' && (
-          <DashboardHome
-            onOpenChat={() => setView('chat')}
-            onOpenDevice={device => { setSelectedDevice(device); setView('device') }}
+          <EnginesScreen
+            onOpenChat={engineId => {
+              /* The chat that opens belongs to the engine the card belongs to, so the
+                 active engine moves before the view does. */
+              api.setActiveEngineId(engineId)
+              setView('chat')
+            }}
           />
         )}
         {view === 'chat' && <EngineChat onBack={() => setView('home')} />}

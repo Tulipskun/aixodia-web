@@ -731,6 +731,10 @@ a { color: var(--info); }
 }
 @media (max-width: 520px) {
   .hello-world-topbar { min-height: 58px; padding: 0 15px; }
+  /* On a phone the account is a chevron: the address is in the menu it opens, and
+     the topbar has three controls to fit in one row. */
+  .hello-world-username { display: none; }
+  .hello-world-account-trigger { padding: 7px 9px; }
   .hello-world-brand-mark { width: 31px; height: 31px; }
   .hello-world-account { gap: 8px; }
   .hello-world-screen { min-height: calc(100vh - 58px); }
@@ -912,6 +916,153 @@ button,
   grid-template-rows: minmax(220px, auto) minmax(0, 1fr);
   gap: 14px;
 }
+
+/* Engines — a card per engine in the registry, with the numbers that engine itself
+   reports. The card is a surface and a hairline; there is no elevation and no second
+   colour, so the only thing that stands out is whether an engine is up. */
+.engines-screen {
+  width: min(720px, 100%);
+  height: 100%;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  overflow-y: auto;
+}
+.engines-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.engines-head h1 { margin: 0; font-size: 20px; font-weight: 600; letter-spacing: -0.01em; }
+.engines-refresh {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 12px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  transition: color 120ms ease, border-color 120ms ease;
+}
+.engines-refresh:active { transform: scale(0.97); }
+.engines-refresh .is-spinning { animation: engines-spin 900ms linear infinite; }
+@keyframes engines-spin { to { transform: rotate(360deg); } }
+.engines-empty {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  padding: 16px;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius);
+  color: var(--muted);
+  font-size: 13px;
+}
+.engines-card {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+.engines-card.is-offline { opacity: 0.72; }
+.engines-card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+.engines-id { min-width: 0; }
+.engines-id h2 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.engines-meta {
+  margin: 2px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.engines-state {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  flex: 0 0 auto;
+  height: 22px;
+  padding: 0 9px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--dim);
+  font-size: 11px;
+  letter-spacing: 0.02em;
+}
+.engines-state.is-live { border-color: rgba(69, 214, 176, 0.35); color: var(--success); }
+.engines-metrics { display: flex; gap: 12px; }
+.engines-metric {
+  flex: 1 1 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+.engines-metric-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--dim);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.engines-metric-value {
+  font-family: var(--mono);
+  font-size: 18px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+.engines-metric-unit {
+  margin-left: 4px;
+  color: var(--dim);
+  font-family: var(--sans);
+  font-size: 11px;
+  font-weight: 400;
+}
+.engines-actions { display: flex; gap: 8px; }
+.engines-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 36px;
+  padding: 0 14px;
+  border: 1px solid var(--border-strong);
+  border-radius: 10px;
+  background: var(--surface-2);
+  color: var(--text);
+  font-size: 13px;
+  transition: background 120ms ease;
+}
+.engines-action:active { transform: scale(0.97); }
+.engines-action:disabled { opacity: 0.4; }
+@media (hover: hover) {
+  .engines-refresh:hover { color: var(--text); border-color: var(--border-strong); }
+  .engines-action:hover:not(:disabled) { background: var(--surface-3); }
+}
 .service-card {
   min-width: 0;
   min-height: 0;
@@ -1089,6 +1240,7 @@ button,
 @media (max-width: 760px) {
   .app-content { padding: 11px 12px 13px; height: calc(100dvh - 58px); }
   .dashboard-home { grid-template-rows: minmax(222px,auto) minmax(0,1fr); gap: 10px; }
+  .engines-card { padding: 14px; gap: 12px; }
   .service-card { padding: 14px; }
   .service-icon { width: 40px; height: 40px; }
   .service-heading h1, .service-heading h2 { font-size: 15px; }
