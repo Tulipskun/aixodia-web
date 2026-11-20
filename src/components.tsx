@@ -72,12 +72,12 @@ export function LoginPage({
 
           <div className="ax-login-device">
             <p className="ax-login-note">
-              Your session is verified by Cloudflare Access. Continuing opens the
-              console with the account you are already signed in with.
+              Your session is verified by Cloudflare Access. Try again opens the console
+              with the account you are already signed in with.
             </p>
             <button className="ax-github-button" type="button" onClick={onSignIn} disabled={busy}>
               {busy ? <Loader2 size={19} className="spin" /> : <ShieldCheck size={19} />}
-              <span>{busy ? 'Signing in…' : 'Continue'}</span>
+              <span>{busy ? 'Signing in…' : 'Try again'}</span>
             </button>
           </div>
         </section>

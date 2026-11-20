@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 
 import * as api from './api'
 import type { Session } from './types'
@@ -13,12 +13,28 @@ const SIGNIN_REFUSED =
   'Cloudflare Access let you through, but no session came back. Your address may not be on the allowlist for this console.'
 
 export default function App() {
-  const [phase, setPhase] = useState<Phase>('boot')
-  const [session, setSession] = useState<Session | null>(null)
+  /* Who is signed in was decided last time this browser was here, and Access keeps its
+     own session for a day. Starting from the console when a profile is still in date is
+     what makes a reload a reload: the console's own calls are the check, and a 401 sends
+     the browser through Access again. */
+  const starting = api.getSession()
+  const [phase, setPhase] = useState<Phase>(starting.authenticated ? 'home' : 'boot')
+  const [session, setSession] = useState<Session | null>(starting.authenticated ? starting : null)
   const [loginBusy, setLoginBusy] = useState(false)
   const [loginError, setLoginError] = useState<string | null>(null)
   const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false)
   const booted = useRef(false)
+  const hopping = useRef(false)
+
+  /* Signing in is not a button: Cloudflare Access is the only party that can say who
+     this is, and with its cookie present it returns before a page is drawn. Sending the
+     browser there by itself is the whole of signing in — the `Continue` this used to
+     wait for only asked the user to confirm what the browser already knew. */
+  const hopToAccess = useCallback(() => {
+    if (hopping.current) return
+    hopping.current = true
+    api.signIn()
+  }, [])
 
   useEffect(() => {
     // Cloudflare Access owns the login. The only local question is whether the
@@ -27,28 +43,53 @@ export default function App() {
     // stopped engine does not look like a signed-out user.
     if (booted.current) return
     booted.current = true
+    const cached = api.getSession()
     api.refreshSession()
       .then(next => {
         setSession(next)
-        if (!next.authenticated && api.takeSignInReturn()) setLoginError(SIGNIN_REFUSED)
-        setPhase(next.authenticated ? 'home' : 'login')
+        if (next.authenticated) {
+          setPhase('home')
+          return
+        }
+        /* Came back from Access and still nobody: say that, rather than looping. */
+        if (api.takeSignInReturn()) {
+          setLoginError(SIGNIN_REFUSED)
+          setPhase('login')
+          return
+        }
+        /* A cached profile that no longer holds is the same situation as a first visit:
+           the browser has to pass through Access before there is anything to read. */
+        setPhase(cached.authenticated ? 'home' : 'boot')
+        hopToAccess()
       })
       .catch(() => {
-        const cached = api.getSession()
-        setSession(cached)
-        setPhase(cached.authenticated ? 'home' : 'login')
+        const fallback = api.getSession()
+        setSession(fallback)
+        setPhase(fallback.authenticated ? 'home' : 'boot')
+        if (!fallback.authenticated) hopToAccess()
       })
-  }, [])
+  }, [hopToAccess])
 
   useEffect(() => {
-    // A 401/403 from the engine means Cloudflare Access rejected the request, so
-    // the Access session is gone and the login page is the only way forward.
+    /* A 401 from an engine is not by itself a signed-out browser: the identity endpoint
+       is the authority. Asking it costs one round trip and stops a call the engine
+       refuses from turning into a hop through Access on every render — which is a loop,
+       because the hop comes back to the same refusal. */
     api.setUnauthorizedHandler(() => {
-      setSession(null)
-      setPhase('login')
+      void api.refreshSession().then(next => {
+        if (next.authenticated) return
+        setSession(null)
+        if (api.takeSignInReturn()) {
+          setLoginError(SIGNIN_REFUSED)
+          setPhase('login')
+          return
+        }
+        hopToAccess()
+      })
     })
     return () => api.setUnauthorizedHandler(null)
-  }, [])
+  }, [hopToAccess])
+
 
   useEffect(() => {
     if (phase !== 'home') return
@@ -70,37 +111,13 @@ export default function App() {
     return () => document.removeEventListener('keydown', handleKeyDown)
   }, [logoutConfirmOpen])
 
-  /**
-   * Sign in.
-   *
-   * Nothing is asked for: whoever is using the browser has already passed
-   * Cloudflare Access, and the Worker reads that identity from the assertion. This
-   * is a single round trip that either issues a session token or says the account
-   * is not permitted.
-   */
-  /**
-   * Sign in.
-   *
-   * The order matters. Cloudflare Access is what establishes identity, so the
-   * browser has to pass through it before there is anything to exchange for a
-   * session token. Asking the Worker first could only ever fail for a first-time
-   * visitor: with no Access cookie there is no assertion to read, and the app
-   * reported that as a broken session rather than sending them to sign in.
-   *
-   * So this navigates to the guarded endpoint, and Access either returns at once
-   * (already signed in) or asks for a login and then returns. The app loads again
-   * at its own address with the cookie present, and `refreshSession`
-   * picks it up from there.
-   */
+  /* The button on the login page is only ever shown after Access has already let the
+     browser through and no session came back, so it is a retry of the hop, not the way
+     in. */
   const handleSignIn = () => {
     setLoginBusy(true)
     setLoginError(null)
-    try {
-      api.signIn()
-    } catch (error) {
-      setLoginError(error instanceof Error ? error.message : 'Could not sign in.')
-      setLoginBusy(false)
-    }
+    api.signIn()
   }
 
   const handleLogout = () => {
@@ -111,7 +128,7 @@ export default function App() {
     api.logout()
   }
 
-  if (phase === 'boot') return <Boot label="Checking your session…" />
+  if (phase === 'boot') return <Boot label="Signing in…" />
 
   if (phase === 'login') {
     return (

@@ -341,12 +341,41 @@ export function getSession(): Session {
 }
 
 /**
- * Shared auth-Worker bearer token, cached in memory only.
+ * Shared auth-Worker bearer token, kept for the life of the tab.
  * All Cloudflare Access-backed engines verify tokens against the same Auth Worker.
+ *
+ * It outlives a reload on purpose: a page load is not a new sign-in, and asking for
+ * a token on every load made the console wait on a round trip it had already made.
+ * sessionStorage is the tab, so the token is dropped when the tab is.
  */
+const ENGINE_TOKEN_KEY = 'aixodia.engine-token.v1'
 let engineToken: string | null = null
 let engineTokenExpiresAt = 0
 let tokenRequest: Promise<string | null> | null = null
+
+function readStoredToken(): void {
+  try {
+    const raw = sessionStorage.getItem(ENGINE_TOKEN_KEY)
+    if (!raw) return
+    const parsed = JSON.parse(raw) as { token?: string; expiresAt?: number }
+    if (!parsed?.token || typeof parsed.expiresAt !== 'number') return
+    if (parsed.expiresAt <= Date.now() + 60_000) return
+    engineToken = parsed.token
+    engineTokenExpiresAt = parsed.expiresAt
+  } catch { /* storage disabled */ }
+}
+
+function writeStoredToken(token: string, expiresAt: number): void {
+  try {
+    sessionStorage.setItem(ENGINE_TOKEN_KEY, JSON.stringify({ token, expiresAt }))
+  } catch { /* storage disabled */ }
+}
+
+function clearStoredToken(): void {
+  try { sessionStorage.removeItem(ENGINE_TOKEN_KEY) } catch { /* storage disabled */ }
+}
+
+readStoredToken()
 
 async function fetchEngineToken(): Promise<string | null> {
   try {
@@ -361,6 +390,7 @@ async function fetchEngineToken(): Promise<string | null> {
     if (!token) return null
     engineToken = token
     engineTokenExpiresAt = Number(body?.expires_at || 0) * 1000
+    writeStoredToken(token, engineTokenExpiresAt)
     return token
   } catch {
     return null
@@ -387,6 +417,7 @@ function forgetEngineToken(engine?: EngineNode): void {
   if (!engine || engine.authMode === 'access') {
     engineToken = null
     engineTokenExpiresAt = 0
+    clearStoredToken()
   }
 }
 
