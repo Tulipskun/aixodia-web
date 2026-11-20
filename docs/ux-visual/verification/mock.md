@@ -1211,3 +1211,32 @@ Three corrections, all from the app's own behaviour:
 
 Audits on both screens at 320/390/1440: `pageScrollY 0`, 0 low contrast, no small
 targets, no clipped text.
+
+## Round 55 — ten degrees
+
+The gesture used to ask "is the movement more vertical than horizontal", i.e. a 45°
+rule, and only after 8px of vertical travel. A phone drag is rarely that neat: a
+20° swipe meant to scroll could still take the drawer with it.
+
+It is now an angle, measured from horizontal:
+
+- Nothing is decided until the finger has moved `SLOP` (4px) in any direction — a
+  one-pixel wobble is not a direction.
+- Past that, `atan2(|dy|, |dx|)` in degrees decides: **10° or less is the drawer's,
+  more is the page's**. The gesture is dropped (`hold(null)`) the moment it crosses
+  the line, so the page gets the rest of the movement.
+
+Measured with touch drags at fixed angles (140px out from `x60 y600`):
+
+| direction | drawer | touchmoves claimed of 6 |
+|---|---|---|
+| 5° | open | 6 |
+| 9° | open | 6 |
+| 11° | closed | 0 |
+| 30° | closed | 0 |
+| 45° / 90° | closed | 0 |
+
+Closing also keeps the rule: with the panel open, a 20° left drag leaves it open and
+a 5° left drag closes it. `defaultPrevented` counting confirms the page keeps every
+steep move, which is what makes vertical scrolling still work under a finger that
+started sideways.

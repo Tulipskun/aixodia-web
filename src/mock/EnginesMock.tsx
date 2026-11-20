@@ -109,6 +109,9 @@ const ENTER_STEP = 80
 const COMMIT = 72
 const FLICK = 0.35
 const SLOP = 4
+/* A gesture is the drawer's only while it is still sideways: within ten degrees of
+   horizontal. Past that the finger is scrolling, and the page keeps it. */
+const SIDEWAYS_DEGREES = 10
 
 interface Drag {
   startX: number
@@ -630,12 +633,16 @@ export function EnginesMock() {
 
   /* A gesture that turns out to be vertical belongs to the page: let it go before
      the drag claims any of it, so scrolling still works. */
-  const letGoIfVertical = (clientX: number, clientY: number) => {
+  /* Nothing is decided until the finger has actually moved: a wobble of a pixel or
+     two is not a direction. After that, ten degrees from horizontal is the line. */
+  const letGoIfNotSideways = (clientX: number, clientY: number) => {
     const current = dragRef.current
     if (!current || current.dx !== 0) return
     const dy = clientY - current.startY
     const dx = clientX - current.startX
-    if (Math.abs(dy) > 8 && Math.abs(dy) > Math.abs(dx)) hold(null)
+    if (Math.hypot(dx, dy) < SLOP) return
+    const degrees = Math.abs((Math.atan2(Math.abs(dy), Math.abs(dx)) * 180) / Math.PI)
+    if (degrees > SIDEWAYS_DEGREES) hold(null)
   }
 
   const settle = () => {
@@ -662,7 +669,7 @@ export function EnginesMock() {
     }
     const onPointerMove = (event: PointerEvent) => {
       if (event.pointerType === 'touch') return
-      letGoIfVertical(event.clientX, event.clientY)
+      letGoIfNotSideways(event.clientX, event.clientY)
       follow(event.clientX)
     }
     const onPointerUp = (event: PointerEvent) => {
@@ -678,7 +685,7 @@ export function EnginesMock() {
     const onTouchMove = (event: TouchEvent) => {
       const touch = event.touches[0]
       if (!touch || !dragRef.current) return
-      letGoIfVertical(touch.clientX, touch.clientY)
+      letGoIfNotSideways(touch.clientX, touch.clientY)
       if (!dragRef.current) return
       event.preventDefault()
       follow(touch.clientX)
