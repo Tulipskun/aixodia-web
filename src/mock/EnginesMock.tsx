@@ -215,7 +215,6 @@ export function EnginesMock() {
       }}
       onCloseSession={fixture.close}
       onTerminalReady={() => undefined}
-      onRefresh={() => undefined}
     />
   )
 }
