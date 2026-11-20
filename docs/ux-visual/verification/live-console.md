@@ -71,6 +71,29 @@ So `Ctrl`/`Esc`/`PgUp` are names in the console and byte sequences in `PtyTermin
 - mock page (`mock.html`) renders the same cards with four verbs and charts; it shares
   the console chunk, so it is the same code path
 
+## Why a terminal and a screen could not open, and what changed
+
+Both verbs were dead in the shipped page, and both for the same reason: the client
+was talking to its own origin.
+
+- `/engine/engines` handed out `/engine/by/<id>`. That is a Pages Function, and it
+  drops the cookie for `/api/` and adds no bearer, so `POST /api/terminals/ticket`
+  came back 401. Worse, a socket cannot cross a Pages Function at all: it re-creates
+  the request (`method` + headers + body) and calls `fetch`, so the `Upgrade` is gone.
+- The engine has its own address, and that is what the registry returns now. On that
+  host the credential is the bearer the auth Worker mints for a signed-in browser, so
+  engine calls stop asking for a cookie that would never be sent to another host.
+- The gateway is the front door for that host, so it owns the browser's CORS. Access
+  sits in front of every origin with a service-token policy, and it answers any request
+  that carries an `Origin` with a bare 403 — before the tunnel is dialled. So the
+  preflight is answered at the gateway, the forward drops `origin`/`referer`, and the
+  reply echoes `access-control-allow-origin`.
+
+Measured against the real engine through the gateway: `POST /api/terminals/ticket`
+200, a `ready` frame, pty echo and output; `POST /api/screen/ticket` 200, a `hello`
+with `codec: jpeg`, 192 tiles over three batches onto a 480×720 canvas, and a tap at
+25 %/25 % landing at (320, 180) on a 1280-wide display — the engine's own scaling.
+
 ## Two CSS decisions worth keeping
 
 1. `.terminal-log { gap: 0 }`. A pty is a grid of cells whose row height already has the
