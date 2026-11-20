@@ -648,6 +648,40 @@ button:disabled { cursor: not-allowed; }
   scrollbar-width: thin;
 }
 
+/* The pull at the top of a list: a strip that is the height of what the finger has
+   asked for, so the list itself moves and the strip arrives with it. */
+.pull {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s2);
+  height: 0;
+  overflow: hidden;
+  color: var(--dim);
+  font-size: var(--fs-label);
+}
+
+/* The height is the drag's own number, so the console sets it inline while the finger
+   is down; the sheet only has to say that nothing else may grow it. */
+.pull.is-refreshing { height: 24px !important; }
+
+.pull-spinner {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 1.5px solid var(--border-strong);
+  border-top-color: var(--accent);
+  opacity: 0;
+}
+
+.pull.is-refreshing .pull-spinner {
+  opacity: 1;
+  animation: axd-spin 700ms linear infinite;
+}
+
+.pull.is-refreshing { color: var(--muted); }
+
 /* ----------------------------------------------------------------- card */
 
 .card {

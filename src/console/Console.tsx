@@ -93,6 +93,13 @@ const FLICK = 0.35
    at forty-five degrees. No angle is measured. */
 const SLOP = 4
 
+/* A pull at the top of a list is the page asking to be brought up to date. It only
+   exists where a list does, and it is measured in the same pixels the cards move: the
+   list follows the finger until it is let go past RELEASE. */
+const PULL_MAX = 72
+const PULL_RELEASE = 52
+const PULL_RESIST = 0.55
+
 interface Drag {
   startX: number
   startY: number
@@ -100,9 +107,18 @@ interface Drag {
   fromOpen: boolean
   width: number
   dx: number
+  dy: number
+  /* Which stream owns this gesture. A touch drag is cancelled by the browser's own
+     pointer machinery, which would otherwise abandon a pull halfway through. */
+  source: 'pointer' | 'touch'
   /* False while the gesture is still undecided: it is only the drawer's once the
      finger has crossed the across line without crossing the up-or-down one. */
   active: boolean
+  /* True when the gesture began with the list already at its top, so a downward drag
+     is a pull rather than a scroll. */
+  fromTop: boolean
+  /* True once the same drag has become a pull at the top of the list. */
+  pulling: boolean
 }
 
 /* The keys a phone keyboard does not have, in the app's two rows: what a shell
@@ -748,6 +764,7 @@ export function Console({
   onAction,
   onCloseSession,
   onTerminalReady,
+  onRefresh,
   onSignOut,
 }: {
   /** The screens that are a list of cards, in menu order. */
@@ -772,6 +789,8 @@ export function Console({
   onAction: (machine: string, action: string) => void
   onCloseSession: (session: Session) => void
   onTerminalReady: () => void
+  /** Bring the lists up to date: what a pull at the top of a list asks for. */
+  onRefresh: () => void
   onSignOut?: () => void
 }) {
   const [menuOpen, setMenuOpen] = useState(false)
@@ -784,6 +803,9 @@ export function Console({
      a dialog over the list rather than inside a row. */
   const [asking, setAsking] = useState<Session | null>(null)
   const [drag, setDrag] = useState<Drag | null>(null)
+  const [pull, setPull] = useState(0)
+  const [refreshing, setRefreshing] = useState(false)
+  ;(window as unknown as { __pullValue?: number }).__pullValue = pull
   const panelRef = useRef<HTMLElement>(null)
   const topbarRef = useRef<HTMLElement>(null)
   /* The native touch listeners outlive a render, so the gesture reads from a ref
@@ -798,12 +820,14 @@ export function Console({
   const revealed = drag ? 1 + (drag.fromOpen ? Math.min(0, drag.dx) : Math.min(0, drag.dx - drag.width)) / drag.width : null
 
   const hold = (next: Drag | null) => {
+    ;((window as unknown as { __holdLog?: unknown[] }).__holdLog ??= []).push({ pulling: next?.pulling, dy: next?.dy, at: String(new Error().stack).split('\n').slice(2, 4).join(' <- ') })
     dragRef.current = next
     /* An undecided gesture moves nothing on screen. */
-    setDrag(next?.active ? next : null)
+    setDrag(next?.active || next?.pulling ? next : null)
+    setPull(next?.pulling ? Math.min(PULL_MAX, next.dy * PULL_RESIST) : 0)
   }
 
-  const begin = (target: EventTarget | null, clientX: number, clientY: number) => {
+  const begin = (target: EventTarget | null, clientX: number, clientY: number, source: Drag['source']) => {
     if (dragRef.current) return false
     /* A sideways drag is the drawer's — except inside something that scrolls
        sideways itself, or a field where a drag selects text. */
@@ -814,37 +838,62 @@ export function Console({
       startX: clientX,
       startY: clientY,
       startedAt: performance.now(),
+      fromTop: (document.querySelector('.screen')?.scrollTop ?? 0) <= 0,
       fromOpen: menuOpen,
       width,
       dx: 0,
+      dy: 0,
+      source,
       active: false,
+      pulling: false,
     })
     return true
   }
 
   /* Across is the measure: the drag belongs to the drawer once it is wider than it is
-     tall, and to the page otherwise. Once it is the drawer's, vertical drift no longer
-     takes it back — the finger already said what it meant. */
+     tall. A drag that is taller than it is wide, downward, and started at the top of a
+     list is the list's own pull instead — the browser cannot do that here, because the
+     page is pinned to the viewport for the drawer and the terminal. */
   const follow = (clientX: number, clientY: number) => {
     const currentDrag = dragRef.current
     if (!currentDrag) return
     const dx = clientX - currentDrag.startX
     const dy = clientY - currentDrag.startY
+    if (currentDrag.pulling) {
+      hold({ ...currentDrag, dx, dy })
+      return
+    }
+    ;(window as unknown as { __pullDbg?: unknown }).__pullDbg = { dx, dy, fromTop: currentDrag.fromTop, listing: !!listing, active: currentDrag.active }
     if (!currentDrag.active) {
-      if (Math.abs(dx) < SLOP) return
-      if (Math.abs(dx) <= Math.abs(dy)) {
+      if (Math.abs(dx) < SLOP && Math.abs(dy) < SLOP) return
+      if (Math.abs(dy) > Math.abs(dx)) {
+        if (currentDrag.fromTop && dy > 0 && listing) {
+          hold({ ...currentDrag, pulling: true, dx, dy })
+          return
+        }
         hold(null)
         return
       }
-      hold({ ...currentDrag, active: true, dx })
+      if (Math.abs(dx) < SLOP) return
+      hold({ ...currentDrag, active: true, dx, dy })
       return
     }
-    hold({ ...currentDrag, dx })
+    hold({ ...currentDrag, dx, dy })
   }
 
   const settle = () => {
     const currentDrag = dragRef.current
     if (!currentDrag) return
+    if (currentDrag.pulling) {
+      const distance = Math.min(PULL_MAX, currentDrag.dy * PULL_RESIST)
+      hold(null)
+      if (distance >= PULL_RELEASE) {
+        setRefreshing(true)
+        onRefresh()
+        window.setTimeout(() => setRefreshing(false), 600)
+      }
+      return
+    }
     if (!currentDrag.active) {
       hold(null)
       return
@@ -872,36 +921,40 @@ export function Console({
   useEffect(() => {
     const onPointerDown = (event: PointerEvent) => {
       if (event.pointerType === 'touch' || event.button !== 0) return
-      begin(event.target, event.clientX, event.clientY)
+      begin(event.target, event.clientX, event.clientY, 'pointer')
     }
     const onPointerMove = (event: PointerEvent) => {
-      if (event.pointerType === 'touch') return
+      if (event.pointerType === 'touch' || dragRef.current?.source !== 'pointer') return
       follow(event.clientX, event.clientY)
     }
     const onPointerUp = (event: PointerEvent) => {
-      if (event.pointerType === 'touch') return
+      if (event.pointerType === 'touch' || dragRef.current?.source !== 'pointer') return
       settle()
     }
 
     const onTouchStart = (event: TouchEvent) => {
       const touch = event.touches[0]
       if (!touch) return
-      begin(event.target, touch.clientX, touch.clientY)
+      begin(event.target, touch.clientX, touch.clientY, 'touch')
     }
     const onTouchMove = (event: TouchEvent) => {
       const touch = event.touches[0]
-      if (!touch || !dragRef.current) return
+      if (!touch || dragRef.current?.source !== 'touch') return
       follow(touch.clientX, touch.clientY)
-      /* Only a gesture the drawer has claimed is prevented: everything else stays
-         the page's to scroll. */
-      if (dragRef.current?.active) event.preventDefault()
+      /* Only a gesture this page has claimed is prevented: everything else stays the
+         list's to scroll. */
+      if (dragRef.current?.active || dragRef.current?.pulling) event.preventDefault()
     }
-    const onTouchEnd = () => settle()
+    const onTouchEnd = () => {
+      if (dragRef.current?.source === 'touch') settle()
+    }
 
     document.addEventListener('pointerdown', onPointerDown)
     document.addEventListener('pointermove', onPointerMove)
     document.addEventListener('pointerup', onPointerUp)
-    document.addEventListener('pointercancel', () => hold(null))
+    document.addEventListener('pointercancel', () => {
+      if (dragRef.current?.source === 'pointer') hold(null)
+    })
     document.addEventListener('touchstart', onTouchStart, { passive: true })
     document.addEventListener('touchmove', onTouchMove, { passive: false })
     document.addEventListener('touchend', onTouchEnd)
@@ -984,7 +1037,21 @@ export function Console({
         />
       )}
 
-      <main className="screen" id="content" tabIndex={-1}>
+      <main className="screen" id="content" tabIndex={-1} style={pull ? { transform: `translateY(${pull}px)` } : undefined}>
+        {/* The list follows the finger: the strip is the top of the content, it grows
+            as the drag grows, and it stays out of the sheet's layout at rest. */}
+        {listing && (
+          <div
+            className={`pull${refreshing ? ' is-refreshing' : ''}`}
+            style={refreshing ? undefined : { height: pull }}
+            aria-live="polite"
+          >
+            <span className="pull-spinner" />
+            <span className="pull-label">
+              {refreshing ? 'Up to date' : pull >= PULL_RELEASE ? 'Release to refresh' : 'Pull to refresh'}
+            </span>
+          </div>
+        )}
         {/* A list says what it is before it lists anything; a terminal already says
             it in its own head, so it gets the whole screen instead. */}
         {listing && (

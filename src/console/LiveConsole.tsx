@@ -56,7 +56,7 @@ export function LiveConsole({ account, onSignOut }: {
   account: string
   onSignOut?: () => void
 }) {
-  const { machines } = useMachines()
+  const { machines, refresh: refreshMachines } = useMachines()
   const online = useMemo(() => machines.filter(machine => machine.online).map(machine => machine.id), [machines])
   const { terminals, refresh, close } = useTerminals(online)
 
@@ -157,6 +157,10 @@ export function LiveConsole({ account, onSignOut }: {
         setCurrent(sessions.find(item => item.id !== session.id)?.id ?? '')
       }}
       onTerminalReady={() => void refresh()}
+      onRefresh={() => {
+        void refreshMachines()
+        void refresh()
+      }}
       onSignOut={onSignOut}
     />
   )
