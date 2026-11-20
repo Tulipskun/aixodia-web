@@ -1264,6 +1264,7 @@ button:disabled { cursor: not-allowed; }
   display: flex;
   align-items: center;
   justify-content: center;
+  position: relative;
 }
 
 .screen-live-canvas {
@@ -1275,7 +1276,24 @@ button:disabled { cursor: not-allowed; }
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--s1);
-  touch-action: manipulation;
+  /* The picture is the mouse: a finger on it is the pointer on the machine, never a
+     page scroll. */
+  touch-action: none;
+}
+
+/* The field a screen types into is never drawn: the machine shows the result, the
+   phone only has to raise its keyboard. It still has to be a real element with a
+   size, or a phone will not focus it. */
+.screen-live-keys {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  border: 0;
+  opacity: 0;
+  color: transparent;
+  background: transparent;
+  pointer-events: none;
 }
 
 /* A picture that has not arrived says why, in the same muted voice a shell uses. */

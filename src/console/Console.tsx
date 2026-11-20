@@ -407,6 +407,15 @@ function TerminalScreen({
     handle?.onKey(event.key, chordOf(event))
   }
 
+  /* A phone's keyboard is not a PC's: a soft key press arrives as a change to the
+     field's text, not as a key with a name, so a chord held in the rows has to be read
+     from what was typed rather than from what was pressed. */
+  const chorded = (added: string) => {
+    if (!added) return false
+    for (const character of added) handle?.onKey(character, held.map(key => key.toLowerCase()).join('+'))
+    return true
+  }
+
   const composerBar = (
     <div className="terminal-composer" data-no-drag>
       {/* The >_ key. It is not a key the shell receives: it is the switch between
@@ -435,7 +444,17 @@ function TerminalScreen({
             rows={1}
             className="terminal-input"
             value={draft}
-            onChange={event => onChange({ draft: event.target.value })}
+            onChange={event => {
+              const value = event.target.value
+              /* A letter typed with a modifier held is the chord, not text: it goes to
+                 the shell and the box stays as it was. */
+              if (held.length && value.length > draft.length) {
+                chorded(value.slice(draft.length))
+                event.target.value = draft
+                return
+              }
+              onChange({ draft: value })
+            }}
             onKeyDown={onBoxKey}
             placeholder={held.length ? 'key for the chord…' : 'Type a command…'}
             aria-label="Command"
@@ -506,8 +525,27 @@ function TerminalScreen({
         ref={tapRef}
         className="terminal-tap"
         value={typed}
-        onChange={event => onChange({ typed: event.target.value })}
+        onChange={event => {
+          const value = event.target.value
+          /* The fixture keeps its line; a real shell is told each character as it is
+             typed, because the shell is what echoes it. */
+          if (view.echo) {
+            onChange({ typed: value })
+            return
+          }
+          const added = value.slice(typed.length)
+          event.target.value = ''
+          onChange({ typed: '' })
+          for (const character of added) handle?.onKey(character, held.map(key => key.toLowerCase()).join('+'))
+        }}
         onKeyDown={onTapKey}
+        onBeforeInput={event => {
+          /* A soft keyboard's erase does not always carry a key name. */
+          const kind = (event.nativeEvent as InputEvent).inputType
+          if (view.echo || kind !== 'deleteContentBackward') return
+          event.preventDefault()
+          handle?.onKey('Backspace', '')
+        }}
         aria-label="Terminal input"
         autoCapitalize="off"
         autoCorrect="off"

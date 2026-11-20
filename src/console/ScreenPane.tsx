@@ -60,12 +60,33 @@ export function mountScreen(machine: { id: string; name: string }): ReactNode {
 
 type Phase = 'connecting' | 'open' | 'closed'
 
+/* What the phone's own keyboard calls a key, and what X calls it. A screen has no
+   text field of its own, so these are the only keys that can be sent by name. */
+const KEYSYMS: Record<string, string> = {
+  Enter: 'Return',
+  Backspace: 'BackSpace',
+  Delete: 'Delete',
+  Tab: 'Tab',
+  Escape: 'Escape',
+  ArrowUp: 'Up',
+  ArrowDown: 'Down',
+  ArrowLeft: 'Left',
+  ArrowRight: 'Right',
+  Home: 'Home',
+  End: 'End',
+  PageUp: 'Prior',
+  PageDown: 'Next',
+}
+
 function ScreenShell({ machine }: { machine: { id: string; name: string } }) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
+  const typingRef = useRef<HTMLInputElement>(null)
   const socketRef = useRef<WebSocket | null>(null)
   const paints = useRef(0)
-  /* The picture's own size, so a tap can be turned into the machine's pixels. */
+  /* The picture's own size, so a finger can be turned into the machine's pixels. */
   const sizeRef = useRef({ width: 0, height: 0 })
+  /* The finger that is currently down, if any: without it a move is only a move. */
+  const holding = useRef<number | null>(null)
   const [phase, setPhase] = useState<Phase>('connecting')
   const [note, setNote] = useState('')
   const [attempt, setAttempt] = useState(0)
@@ -154,18 +175,31 @@ function ScreenShell({ machine }: { machine: { id: string; name: string } }) {
   }, [dial, attempt])
 
   /* A press is a move and a click in one, so the machine never sees the pointer
-     travel to where the finger already was. */
-  const press = (event: React.PointerEvent<HTMLCanvasElement>) => {
-    const socket = socketRef.current
+     travel to where the finger already was. Dragging sends the ones in between: a
+     machine's own drag and drop needs the pointer to pass over what it drops on. */
+  const where = (event: React.PointerEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current
-    if (!socket || socket.readyState !== WebSocket.OPEN || !canvas) return
-    const rect = canvas.getBoundingClientRect()
     const { width, height } = sizeRef.current
-    if (!width || !height || !rect.width) return
-    const x = Math.round(((event.clientX - rect.left) / rect.width) * width)
-    const y = Math.round(((event.clientY - rect.top) / rect.height) * height)
-    socket.send(JSON.stringify({ type: 'down', x, y, button: 'left' }))
-    socket.send(JSON.stringify({ type: 'up', x, y, button: 'left' }))
+    const rect = canvas?.getBoundingClientRect()
+    if (!canvas || !rect || !rect.width || !width || !height) return null
+    return {
+      x: Math.round(((event.clientX - rect.left) / rect.width) * width),
+      y: Math.round(((event.clientY - rect.top) / rect.height) * height),
+    }
+  }
+
+  const post = (message: unknown) => {
+    const socket = socketRef.current
+    if (!socket || socket.readyState !== WebSocket.OPEN) return false
+    socket.send(JSON.stringify(message))
+    return true
+  }
+
+  /* The phone's keyboard is the machine's keyboard: what it types is sent as text,
+     because a layout the machine cannot produce — Thai, emoji — is typed by
+     borrowing a keycode rather than silently dropped. */
+  const type = (text: string) => {
+    if (text) post({ type: 'text', text })
   }
 
   return (
@@ -176,8 +210,56 @@ function ScreenShell({ machine }: { machine: { id: string; name: string } }) {
           className="screen-live-canvas"
           width={480}
           height={720}
-          onPointerDown={press}
           aria-label={`The screen of ${machine.name}`}
+          onPointerDown={event => {
+            const at = where(event)
+            if (!at) return
+            /* The keyboard follows the tap: a screen is typed into where it is
+               touched, and the field itself is never shown. */
+            typingRef.current?.focus({ preventScroll: true })
+            holding.current = event.pointerId
+            event.currentTarget.setPointerCapture(event.pointerId)
+            post({ type: 'down', ...at, button: 'left' })
+          }}
+          onPointerMove={event => {
+            if (holding.current !== event.pointerId) return
+            const at = where(event)
+            if (at) post({ type: 'move', ...at })
+          }}
+          onPointerUp={event => {
+            const at = where(event)
+            if (!at || holding.current !== event.pointerId) return
+            holding.current = null
+            event.currentTarget.releasePointerCapture(event.pointerId)
+            post({ type: 'up', ...at, button: 'left' })
+          }}
+          onPointerCancel={() => { holding.current = null }}
+          onWheel={event => {
+            const at = where(event as unknown as React.PointerEvent<HTMLCanvasElement>)
+            if (!at) return
+            event.preventDefault()
+            post({ type: 'wheel', ...at, delta: event.deltaY > 0 ? 1 : -1 })
+          }}
+        />
+        {/* Nothing is drawn here: it exists so the phone's keyboard has something to
+            type into, and it is the machine that does the showing. */}
+        <input
+          ref={typingRef}
+          className="screen-live-keys"
+          aria-label={`Type on ${machine.name}`}
+          autoCapitalize="off"
+          autoCorrect="off"
+          spellCheck={false}
+          onChange={event => {
+            type(event.target.value)
+            event.target.value = ''
+          }}
+          onKeyDown={event => {
+            const keysym = KEYSYMS[event.key]
+            if (!keysym) return
+            event.preventDefault()
+            post({ type: 'key', keysym, mods: [] })
+          }}
         />
       </div>
       {phase !== 'open' && (
