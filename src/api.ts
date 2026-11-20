@@ -441,7 +441,11 @@ export async function refreshSession(): Promise<Session> {
     return { authenticated: false, username: null, expiresAt: null }
   }
 
-  const expiresAt = Math.floor(Date.now() / 1000) + 24 * 60 * 60
+  /* How long the console trusts a profile it has already seen. This mirrors the Access
+     application's own session duration (30 days), because it exists only to skip a boot
+     screen: the engine's answers are what actually decide whether the session is real, and
+     a 401 asks the identity endpoint rather than believing this number. */
+  const expiresAt = Math.floor(Date.now() / 1000) + 30 * 24 * 60 * 60
   writeProfile({ username, expiresAt })
   return {
     authenticated: true,
