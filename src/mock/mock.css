@@ -331,6 +331,43 @@ button:disabled { cursor: not-allowed; }
 
 .drawer-session-close:active { transform: scale(0.92); color: var(--text); }
 
+/* The question takes the x's place: two answers, each a 44px target, in the same
+   row, so nothing moves and nothing else is covered. */
+.drawer-confirm {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: stretch;
+  gap: 2px;
+}
+
+.drawer-confirm-cancel,
+.drawer-confirm-yes {
+  min-width: 44px;
+  min-height: 44px;
+  display: grid;
+  place-items: center;
+  padding: 0 var(--s2);
+  border: 0;
+  border-radius: var(--s2);
+  background: transparent;
+  font-size: var(--fs-label);
+  transition: color 0.15s ease, background 0.15s ease, transform 0.12s ease;
+}
+
+.drawer-confirm-cancel { color: var(--muted); }
+
+/* The destructive one is the one with weight: the accent, on the side the thumb
+   already is. */
+.drawer-confirm-yes { color: var(--accent); }
+
+@media (hover: hover) {
+  .drawer-confirm-cancel:hover { color: var(--text); background: var(--surface-2); }
+  .drawer-confirm-yes:hover { background: var(--surface-2); }
+}
+
+.drawer-confirm-cancel:active,
+.drawer-confirm-yes:active { transform: scale(0.94); }
+
 /* Opening one more belongs to the engine above it, so it reads as that engine's
    last row rather than as another screen. */
 .drawer-new {

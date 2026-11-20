@@ -684,6 +684,10 @@ function Drawer({
   drag: Drag | null
   panelRef: React.RefObject<HTMLElement>
 }) {
+  /* Closing a shell ends something that was running, so the x asks first: the row
+     turns its own end into a question rather than opening a dialog over the list. */
+  const [confirming, setConfirming] = useState<string | null>(null)
+
   /* While a pointer is down the panel follows it instead of the class, so the
      gesture reads as dragging the panel rather than waiting for it to appear. */
   const offset = drag ? (drag.fromOpen ? Math.min(0, drag.dx) : Math.min(0, drag.dx - drag.width)) : null
@@ -703,6 +707,9 @@ function Drawer({
        the pointer nowhere near where the keyboard thinks it is. While closed the
        panel is inert, so it is skipped. */
     panelRef.current?.toggleAttribute('inert', !open)
+    /* A question left open over a closed panel would be asked again on the next
+       visit, out of context. */
+    if (!open) setConfirming(null)
   }, [open, panelRef])
 
   return (
@@ -778,14 +785,38 @@ function Drawer({
                     <SquareTerminal size={16} />
                     <span className="drawer-session-title">{session.title}</span>
                   </button>
-                  <button
-                    type="button"
-                    className="drawer-session-close"
-                    aria-label={`Close ${session.title}`}
-                    onClick={() => onCloseSession(session.id)}
-                  >
-                    <X size={14} aria-hidden="true" />
-                  </button>
+                  {confirming === session.id ? (
+                    /* The question lives where the x was, so the answer is under the
+                       thumb that asked it and nothing is covered. */
+                    <span className="drawer-confirm">
+                      <button
+                        type="button"
+                        className="drawer-confirm-cancel"
+                        onClick={() => setConfirming(null)}
+                      >
+                        Keep
+                      </button>
+                      <button
+                        type="button"
+                        className="drawer-confirm-yes"
+                        onClick={() => {
+                          setConfirming(null)
+                          onCloseSession(session.id)
+                        }}
+                      >
+                        Close
+                      </button>
+                    </span>
+                  ) : (
+                    <button
+                      type="button"
+                      className="drawer-session-close"
+                      aria-label={`Close ${session.title}`}
+                      onClick={() => setConfirming(session.id)}
+                    >
+                      <X size={14} aria-hidden="true" />
+                    </button>
+                  )}
                 </div>
               ))}
 

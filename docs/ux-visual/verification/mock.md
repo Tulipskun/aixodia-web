@@ -1492,3 +1492,17 @@ const open = sessions.filter((s) => MACHINES.find((m) => m.id === s.engine)?.onl
 Measured, after the fix: close `shell 2` → rows 1, still on the terminal; close `shell 1`
 → rows 0, `terminal: false`, heading `Engines`. Row height 46 (44 + the row's hairline),
 close target 44×44. Audits 390/1440 clean, 19 tests pass.
+
+## Round 65 — closing asks first, in place
+
+Closing a shell ends something that was running, so the `×` no longer closes on the
+first tap: it turns its own end of the row into the question — `Keep` and `Close`, both
+44px, in the same 44px row, so nothing moves and nothing is covered by a dialog. `Keep`
+is muted, `Close` carries the accent and sits where the thumb already is. A question
+left open is dropped when the panel closes, so it is never asked out of context.
+
+Measured (390×844): tapping `×` on `shell 2` → that row `asking: true`, `Keep` 44×44,
+`Close` 46×44, row still 46 tall; `Keep` → back to the `×`, nothing closed; `×` then
+`Close` → the row is gone; `×` then closing the panel and reopening → no question
+standing. Audits 390/1440 clean, 19 tests pass. Vision check: one row, two readable
+choices, the destructive one brighter without shouting.
