@@ -3,6 +3,7 @@ import { Cpu, HardDrive, MemoryStick } from 'lucide-react'
 import type { Listing, Machine, MachineRef, Metric, Session } from './Console'
 import { Console } from './Console'
 import { mountPty } from './PtyTerminal'
+import { mountScreen } from './ScreenPane'
 import { useMachines, useTerminals } from './useLive'
 import type { Series } from './useLive'
 import { NAV, droidimeListing, enginesListing } from './vocabulary'
@@ -103,6 +104,13 @@ export function LiveConsole({ account, onOpenChat, onSignOut }: {
     [machines],
   )
 
+  /* A screen is one machine's display, opened from its card and left by the menu. */
+  const [viewing, setViewing] = useState<{ id: string; name: string } | null>(null)
+  const openScreen = useCallback((engineId: string, name: string) => {
+    setViewing({ id: engineId, name })
+    setScreenId('screen')
+  }, [])
+
   const openTerminal = useCallback((engineId: string) => {
     const id = newId()
     setOpening(list => [...list, { id, engine: engineId, title: 'new shell' }])
@@ -120,6 +128,8 @@ export function LiveConsole({ account, onOpenChat, onSignOut }: {
       screenId={sessions.length ? screenId : 'engines'}
       account={account}
       mount={mountPty}
+      mountScreen={machine => mountScreen(machine)}
+      viewing={viewing}
       onScreenId={setScreenId}
       onSession={id => {
         setCurrent(id)
@@ -129,6 +139,7 @@ export function LiveConsole({ account, onOpenChat, onSignOut }: {
         /* Two verbs have a screen behind them; the rest are drawn and not wired. */
         if (action === 'terminal') openTerminal(machineId)
         else if (action === 'ai') onOpenChat(machineId)
+        else if (action === 'screen') openScreen(machineId, machines.find(m => m.id === machineId)?.name ?? machineId)
       }}
       onCloseSession={async session => {
         setOpening(list => list.filter(item => item.id !== session.id))

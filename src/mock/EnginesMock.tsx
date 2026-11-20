@@ -141,8 +141,45 @@ function useFixture() {
   }
 }
 
+/** A fixture display: a still picture, drawn once, so the preview shows the screen
+ *  the app shows without pretending to be a stream. */
+function FixtureScreen({ name }: { name: string }) {
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+  useEffect(() => {
+    const canvas = canvasRef.current
+    const context = canvas?.getContext('2d')
+    if (!canvas || !context) return
+    const { width, height } = canvas
+    context.fillStyle = '#101014'
+    context.fillRect(0, 0, width, height)
+    context.fillStyle = '#16161b'
+    context.fillRect(0, 0, width, 34)
+    context.fillStyle = '#1d1d24'
+    context.fillRect(18, 60, width - 36, height - 120)
+    context.strokeStyle = '#2a2a33'
+    context.strokeRect(18, 60, width - 36, height - 120)
+    context.fillStyle = '#7fa6d3'
+    context.fillRect(36, 84, 120, 10)
+    context.fillStyle = '#4a4a55'
+    for (let line = 0; line < 6; line += 1) {
+      context.fillRect(36, 116 + line * 22, width - 140 - (line % 3) * 40, 8)
+    }
+    context.fillStyle = '#585862'
+    context.font = '13px system-ui, sans-serif'
+    context.fillText(`${name} · fixture display`, 36, height - 40)
+  }, [name])
+  return (
+    <div className="screen-live">
+      <div className="screen-live-stage">
+        <canvas ref={canvasRef} className="screen-live-canvas" width={480} height={720} aria-label={`The screen of ${name}`} />
+      </div>
+    </div>
+  )
+}
+
 export function EnginesMock() {
   const fixture = useFixture()
+  const [viewing, setViewing] = useState<{ id: string; name: string } | null>(null)
   /* A shell whose engine is down cannot be opened, so it is offered nowhere: not in
      the menu, and not as the tab the screen falls back to. */
   const open = fixture.sessions.filter(session =>
@@ -159,6 +196,8 @@ export function EnginesMock() {
       screenId={fixture.screenId}
       account="Tulipskun"
       mount={mountFixture}
+      mountScreen={machine => <FixtureScreen key={machine.id} name={machine.name} />}
+      viewing={viewing}
       onScreenId={fixture.setScreenId}
       onSession={id => {
         fixture.setCurrent(id)
@@ -166,6 +205,12 @@ export function EnginesMock() {
       }}
       onAction={(machineId, action) => {
         if (action === 'terminal') fixture.add(machineId)
+        /* A fixture has no display to stream, but the screen the action opens is the
+           same screen, so the preview can be walked the same way. */
+        if (action === 'screen') {
+          setViewing({ id: machineId, name: MACHINES.find(m => m.id === machineId)?.name ?? machineId })
+          fixture.setScreenId('screen')
+        }
       }}
       onCloseSession={fixture.close}
       onTerminalReady={() => undefined}

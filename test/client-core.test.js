@@ -90,7 +90,7 @@ test('DEVICE_PATHS point at the real engine endpoints and encode ids', () => {
 
 // ---------------------------------------------------------------- engineCall (mock fetch)
 
-test('engineCall relies on the Access cookie: no Authorization header is built here', async () => {
+test('engineCall carries no cookie: the engine is another host and the bearer is the credential', async () => {
   const fetchFn = createFetch([jsonResponse({ tools: [{ name: 'tap' }] })])
   const result = await engineCall(fetchFn, 'https://engine.test', DEVICE_PATHS.tools('dev-1'))
   assert.equal(result.ok, true)
@@ -100,8 +100,9 @@ test('engineCall relies on the Access cookie: no Authorization header is built h
   assert.equal(call.url, 'https://engine.test/api/devices/dev-1/tools')
   assert.equal(call.init.method, 'GET')
   assert.equal(call.init.headers['Authorization'], undefined)
-  // Cloudflare Access authorises from the cookie, so it must be sent.
-  assert.equal(call.init.credentials, 'include')
+  /* A cookie for the console's host is never sent to the engine's host, so asking
+     for one only makes the browser refuse the answer it already has. */
+  assert.equal(call.init.credentials, 'omit')
 })
 
 test('engineCall sends the action body as { tool, arguments } for POST', async () => {

@@ -119,7 +119,10 @@ export async function engineCall(fetchFn, baseUrl, path, options = {}) {
     res = await fetchFn(`${baseUrl}${path}`, {
       method: options.method || 'GET',
       headers,
-      credentials: 'include',
+      /* The engine is a different host, and its credential is the bearer: a cookie
+         for the console's host is not sent to it, and asking for one would only
+         make the browser demand a credentials grant the engine has no use for. */
+      credentials: 'omit',
       cache: 'no-store',
       ...(options.body !== undefined ? { body: JSON.stringify(options.body) } : {}),
     })

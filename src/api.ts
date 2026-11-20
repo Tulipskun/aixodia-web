@@ -482,7 +482,9 @@ async function fetchResponse(engine: EngineNode, path: string, init: RequestInit
   }
   try {
     return await fetch(`${engine.url}${path}`, {
-      credentials: 'include',
+      /* Same reason as `engineCall`: the engine's credential is the bearer in the
+         header, not a cookie belonging to this host. */
+      credentials: 'omit',
       cache: 'no-store',
       ...init,
       headers,
@@ -720,6 +722,50 @@ export async function listTerminals(engineId?: string): Promise<TerminalInfo[]> 
 
 export async function closeTerminal(id: string, engineId?: string): Promise<void> {
   await request(`/api/terminals/${encodeURIComponent(id)}`, { method: 'DELETE' }, engineId)
+}
+
+// ---------------------------------------------------------------- screen
+/* The machine's own display, streamed as changed JPEG tiles over one socket. Like a
+   terminal, the socket cannot carry a header, so the bearer buys a ticket. */
+export interface ScreenFrameInfo {
+  available: boolean
+  width: number
+  height: number
+  fps: number
+  tile: number
+}
+
+export async function getScreenInfo(engineId?: string): Promise<ScreenFrameInfo> {
+  const data = await request<Record<string, unknown>>('/api/screen/info', {}, engineId)
+  return {
+    available: data?.available === true,
+    width: Number(data?.width) || 0,
+    height: Number(data?.height) || 0,
+    fps: Number(data?.fps) || 0,
+    tile: Number(data?.tile) || 0,
+  }
+}
+
+export async function createScreenTicket(engineId?: string): Promise<TerminalTicket> {
+  const data = await post<{ ticket?: string; expires_at?: number }>('/api/screen/ticket', {}, engineId)
+  if (!data?.ticket) throw new ApiError(502, { error: 'The engine did not issue a screen ticket.', code: 'NO_TICKET' })
+  return { ticket: data.ticket, expiresAt: Number(data.expires_at) || 0 }
+}
+
+export function screenSocketUrl(
+  engineId: string,
+  ticket: string,
+  options: { width?: number; fps?: number; quality?: number } = {},
+): string {
+  const engine = resolveTargetEngine(engineId)
+  const base = new URL(engine.url, window.location.href)
+  const scheme = base.protocol === 'https:' ? 'wss:' : 'ws:'
+  const root = `${scheme}//${base.host}${base.pathname.replace(/\/+$/, '')}/api/screen`
+  const query = new URLSearchParams({ ticket, codec: 'jpeg' })
+  if (options.width) query.set('width', String(options.width))
+  if (options.fps) query.set('fps', String(options.fps))
+  if (options.quality) query.set('quality', String(options.quality))
+  return `${root}?${query.toString()}`
 }
 
 /* The socket URL for an engine: same origin as its HTTP API, but the scheme has to

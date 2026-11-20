@@ -117,6 +117,10 @@ const KEY_ROWS: string[][] = [
    app binds to ctrl+p, and it sends that itself. */
 const MODIFIERS = ['Ctrl', 'Shift', 'Alt']
 
+/** How the console mounts a machine's display: it names the machine, and draws what
+ *  comes back. A screen keeps its own socket, so the console only chooses the room. */
+export type ScreenMount = (machine: { id: string; name: string }) => ReactNode
+
 /** What the terminal draws, from whoever is holding the shell. */
 export interface TerminalView {
   /** The transcript: cells from a pty, or lines from a fixture. */
@@ -736,6 +740,8 @@ export function Console({
   screenId,
   account,
   mount,
+  mountScreen,
+  viewing,
   onScreenId,
   onSession,
   onAction,
@@ -753,6 +759,9 @@ export function Console({
   screenId: string
   account: string
   mount: TerminalMount
+  mountScreen: ScreenMount
+  /** The machine whose display is on screen, when the screen is a display. */
+  viewing: { id: string; name: string } | null
   onScreenId: (id: string) => void
   onSession: (id: string) => void
   onAction: (machine: string, action: string) => void
@@ -780,7 +789,7 @@ export function Console({
      which is the one moment the bar has something to say. While the finger is still
      down, the bar follows it, so the two arrive together instead of one after the
      other. */
-  const full = screenId === 'terminal'
+  const full = screenId === 'terminal' || screenId === 'screen'
   const revealed = drag ? 1 + (drag.fromOpen ? Math.min(0, drag.dx) : Math.min(0, drag.dx - drag.width)) / drag.width : null
 
   const hold = (next: Drag | null) => {
@@ -980,6 +989,10 @@ export function Console({
           </div>
         )}
 
+        {screenId === 'screen' && viewing && (
+          <div className="screen-live-body">{mountScreen(viewing)}</div>
+        )}
+
         {listing
           ? listing.machines.map((machine, index) => (
               <Card
@@ -990,7 +1003,7 @@ export function Console({
                 onAction={id => onAction(machine.id, id)}
               />
             ))
-          : session && (
+          : screenId !== 'screen' && session && (
               <TerminalScreen
                 key={session.id}
                 session={session}
