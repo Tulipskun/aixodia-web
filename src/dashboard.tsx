@@ -1,16 +1,14 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import type { PointerEvent } from 'react'
-import {
-  Activity, ArrowLeft, Bot, Keyboard, LoaderCircle, MessageSquare, MonitorSmartphone,
-  Plus, Send, Smartphone, Square, X,
-} from 'lucide-react'
+import { ArrowLeft, Bot, LoaderCircle, MessageSquare, Plus, Send, Square, X } from 'lucide-react'
 import * as api from './api'
-import type {
-  Device, DeviceActionResult, DeviceTool, EngineEvent, EngineSession, EngineTurn,
-} from './types'
+import type { EngineEvent, EngineSession, EngineTurn } from './types'
+import { NAV } from './console/vocabulary'
+
+/* The way out of a chat is back to the list of machines, and it says so with the same
+   word the menu uses. */
+const BACK_LABEL = NAV[0].label
 
 type ChatMessage = { id: string; role: 'user' | 'assistant'; text: string; error?: boolean; tool?: string }
-type ScreenPoint = { x: number; y: number; at: number }
 
 function parseEvents(raw: string): EngineEvent[] {
   const result: EngineEvent[] = []
@@ -194,7 +192,7 @@ export function EngineChat({ onBack }: { onBack: () => void }) {
       {railOpen && <button className="chat-rail-scrim" aria-label="Close chat list" onClick={() => setRailOpen(false)} />}
       <aside className={`chat-rail ${railOpen ? 'is-open' : ''}`}>
         <div className="chat-rail-head">
-          <button className="back-button" type="button" onClick={onBack}><ArrowLeft size={17} /> Dashboard</button>
+          <button className="back-button" type="button" onClick={onBack}><ArrowLeft size={17} /> {BACK_LABEL}</button>
           <button className="icon-action" type="button" aria-label="Close chat list" onClick={() => setRailOpen(false)}><X size={17} /></button>
         </div>
         <button className="new-chat-button" type="button" onClick={() => void newSession()}><Plus size={17} /> New chat</button>
@@ -211,7 +209,7 @@ export function EngineChat({ onBack }: { onBack: () => void }) {
         <header className="chat-header">
           <button className="icon-action mobile-chat-menu" type="button" aria-label="Open chat list" onClick={() => setRailOpen(true)}><MessageSquare size={18} /></button>
           <div><strong>AIxodia</strong><span><span className="state-dot is-online-dot" /> Engine chat</span></div>
-          <button className="back-button chat-back-desktop" type="button" onClick={onBack}>Dashboard</button>
+          <button className="back-button chat-back-desktop" type="button" onClick={onBack}>{BACK_LABEL}</button>
         </header>
         <div className="chat-messages" ref={scrollRef}>
           {loading ? <div className="chat-empty"><LoaderCircle className="spin" size={22} /> Loading…</div> :
@@ -245,162 +243,6 @@ export function EngineChat({ onBack }: { onBack: () => void }) {
             <button className="send-button" type="submit" aria-label="Send message" disabled={!draft.trim() || loading || !selected}><Send size={16} /></button>
           )}
         </form>
-      </div>
-    </section>
-  )
-}
-
-export function DeviceControl({ device, onBack }: { device: Device; onBack: () => void }) {
-  const [image, setImage] = useState<string | null>(null)
-  const [size, setSize] = useState({ width: 0, height: 0 })
-  const [tools, setTools] = useState<DeviceTool[]>([])
-  const [status, setStatus] = useState('Connecting to device…')
-  const [busy, setBusy] = useState(false)
-  const [textInput, setTextInput] = useState('')
-  const [lastError, setLastError] = useState('')
-  const point = useRef<ScreenPoint | null>(null)
-  const longPressFired = useRef(false)
-  const longPressTimer = useRef<number | null>(null)
-
-  const applyResult = useCallback((result: DeviceActionResult) => {
-    if (result.screenshot) setImage(`data:${result.screenshot.mimeType};base64,${result.screenshot.data}`)
-    if (result.text && result.text.startsWith('width=')) {
-      const width = Number(result.text.match(/width=(\d+)/)?.[1] || 0)
-      const height = Number(result.text.match(/height=(\d+)/)?.[1] || 0)
-      if (width > 0 && height > 0) setSize({ width, height })
-    }
-    if (!result.ok) setLastError(result.text || 'Device action failed')
-    else setLastError('')
-  }, [])
-
-  const runTool = useCallback(async (tool: string, args: Record<string, unknown> = {}) => {
-    setBusy(true)
-    try {
-      const result = await api.callDeviceTool(device.id, tool, args)
-      applyResult(result)
-      return result
-    } catch (cause) {
-      setLastError(cause instanceof Error ? cause.message : 'Device action failed')
-      return null
-    } finally { setBusy(false) }
-  }, [applyResult, device.id])
-
-  useEffect(() => {
-    let alive = true
-    void (async () => {
-      setStatus('Reading available controls…')
-      try {
-        const [toolPage] = await Promise.all([api.getDeviceTools(device.id)])
-        if (alive) setTools(toolPage.tools)
-        const screen = await api.callDeviceTool(device.id, 'screen_size')
-        if (alive) applyResult(screen)
-        const shot = await api.callDeviceTool(device.id, 'screenshot')
-        if (alive) { applyResult(shot); setStatus('Connected') }
-      } catch (cause) {
-        if (alive) { setStatus('Device connection failed'); setLastError(cause instanceof Error ? cause.message : 'Unable to connect') }
-      }
-    })()
-    return () => {
-      alive = false
-      if (longPressTimer.current != null) window.clearTimeout(longPressTimer.current)
-    }
-  }, [device.id, applyResult])
-
-  const imagePoint = (event: PointerEvent<HTMLImageElement>) => {
-    const rect = event.currentTarget.getBoundingClientRect()
-    return {
-      x: Math.max(0, Math.min(size.width - 1, Math.round((event.clientX - rect.left) / rect.width * size.width))),
-      y: Math.max(0, Math.min(size.height - 1, Math.round((event.clientY - rect.top) / rect.height * size.height))),
-    }
-  }
-  const onPointerDown = (event: React.PointerEvent<HTMLImageElement>) => {
-    if (busy || !size.width || !size.height) return
-    event.currentTarget.setPointerCapture(event.pointerId)
-    const coords = imagePoint(event)
-    point.current = { ...coords, at: Date.now() }
-    longPressFired.current = false
-    longPressTimer.current = window.setTimeout(() => {
-      const start = point.current
-      if (!start) return
-      longPressFired.current = true
-      void runTool('long_press', { x: start.x, y: start.y, duration_ms: 800 })
-    }, 650)
-  }
-  const onPointerUp = (event: React.PointerEvent<HTMLImageElement>) => {
-    const start = point.current
-    if (!start) return
-    if (longPressTimer.current != null) window.clearTimeout(longPressTimer.current)
-    longPressTimer.current = null
-    point.current = null
-    if (longPressFired.current) return
-    const end = imagePoint(event)
-    if (Math.hypot(end.x - start.x, end.y - start.y) < 12) {
-      void runTool('tap', { x: end.x, y: end.y })
-    } else {
-      void runTool('swipe', { x1: start.x, y1: start.y, x2: end.x, y2: end.y, duration_ms: Math.max(100, Date.now() - start.at) })
-    }
-  }
-
-  const key = (code: number) => void runTool('key_event', { keycode: code })
-  const sendText = async () => {
-    if (!textInput.trim() || busy) return
-    const text = textInput
-    setTextInput('')
-    await runTool('input_text', { text })
-  }
-  return (
-    <section className="device-control-view">
-      <header className="device-control-header">
-        <button className="back-button" type="button" onClick={onBack}><ArrowLeft size={17} /> Devices</button>
-        <div className="control-device-title"><Smartphone size={19} /><strong>{device.name}</strong><span className="connection-state is-online"><span className="state-dot" />Online</span></div>
-        <span className="control-device-meta">{size.width && size.height ? `${size.width} × ${size.height}` : 'Screen'}</span>
-      </header>
-      <div className="device-control-body">
-        <div className="remote-screen-panel">
-          <div className="remote-screen-toolbar"><span><MonitorSmartphone size={15} /> Live device screen</span><span>{status}</span></div>
-          <div className="remote-screen-stage">
-            {image ? <img
-              src={image}
-              alt={`Screen of ${device.name}`}
-              draggable={false}
-              onPointerDown={onPointerDown}
-              onPointerUp={onPointerUp}
-              onPointerCancel={() => { if (longPressTimer.current != null) window.clearTimeout(longPressTimer.current); point.current = null }}
-              className={busy ? 'is-busy' : ''}
-            /> : <div className="screen-loading"><LoaderCircle className="spin" size={25} /><span>Loading device screen…</span></div>}
-          </div>
-        </div>
-        <aside className="remote-controls">
-          <section className="remote-control-group">
-            <h3>Navigation</h3>
-            <div className="navigation-keys">
-              <button type="button" onClick={() => key(4)} disabled={busy}>Back</button>
-              <button type="button" onClick={() => key(3)} disabled={busy}>Home</button>
-              <button type="button" onClick={() => key(187)} disabled={busy}>Recent</button>
-            </div>
-            <div className="navigation-keys">
-              <button type="button" onClick={() => key(66)} disabled={busy}>Enter</button>
-              <button type="button" onClick={() => key(67)} disabled={busy}>Delete</button>
-            </div>
-          </section>
-          <section className="remote-control-group">
-            <h3>Text input</h3>
-            <div className="remote-text-entry">
-              <input value={textInput} onChange={event => setTextInput(event.target.value)} onKeyDown={event => { if (event.key === 'Enter') void sendText() }} placeholder="Type on device…" />
-              <button type="button" aria-label="Send text" onClick={() => void sendText()} disabled={!textInput.trim() || busy}><Send size={15} /></button>
-            </div>
-          </section>
-          <section className="remote-control-group">
-            <h3>Device actions</h3>
-            <button className="remote-wide-button" type="button" onClick={() => void runTool('screenshot')} disabled={busy}><Activity size={15} /> Refresh screenshot</button>
-            <button className="remote-wide-button" type="button" onClick={() => void runTool('ui_hierarchy')} disabled={busy}><Keyboard size={15} /> Read UI hierarchy</button>
-            {lastError && <p className="remote-error">{lastError}</p>}
-          </section>
-          <section className="remote-control-group remote-tools-info">
-            <h3>Available MCP tools</h3>
-            <span>{tools.length ? tools.map(tool => tool.name).join(' · ') : 'Loading tool catalogue…'}</span>
-          </section>
-        </aside>
       </div>
     </section>
   )

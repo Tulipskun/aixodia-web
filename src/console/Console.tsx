@@ -742,6 +742,7 @@ export function Console({
   mount,
   mountScreen,
   viewing,
+  pane,
   onScreenId,
   onSession,
   onAction,
@@ -762,6 +763,10 @@ export function Console({
   mountScreen: ScreenMount
   /** The machine whose display is on screen, when the screen is a display. */
   viewing: { id: string; name: string } | null
+  /** A screen that is neither a list nor a shell — the chat — drawn inside the same
+   *  frame. It keeps the bar, the menu and the gesture, so it is a screen of the
+   *  console rather than a page beside it. */
+  pane: { id: string; content: ReactNode } | null
   onScreenId: (id: string) => void
   onSession: (id: string) => void
   onAction: (machine: string, action: string) => void
@@ -785,11 +790,11 @@ export function Console({
      and only the render values come from state. */
   const dragRef = useRef<Drag | null>(null)
 
-  /* A terminal is the whole screen, so the bar is off it — until the menu comes out,
-     which is the one moment the bar has something to say. While the finger is still
-     down, the bar follows it, so the two arrive together instead of one after the
-     other. */
-  const full = screenId === 'terminal' || screenId === 'screen'
+  /* Anything that is not a list of cards is the whole screen — a shell, a display, the
+     chat — so the bar is off it, until the menu comes out, which is the one moment the
+     bar has something to say. While the finger is still down, the bar follows it, so
+     the two arrive together instead of one after the other. */
+  const full = !listing
   const revealed = drag ? 1 + (drag.fromOpen ? Math.min(0, drag.dx) : Math.min(0, drag.dx - drag.width)) / drag.width : null
 
   const hold = (next: Drag | null) => {
@@ -950,7 +955,9 @@ export function Console({
       <Drawer
         open={menuOpen}
         onClose={() => setMenuOpen(false)}
-        screen={screenId}
+        /* A pane is a screen of the list it was opened from, so the menu still says
+           which list that is. */
+        screen={pane && screenId === pane.id ? nav[0]?.id ?? screenId : screenId}
         onScreen={onScreenId}
         nav={nav}
         machines={machines}
@@ -993,6 +1000,8 @@ export function Console({
           <div className="screen-live-body">{mountScreen(viewing)}</div>
         )}
 
+        {pane && screenId === pane.id && <div className="screen-live-body">{pane.content}</div>}
+
         {listing
           ? listing.machines.map((machine, index) => (
               <Card
@@ -1003,7 +1012,7 @@ export function Console({
                 onAction={id => onAction(machine.id, id)}
               />
             ))
-          : screenId !== 'screen' && session && (
+          : screenId !== 'screen' && screenId !== pane?.id && session && (
               <TerminalScreen
                 key={session.id}
                 session={session}

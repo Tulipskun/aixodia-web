@@ -1,6 +1,5 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
 import * as api from '../api'
-import { useEngines } from '../EngineSwitcher'
 import type { EngineStatus } from '../types'
 
 /* The console's data, as the screens need it.
@@ -55,6 +54,25 @@ function describe(status: EngineStatus | undefined): string {
   if (status.online) return uptime(status.uptimeSeconds) ?? 'online'
   const reason = (status.reason ?? '').trim()
   return reason && reason.length <= 22 ? `offline · ${reason}` : 'offline · unreachable'
+}
+
+function useEngines() {
+  const engines = useSyncExternalStore(api.subscribeEngines, api.getEngines, api.getEngines)
+  const [statuses, setStatuses] = useState<Record<string, EngineStatus>>({})
+
+  const refreshStatuses = useCallback(async () => {
+    setStatuses(await api.getAllEngineStatuses())
+  }, [])
+
+  useEffect(() => {
+    let active = true
+    void api.discoverEngines().then(() => {
+      if (active) void refreshStatuses()
+    })
+    return () => { active = false }
+  }, [refreshStatuses])
+
+  return { engines, statuses, refreshStatuses }
 }
 
 export function useMachines() {

@@ -1,9 +1,7 @@
-import { EngineSwitcher } from './EngineSwitcher'
 import { useEffect, useRef, useState } from 'react'
 
 import * as api from './api'
-import type { Device, Session } from './types'
-import { DeviceControl, EngineChat } from './dashboard'
+import type { Session } from './types'
 import { LiveConsole } from './console/LiveConsole'
 import { Boot, LoginPage } from './components'
 
@@ -13,18 +11,13 @@ type Phase = 'boot' | 'login' | 'home'
    session: it names what failed instead of showing the same button again. */
 const SIGNIN_REFUSED =
   'Cloudflare Access let you through, but no session came back. Your address may not be on the allowlist for this console.'
-type View = 'home' | 'chat' | 'device'
 
 export default function App() {
   const [phase, setPhase] = useState<Phase>('boot')
   const [session, setSession] = useState<Session | null>(null)
-  const [view, setView] = useState<View>('home')
-  const [selectedDevice, setSelectedDevice] = useState<Device | null>(null)
   const [loginBusy, setLoginBusy] = useState(false)
   const [loginError, setLoginError] = useState<string | null>(null)
-  const [accountMenuOpen, setAccountMenuOpen] = useState(false)
   const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false)
-  const accountMenuRef = useRef<HTMLDivElement>(null)
   const booted = useRef(false)
 
   useEffect(() => {
@@ -67,22 +60,6 @@ export default function App() {
     window.addEventListener('popstate', lockAuthenticatedHistory)
     return () => window.removeEventListener('popstate', lockAuthenticatedHistory)
   }, [phase])
-
-  useEffect(() => {
-    if (!accountMenuOpen) return
-    const handlePointerDown = (event: PointerEvent) => {
-      if (!accountMenuRef.current?.contains(event.target as Node)) setAccountMenuOpen(false)
-    }
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setAccountMenuOpen(false)
-    }
-    document.addEventListener('pointerdown', handlePointerDown)
-    document.addEventListener('keydown', handleKeyDown)
-    return () => {
-      document.removeEventListener('pointerdown', handlePointerDown)
-      document.removeEventListener('keydown', handleKeyDown)
-    }
-  }, [accountMenuOpen])
 
   useEffect(() => {
     if (!logoutConfirmOpen) return
@@ -180,67 +157,12 @@ export default function App() {
     </div>
   )
 
-  /* The console is the whole surface for the machines and their shells: it draws its
-     own bar, its own menu and its own lists, so the dashboard chrome is not around it. */
-  if (view === 'home') {
-    return (
-      <>
-        <LiveConsole
-          account={session?.username ?? ''}
-          onOpenChat={engineId => {
-            /* The chat that opens belongs to the engine the card belongs to, so the
-               active engine moves before the view does. */
-            api.setActiveEngineId(engineId)
-            setView('chat')
-          }}
-          onSignOut={() => setLogoutConfirmOpen(true)}
-        />
-        {signOutDialog}
-      </>
-    )
-  }
-
+  /* The console is the whole surface: it draws its own bar, its own menu and its own
+     lists, and the chat is one of its screens. Nothing sits around it. */
   return (
-    <div className="hello-world-layout">
-      <header className="hello-world-topbar">
-        <button className="hello-world-brand brand-button" type="button" onClick={() => { setView('home'); setSelectedDevice(null) }} aria-label="AIxodia Dashboard">
-          <span className="hello-world-brand-mark">A</span>
-          <span className="hello-world-brand-name">AIxodia</span>
-        </button>
-        <EngineSwitcher />
-          <div className="hello-world-account-menu" ref={accountMenuRef}>
-          <button
-            className="hello-world-account-trigger"
-            type="button"
-            aria-haspopup="menu"
-            aria-expanded={accountMenuOpen}
-            onClick={() => setAccountMenuOpen(open => !open)}
-          >
-            <span className="hello-world-username">{session?.username ?? 'Signed in'}</span>
-            <span className={`hello-world-account-chevron${accountMenuOpen ? ' is-open' : ''}`} aria-hidden="true">⌄</span>
-          </button>
-          {accountMenuOpen && (
-            <div className="hello-world-account-dropdown" role="menu">
-              <div className="hello-world-dropdown-user">{session?.username ?? 'Signed in'}</div>
-              <button
-                className="hello-world-logout"
-                type="button"
-                role="menuitem"
-                onClick={() => { setAccountMenuOpen(false); setLogoutConfirmOpen(true) }}
-              >
-                Sign out
-              </button>
-            </div>
-          )}
-        </div>
-      </header>
-      <main className="hello-world-screen app-content is-subview" aria-label="Dashboard">
-        {view === 'chat' && <EngineChat onBack={() => setView('home')} />}
-        {view === 'device' && selectedDevice && (
-          <DeviceControl device={selectedDevice} onBack={() => setView('home')} />
-        )}
-      </main>
+    <>
+      <LiveConsole account={session?.username ?? ''} onSignOut={() => setLogoutConfirmOpen(true)} />
       {signOutDialog}
-    </div>
+    </>
   )
 }

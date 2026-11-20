@@ -198,6 +198,7 @@ export function EnginesMock() {
       mount={mountFixture}
       mountScreen={machine => <FixtureScreen key={machine.id} name={machine.name} />}
       viewing={viewing}
+      pane={null}
       onScreenId={fixture.setScreenId}
       onSession={id => {
         fixture.setCurrent(id)

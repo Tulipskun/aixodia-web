@@ -8,6 +8,8 @@ import { useMachines, useTerminals } from './useLive'
 import type { Series } from './useLive'
 import { NAV, droidimeListing, enginesListing } from './vocabulary'
 import { DROIDIME_DEVICES } from './placeholders'
+import { EngineChat } from '../dashboard'
+import * as api from '../api'
 
 /* The console on the registry.
  *
@@ -50,9 +52,8 @@ function newId(): string {
   return `t-${crypto.randomUUID().replace(/-/g, '')}`
 }
 
-export function LiveConsole({ account, onOpenChat, onSignOut }: {
+export function LiveConsole({ account, onSignOut }: {
   account: string
-  onOpenChat: (engineId: string) => void
   onSignOut?: () => void
 }) {
   const { machines } = useMachines()
@@ -118,6 +119,14 @@ export function LiveConsole({ account, onOpenChat, onSignOut }: {
     setScreenId('terminal')
   }, [])
 
+  /* The chat belongs to one engine, so the engine the card belongs to becomes the
+     active one before the screen changes. It is a screen of the console, drawn in the
+     same frame: the bar, the menu and the gesture stay. */
+  const openChat = useCallback((engineId: string) => {
+    api.setActiveEngineId(engineId)
+    setScreenId('chat')
+  }, [])
+
   return (
     <Console
       listings={listings}
@@ -125,11 +134,12 @@ export function LiveConsole({ account, onOpenChat, onSignOut }: {
       machines={refs}
       sessions={sessions}
       current={current}
-      screenId={sessions.length ? screenId : 'engines'}
+      screenId={screenId}
       account={account}
       mount={mountPty}
       mountScreen={machine => mountScreen(machine)}
       viewing={viewing}
+      pane={screenId === 'chat' ? { id: 'chat', content: <EngineChat onBack={() => setScreenId('engines')} /> } : null}
       onScreenId={setScreenId}
       onSession={id => {
         setCurrent(id)
@@ -138,7 +148,7 @@ export function LiveConsole({ account, onOpenChat, onSignOut }: {
       onAction={(machineId, action) => {
         /* Two verbs have a screen behind them; the rest are drawn and not wired. */
         if (action === 'terminal') openTerminal(machineId)
-        else if (action === 'ai') onOpenChat(machineId)
+        else if (action === 'ai') openChat(machineId)
         else if (action === 'screen') openScreen(machineId, machines.find(m => m.id === machineId)?.name ?? machineId)
       }}
       onCloseSession={async session => {
